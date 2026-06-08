@@ -31,12 +31,12 @@ FROM base AS runtime
 ENV NODE_ENV=production
 ENV GETO_DATA_DIR=/data
 ENV GETO_WEB_DIR=../web/build
-ENV PORT=3000
+ENV PORT=7020
 
 COPY --from=server-deps /app/node_modules ./apps/server/node_modules
 COPY apps/server ./apps/server
 COPY --from=build /app/apps/web/build ./apps/web/build
 
 VOLUME ["/data"]
-EXPOSE 3000
+EXPOSE 7020
 CMD ["bun", "apps/server/src/index.ts"]

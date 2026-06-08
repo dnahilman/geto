@@ -1,0 +1,28 @@
+# Production compose — pulls the pre-built image from GHCR (no local build).
+#
+#   GETO_AUTH_PASSWORD=... GETO_MASTER_KEY=... docker compose up -d
+#
+# Pin a version instead of `latest` for reproducible deploys, e.g.
+#   image: ghcr.io/dnahilman/geto:0.1.0
+services:
+  geto:
+    image: ghcr.io/dnahilman/geto:latest
+    # Host port (left) overridable via PORT; the container listens on 7020.
+    ports:
+      - '${PORT:-7020}:7020'
+    environment:
+      NODE_ENV: production
+      # Required in production — compose refuses to start if unset.
+      GETO_AUTH_PASSWORD: ${GETO_AUTH_PASSWORD:?set a strong login password}
+      GETO_MASTER_KEY: ${GETO_MASTER_KEY:?set a stable master key (keep it secret and unchanged)}
+      GETO_DATA_DIR: /data
+    volumes:
+      - geto-data:/data
+    # Reach a Postgres running on the host (not in this compose) at host
+    # `host.docker.internal`. On podman this maps to the host gateway.
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    restart: unless-stopped
+
+volumes:
+  geto-data:

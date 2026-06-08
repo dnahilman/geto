@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 const schema = z.object({
-  PORT: z.coerce.number().default(3000),
+  PORT: z.coerce.number().default(7020),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   GETO_AUTH_PASSWORD: z.string().min(1, 'GETO_AUTH_PASSWORD is required'),
   // Optional. Derives the at-rest encryption key (saved DB passwords) and signs

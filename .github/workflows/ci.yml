@@ -1,0 +1,55 @@
+name: ci
+
+# Runs on PRs into main (the branch-protection status check) and on pushes to
+# any non-main branch. Pushes to main itself skip CI — main is protected, so
+# code only lands there via a PR that already ran this workflow.
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches-ignore: [main]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 20
+
+    env:
+      # Integration tests connect to the service Postgres above; unit tests
+      # ignore it. GETO_AUTH_PASSWORD is required by the env schema.
+      TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
+      GETO_AUTH_PASSWORD: test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1'
+
+      - run: bun install --frozen-lockfile
+
+      - name: Typecheck server
+        run: bun run --filter server typecheck
+
+      - name: Typecheck web
+        run: bun run --filter web check
+
+      - name: Build SPA
+        run: bun run --filter web build
+
+      - name: Test server
+        run: bun run --filter server test

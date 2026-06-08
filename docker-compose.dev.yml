@@ -1,10 +1,10 @@
 services:
   geto:
     build: .
-    # Host port (left) is overridable via PORT; the container always listens on
-    # 3000 internally. Default published port: 3100.
+    # Host port (left) is overridable via PORT; the container listens on 7020
+    # internally. Default published port: 7020.
     ports:
-      - '${PORT:-3100}:3000'
+      - '${PORT:-7020}:7020'
     environment:
       # All have defaults here; override via shell env or a .env file.
       NODE_ENV: ${NODE_ENV:-development}

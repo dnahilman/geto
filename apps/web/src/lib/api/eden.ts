@@ -4,7 +4,7 @@ import { browser } from '$app/environment'
 
 // In the browser the SPA is same-origin with the API (Elysia in prod, Vite proxy
 // in dev). During the static build there is no window, so fall back to a constant.
-const origin = browser ? window.location.origin : 'http://localhost:3100'
+const origin = browser ? window.location.origin : 'http://localhost:7020'
 
 /**
  * Type-safe API client. Calls map to Elysia routes, e.g.
