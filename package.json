@@ -1,0 +1,24 @@
+{
+  "name": "geto",
+  "private": true,
+  "type": "module",
+  "workspaces": ["apps/*"],
+  "scripts": {
+    "dev": "bun run --filter '*' dev",
+    "dev:server": "bun run --filter server dev",
+    "dev:web": "bun run --filter web dev",
+    "build": "bun run --filter web build",
+    "start": "bun run --filter server start",
+    "format": "prettier --write \"apps/**/*.{ts,svelte,js,json,css}\""
+  },
+  "devDependencies": {
+    "playwright-core": "^1.60.0",
+    "prettier": "^3.4.2",
+    "prettier-plugin-svelte": "^3.3.3",
+    "typescript": "^5.7.3"
+  },
+  "overrides": {
+    "elysia": "1.4.28",
+    "monaco-editor": "0.52.2"
+  }
+}

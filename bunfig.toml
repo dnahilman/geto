@@ -1,0 +1,5 @@
+# Hoisted linker so the whole workspace shares a single `elysia` instance.
+# Eden Treaty's end-to-end types break if the server and the web client resolve
+# to different copies of elysia (their internal types compare by instance).
+[install]
+linker = "hoisted"

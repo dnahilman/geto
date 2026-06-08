@@ -1,0 +1,8 @@
+{
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "files.associations": {
+        "*.svelte": "svelte"
+    },
+    "svelte.plugin.typescript.enable": true,
+}

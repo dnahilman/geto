@@ -1,0 +1,13 @@
+{
+  "name": "geto — PostgreSQL client",
+  "short_name": "geto",
+  "description": "A lightweight web-based PostgreSQL database client.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#18181b",
+  "theme_color": "#18181b",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

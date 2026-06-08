@@ -1,0 +1,12 @@
+node_modules
+apps/*/node_modules
+apps/web/build
+apps/web/.svelte-kit
+data
+.env
+.env.local
+.git
+*.log
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal

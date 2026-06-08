@@ -1,0 +1,51 @@
+services:
+  geto:
+    build: .
+    # Host port (left) is overridable via PORT; the container always listens on
+    # 3000 internally. Default published port: 3100.
+    ports:
+      - '${PORT:-3100}:3000'
+    environment:
+      # All have defaults here; override via shell env or a .env file.
+      NODE_ENV: ${NODE_ENV:-development}
+      GETO_AUTH_PASSWORD: ${GETO_AUTH_PASSWORD:-dev}
+      GETO_MASTER_KEY: ${GETO_MASTER_KEY:-}
+      GETO_DATA_DIR: /data
+    volumes:
+      - geto-data:/data
+    # Reach a Postgres running on the host (not in this compose) at host
+    # `host.docker.internal`. On podman this maps to the host gateway.
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    restart: unless-stopped
+
+  # --- testing (opt-in): `podman compose --profile test up --build test` ---
+  # Spins up a throwaway Postgres and runs the server's unit + integration tests
+  # against it, then exits.
+  postgres-test:
+    profiles: ['test']
+    image: postgres:16
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+  test:
+    profiles: ['test']
+    build:
+      context: .
+      target: build
+    command: sh -c "cd apps/server && bun test --preload ./test/setup.ts"
+    environment:
+      TEST_DATABASE_URL: postgres://postgres:postgres@postgres-test:5432/postgres
+      GETO_AUTH_PASSWORD: test
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+
+volumes:
+  geto-data:

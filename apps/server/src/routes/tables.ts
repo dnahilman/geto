@@ -1,0 +1,171 @@
+import { Elysia, t } from 'elysia'
+import { requireAuth } from '../auth/gate'
+import { getConnection } from '../store/connections'
+import { getPool } from '../pg/pool'
+import { getTableData, quoteIdent } from '../pg/introspect'
+import { executeSql, type QueryResult } from '../pg/marshal'
+import { buildCreateTable, buildDelete, buildInsert, buildUpdate, inlineParams } from '../pg/dml'
+import { recordHistory } from '../store/history'
+import { pgErrorMessage } from '../pg/error'
+import type { Sql } from '../pg/pool'
+
+const tableParams = t.Object({ id: t.String(), schema: t.String(), table: t.String() })
+const rowValues = t.Record(t.String(), t.Unknown())
+
+/** Run a write, logging the executed SQL (with inlined values) to history. */
+async function logged(
+  connId: string,
+  display: string,
+  exec: () => Promise<QueryResult>,
+): Promise<QueryResult> {
+  const startedAt = new Date().toISOString()
+  const t0 = performance.now()
+  try {
+    const result = await exec()
+    recordHistory({
+      connectionId: connId,
+      sql: display,
+      startedAt,
+      durationMs: Math.round(performance.now() - t0),
+      rowCount: result.rowCount,
+      status: 'ok',
+      error: null,
+    })
+    return result
+  } catch (e) {
+    recordHistory({
+      connectionId: connId,
+      sql: display,
+      startedAt,
+      durationMs: Math.round(performance.now() - t0),
+      rowCount: null,
+      status: 'error',
+      error: pgErrorMessage(e),
+    })
+    throw e
+  }
+}
+
+/** Run a DDL statement (no result rows), logging it to history. */
+async function loggedDdl(connId: string, sql: Sql, ddl: string): Promise<void> {
+  const startedAt = new Date().toISOString()
+  const t0 = performance.now()
+  try {
+    await sql.unsafe(ddl)
+    recordHistory({
+      connectionId: connId,
+      sql: ddl,
+      startedAt,
+      durationMs: Math.round(performance.now() - t0),
+      rowCount: null,
+      status: 'ok',
+      error: null,
+    })
+  } catch (e) {
+    recordHistory({
+      connectionId: connId,
+      sql: ddl,
+      startedAt,
+      durationMs: Math.round(performance.now() - t0),
+      rowCount: null,
+      status: 'error',
+      error: pgErrorMessage(e),
+    })
+    throw e
+  }
+}
+
+export const tablesRoutes = new Elysia({ prefix: '/connections' })
+  .use(requireAuth)
+  .resolve(({ params, status }) => {
+    const id = (params as { id?: string }).id
+    if (!id || !getConnection(id)) return status(404, { error: 'Connection not found' })
+    return { sql: getPool(id), connId: id }
+  })
+  // ---- read a page of rows ----
+  .get(
+    '/:id/tables/:schema/:table/rows',
+    ({ sql, params, query }) =>
+      getTableData(sql, params.schema, params.table, {
+        limit: Math.min(query.limit ?? 500, 10000),
+        offset: query.offset ?? 0,
+        orderBy: query.orderBy,
+        orderDir: query.orderDir === 'DESC' ? 'DESC' : 'ASC',
+      }),
+    {
+      params: tableParams,
+      query: t.Object({
+        limit: t.Optional(t.Integer({ minimum: 1, maximum: 10000 })),
+        offset: t.Optional(t.Integer({ minimum: 0 })),
+        orderBy: t.Optional(t.String()),
+        orderDir: t.Optional(t.Union([t.Literal('ASC'), t.Literal('DESC')])),
+      }),
+    },
+  )
+  // ---- row CRUD (writes blocked by PG on read-only connections) ----
+  .post(
+    '/:id/tables/:schema/:table/rows',
+    ({ sql, connId, params, body }) => {
+      const { text, params: p } = buildInsert(params.schema, params.table, body.values)
+      return logged(connId, inlineParams(text, p), () => executeSql(sql, text, p))
+    },
+    { params: tableParams, body: t.Object({ values: rowValues }) },
+  )
+  .patch(
+    '/:id/tables/:schema/:table/rows',
+    ({ sql, connId, params, body }) => {
+      const { text, params: p } = buildUpdate(params.schema, params.table, body.pk, body.values)
+      return logged(connId, inlineParams(text, p), () => executeSql(sql, text, p))
+    },
+    { params: tableParams, body: t.Object({ pk: rowValues, values: rowValues }) },
+  )
+  .delete(
+    '/:id/tables/:schema/:table/rows',
+    ({ sql, connId, params, body }) => {
+      const { text, params: p } = buildDelete(params.schema, params.table, body.pk)
+      return logged(connId, inlineParams(text, p), () => executeSql(sql, text, p))
+    },
+    { params: tableParams, body: t.Object({ pk: rowValues }) },
+  )
+  // ---- table DDL ----
+  .post(
+    '/:id/tables',
+    async ({ sql, connId, body }) => {
+      const ddl = buildCreateTable(body.schema, body.name, body.columns)
+      await loggedDdl(connId, sql, ddl)
+      return { created: true as const, schema: body.schema, name: body.name }
+    },
+    {
+      params: t.Object({ id: t.String() }),
+      body: t.Object({
+        schema: t.String({ minLength: 1 }),
+        name: t.String({ minLength: 1 }),
+        columns: t.Array(
+          t.Object({
+            name: t.String({ minLength: 1 }),
+            type: t.String({ minLength: 1 }),
+            notNull: t.Optional(t.Boolean()),
+            default: t.Optional(t.Nullable(t.String())),
+            primaryKey: t.Optional(t.Boolean()),
+          }),
+          { minItems: 1 },
+        ),
+      }),
+    },
+  )
+  .delete(
+    '/:id/tables/:schema/:table',
+    async ({ sql, connId, params }) => {
+      await loggedDdl(connId, sql, `DROP TABLE ${quoteIdent(params.schema)}.${quoteIdent(params.table)}`)
+      return { dropped: true as const }
+    },
+    { params: tableParams },
+  )
+  .post(
+    '/:id/tables/:schema/:table/truncate',
+    async ({ sql, connId, params }) => {
+      await loggedDdl(connId, sql, `TRUNCATE ${quoteIdent(params.schema)}.${quoteIdent(params.table)}`)
+      return { truncated: true as const }
+    },
+    { params: tableParams },
+  )
