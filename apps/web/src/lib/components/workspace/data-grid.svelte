@@ -9,6 +9,7 @@
     DataGrid,
     DataGridToolbar,
     PageSizeSelect,
+    ExportMenu,
     createDataGrid,
     variantFor,
     type GridColumn,
@@ -154,6 +155,7 @@
     {:else if grid.dirty}
       <span class="text-muted-foreground ml-auto text-xs">unsaved changes — Apply or Cancel</span>
     {/if}
+    <ExportMenu api={grid} baseName={`${schema}.${table}`} class="ml-auto" />
   </DataGridToolbar>
 
   <div class="min-h-0 flex-1 overflow-auto">
