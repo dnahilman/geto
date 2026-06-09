@@ -3,6 +3,7 @@
   import { Download } from 'lucide-svelte'
   import * as DropdownMenu from '$lib/components/ui/dropdown-menu'
   import { Button } from '$lib/components/ui/button'
+  import { cn } from '$lib/utils'
   import type { DataGridApi } from './data-grid-context'
   import { collectRows, toCSV, toJSON, toMarkdown, downloadFile, timestamp } from '$lib/export'
 
@@ -41,7 +42,7 @@
 <DropdownMenu.Root>
   <DropdownMenu.Trigger>
     {#snippet child({ props })}
-      <Button {...props} variant="outline" size="sm" class="h-7 {className}">
+      <Button {...props} variant="outline" size="sm" class={cn('h-7', className)}>
         <Download class="size-4" /> Export
       </Button>
     {/snippet}
