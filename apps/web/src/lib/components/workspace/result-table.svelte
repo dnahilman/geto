@@ -6,6 +6,7 @@
   import {
     DataGrid,
     DataGridToolbar,
+    ExportMenu,
     createDataGrid,
     variantFor,
     type GridColumn,
@@ -100,7 +101,12 @@
           >editable · {source.schema}.{source.table}</span
         >
       {/if}
+      <ExportMenu api={grid} baseName={`${source.schema}.${source.table}`} />
     </DataGridToolbar>
+  {:else}
+    <div class="flex items-center justify-end border-b px-2 py-1">
+      <ExportMenu api={grid} baseName="query-result" />
+    </div>
   {/if}
   <div class="min-h-0 flex-1 overflow-auto">
     <DataGrid api={grid} offset={startIndex} emptyText="No rows returned" />
