@@ -9,7 +9,8 @@ import type { DataGridApi } from '$lib/components/ui/data-grid/data-grid-context
  * selected, otherwise every row currently loaded in the grid (the active page).
  * Cell values prefer a pending (unsaved) edit, falling back to the loaded value.
  * Draft rows never appear here — they are not in the table's row model and are
- * excluded from selection.
+ * excluded from selection. Rows toggled for deletion are still visible
+ * (struck-through) and are intentionally included, matching the grid's TSV copy.
  */
 export function collectRows(api: DataGridApi): { columns: string[]; rows: unknown[][] } {
   const cols = api.ctx.columns
@@ -42,7 +43,7 @@ export function toCSV(columns: string[], rows: unknown[][]): string {
   const esc = (s: string) => (/[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s)
   const line = (cells: string[]) => cells.map(esc).join(',')
   const out = [line(columns), ...rows.map((r) => line(r.map(cellText)))]
-  return '﻿' + out.join('\r\n')
+  return '\uFEFF' + out.join('\r\n')
 }
 
 /** Array of objects keyed by column name; values keep their type (null stays null). */
