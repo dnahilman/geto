@@ -3,6 +3,7 @@ export { default as DataGridCell } from './data-grid-cell.svelte'
 export { default as DataGridToolbar } from './data-grid-toolbar.svelte'
 export { default as PageSizeSelect } from './page-size-select.svelte'
 export { default as EditableCell } from './editable-cell.svelte'
+export { default as ExportMenu } from './export-menu.svelte'
 export { createDataGrid, type CreateDataGridOptions } from './create-data-grid.svelte.js'
 export {
   variantFor,
