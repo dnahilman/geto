@@ -152,10 +152,13 @@
     </Button>
     {#if pk.length === 0}
       <span class="text-muted-foreground text-xs">no primary key — read-only grid</span>
-    {:else if grid.dirty}
-      <span class="text-muted-foreground ml-auto text-xs">unsaved changes — Apply or Cancel</span>
     {/if}
-    <ExportMenu api={grid} baseName={`${schema}.${table}`} class="ml-auto" />
+    <div class="ml-auto flex items-center gap-2">
+      {#if grid.dirty}
+        <span class="text-muted-foreground text-xs">unsaved changes — Apply or Cancel</span>
+      {/if}
+      <ExportMenu api={grid} baseName={`${schema}.${table}`} />
+    </div>
   </DataGridToolbar>
 
   <div class="min-h-0 flex-1 overflow-auto">
