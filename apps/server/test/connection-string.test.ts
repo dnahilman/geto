@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { buildConnectionString } from '$src/pg/connection-string'
+import { buildConnectionString } from '$src/db/drivers/postgres/connection-string'
 
 const base = {
   host: 'localhost',

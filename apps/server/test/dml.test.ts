@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { buildInsert, buildUpdate, buildDelete, buildCreateTable } from '$src/pg/dml'
+import { buildInsert, buildUpdate, buildDelete, buildCreateTable } from '$src/db/drivers/postgres/dml'
 
 describe('pg/dml', () => {
   test('buildInsert with values', () => {

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { marshalValue, typeName } from '$src/pg/marshal'
+import { marshalValue, typeName } from '$src/db/shared/marshal'
 
 describe('pg/marshal marshalValue', () => {
   test('bigint -> string (no precision loss)', () => {

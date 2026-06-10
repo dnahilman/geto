@@ -1,10 +1,30 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import postgres from 'postgres'
-import type { Sql } from '$src/pg/pool'
-import { executeSql } from '$src/pg/marshal'
-import { getColumns, getPrimaryKey, getTableData, getTree } from '$src/pg/introspect'
-import { buildDelete, buildInsert, buildUpdate } from '$src/pg/dml'
-import { analyzeSql } from '$src/pg/safety'
+import type { Sql, PgOptions } from '$src/db/drivers/postgres/pool'
+import { executeSql } from '$src/db/drivers/postgres/exec'
+import {
+  getColumns,
+  getPrimaryKey,
+  getTableData,
+  getTree,
+} from '$src/db/drivers/postgres/introspect'
+import { buildDelete, buildInsert, buildUpdate } from '$src/db/drivers/postgres/dml'
+import { analyzeSql } from '$src/db/shared/safety'
+import { PostgresDriver } from '$src/db/drivers/postgres/driver'
+
+/** Parse a TEST_DATABASE_URL into the driver's PgOptions (no SSL for the test DB). */
+function urlToOptions(raw: string): PgOptions {
+  // globalThis.URL because the module-level `URL` constant below shadows the global.
+  const u = new globalThis.URL(raw)
+  return {
+    host: decodeURIComponent(u.hostname),
+    port: u.port ? Number(u.port) : 5432,
+    database: decodeURIComponent(u.pathname.replace(/^\//, '')) || 'postgres',
+    username: decodeURIComponent(u.username) || 'postgres',
+    password: u.password ? decodeURIComponent(u.password) : null,
+    sslMode: 'disable',
+  }
+}
 
 // Runs only when TEST_DATABASE_URL is set (see docker-compose `test` profile).
 // Falls back to skipping so the pure unit tests still run without a database.
@@ -82,6 +102,24 @@ suite('integration: real PostgreSQL', () => {
   test('safety guard matches real parser behavior', async () => {
     expect((await analyzeSql('DELETE FROM geto_it.t')).dangerous).toBe(true)
     expect((await analyzeSql('DELETE FROM geto_it.t WHERE id = 1')).dangerous).toBe(false)
+  })
+
+  test('PostgresDriver binds introspection + exec + editable-source', async () => {
+    const driver = new PostgresDriver(urlToOptions(URL as string))
+    try {
+      const tree = await driver.introspect.getTree()
+      expect(tree.find((x) => x.schema === 'geto_it')?.relations.some((r) => r.name === 't')).toBe(
+        true,
+      )
+      const res = await driver.exec.query('SELECT id, name FROM geto_it.t LIMIT 1')
+      expect(res.columns.map((c) => c.name)).toEqual(['id', 'name'])
+      // id (the PK) is projected → result is editable, source resolves to geto_it.t.
+      const editable = await driver.introspect.resolveEditableSource(res.columns)
+      expect(editable?.table).toBe('t')
+      expect(editable?.primaryKey).toEqual(['id'])
+    } finally {
+      await driver.lifecycle.close()
+    }
   })
 
   test('read-only session blocks writes (default_transaction_read_only)', async () => {

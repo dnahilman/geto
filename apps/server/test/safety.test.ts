@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { analyzeSql } from '$src/pg/safety'
+import { analyzeSql } from '$src/db/shared/safety'
 
 describe('pg/safety analyzeSql', () => {
   test('flags DELETE without WHERE', async () => {

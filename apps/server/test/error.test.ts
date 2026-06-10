@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { pgErrorMessage } from '$src/pg/error'
+import { pgErrorMessage } from '$src/db/shared/error'
 
 describe('pg/error pgErrorMessage', () => {
   test('uses a non-empty Error message', () => {
