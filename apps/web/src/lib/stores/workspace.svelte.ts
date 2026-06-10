@@ -5,6 +5,7 @@ export type Tab =
 export class Workspace {
   tabs = $state<Tab[]>([])
   activeId = $state<string | null>(null)
+  // $state so the sessionStorage $effect in the constructor tracks counter changes.
   nextN = $state(1)
 
   openTable(schema: string, table: string) {
@@ -32,6 +33,7 @@ export class Workspace {
     if (idx === -1) return
     this.tabs.splice(idx, 1)
     if (this.activeId === id) {
+      // After splice, tabs[idx] is the right neighbor; tabs[idx-1] is the left.
       this.activeId = this.tabs[idx]?.id ?? this.tabs[idx - 1]?.id ?? null
     }
   }
