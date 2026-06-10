@@ -19,7 +19,7 @@
   const connections = createQuery(() => ({ queryKey: connectionsKey, queryFn: listConnections }))
   const conn = $derived(connections.data?.find((c) => c.id === connId))
 
-  const ws = new Workspace(page.params.connId!)
+  const ws = new Workspace(connId)
 
   $effect(() => {
     function onKeydown(e: KeyboardEvent) {
@@ -114,6 +114,7 @@
             </div>
           {/each}
           <button
+            type="button"
             class="hover:bg-accent text-muted-foreground rounded p-1"
             title="New SQL console (Ctrl+T)"
             onclick={() => ws.openConsole()}
