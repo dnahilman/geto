@@ -1,8 +1,10 @@
 {
-  "name": "server",
+  "name": "@geto/server",
   "private": true,
   "type": "module",
-  "module": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
   "scripts": {
     "dev": "bun --env-file=../../.env --watch src/index.ts",
     "start": "bun --env-file=../../.env src/index.ts",

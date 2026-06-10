@@ -11,10 +11,6 @@ const config = {
       precompress: false,
       strict: false,
     }),
-    alias: {
-      // type-only import of the Elysia app for Eden Treaty
-      '@geto/server': '../server/src/index.ts',
-    },
   },
 }
 
