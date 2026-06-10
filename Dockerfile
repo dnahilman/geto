@@ -27,7 +27,7 @@ COPY apps/server/package.json ./
 RUN bun install --production
 
 # ---- stage 3: minimal runtime ----
-FROM base AS runtime
+FROM oven/bun:1-alpine AS runtime
 ENV NODE_ENV=production
 ENV GETO_DATA_DIR=/data
 ENV GETO_WEB_DIR=../web/build
