@@ -9,7 +9,7 @@ const base = {
   sslMode: 'disable' as const,
 }
 
-describe('pg/connection-string', () => {
+describe('postgres/connection-string', () => {
   test('includes the password when given', () => {
     expect(buildConnectionString(base, 'secret')).toBe(
       'postgresql://postgres:secret@localhost:5432/app?sslmode=disable',

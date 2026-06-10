@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 import { analyzeSql } from '$src/db/shared/safety'
 
-describe('pg/safety analyzeSql', () => {
+describe('shared/safety analyzeSql', () => {
   test('flags DELETE without WHERE', async () => {
     const r = await analyzeSql('DELETE FROM users')
     expect(r.dangerous).toBe(true)
