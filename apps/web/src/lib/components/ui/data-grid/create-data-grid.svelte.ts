@@ -53,6 +53,8 @@ export function createDataGrid<RowT = unknown[]>(
   let edits = $state<Record<number, Record<number, string>>>({})
   let newRows = $state<Array<Record<number, string>>>([])
   let deletes = $state<Record<number, true>>({})
+  let selectedRows = $state<Record<number, true>>({})
+  let lastSelected = $state<number | null>(null)
 
   const dirty = $derived(
     newRows.length > 0 ||
@@ -101,8 +103,45 @@ export function createDataGrid<RowT = unknown[]>(
     return i < 0 ? 0 : i
   }
 
+  // ---- row selection (full-row, for copy) ----
+  function isRowSelected(r: number): boolean {
+    return selectedRows[r] === true
+  }
+  function clearSelection() {
+    if (Object.keys(selectedRows).length) selectedRows = {}
+    lastSelected = null
+  }
+  // mode: 'replace' (plain click), 'toggle' (ctrl/cmd), 'range' (shift)
+  function selectRow(r: number, mode: 'replace' | 'toggle' | 'range') {
+    if (isDraftRow(r)) return // drafts aren't selectable
+    if (mode === 'toggle') {
+      if (selectedRows[r]) {
+        const { [r]: _omit, ...rest } = selectedRows
+        void _omit
+        selectedRows = rest
+      } else {
+        selectedRows = { ...selectedRows, [r]: true }
+      }
+      lastSelected = r
+    } else if (mode === 'range' && lastSelected !== null) {
+      const lo = Math.min(lastSelected, r)
+      const hi = Math.max(lastSelected, r)
+      const next: Record<number, true> = { ...selectedRows }
+      for (let i = lo; i <= hi; i += 1) next[i] = true
+      selectedRows = next
+      // keep lastSelected as the anchor (standard spreadsheet behavior)
+    } else {
+      selectedRows = { [r]: true }
+      lastSelected = r
+    }
+    // selecting a row is a distinct mode from cell editing — drop any focus/edit
+    focusedCell = null
+    editingCell = null
+  }
+
   // ---- focus / edit ----
   function focusCell(r: number, c: number) {
+    clearSelection() // cell focus and row selection are mutually exclusive modes
     focusedCell = { r, c }
     if (editingCell && (editingCell.r !== r || editingCell.c !== c)) editingCell = null
   }
@@ -118,6 +157,7 @@ export function createDataGrid<RowT = unknown[]>(
   function unfocus() {
     editingCell = null
     focusedCell = null
+    clearSelection()
   }
 
   // ---- staged mutations ----
@@ -237,6 +277,12 @@ export function createDataGrid<RowT = unknown[]>(
     get deletes() {
       return deletes
     },
+    get selectedRows() {
+      return selectedRows
+    },
+    selectRow,
+    isRowSelected,
+    clearSelection,
     focusCell,
     startEdit,
     cancelEdit,

@@ -28,6 +28,11 @@ export interface DataGridContext {
   readonly newRows: Array<Record<number, string>>
   readonly edits: Record<number, Record<number, string>>
   readonly deletes: Record<number, true>
+  /** Selected (full) rows by page-local index — for row-copy. Drafts excluded. */
+  readonly selectedRows: Record<number, true>
+  selectRow(r: number, mode: 'replace' | 'toggle' | 'range'): void
+  isRowSelected(r: number): boolean
+  clearSelection(): void
   focusCell(r: number, c: number): void
   startEdit(r: number, c: number): void
   cancelEdit(): void
