@@ -112,10 +112,13 @@ function needsQuoting(name: string): boolean {
   return PG_RESERVED.has(name.toUpperCase()) || /[^a-z0-9_]/.test(name) || /^\d/.test(name)
 }
 
-/** Build lang-sql's nested namespace (schema → table → columns) from the index. */
+/** Build lang-sql's nested namespace (schema → table → columns) from the index.
+ *  Reserved-word tables (e.g. `user`, `order`) are excluded here so schemaCompletionSource
+ *  does not insert them unquoted. reservedTableSource handles those exclusively. */
 function buildSchema(idx: CompletionIndex): SQLNamespace {
   const root: Record<string, Record<string, Completion[]>> = {}
   for (const tbl of idx.entities.tables) {
+    if (needsQuoting(tbl.name)) continue
     const cols = idx.columnsByTable.get(`${tbl.schema}.${tbl.name}`.toLowerCase()) ?? []
     ;(root[tbl.schema] ??= {})[tbl.name] = cols.map((c) => ({
       label: c.name,
@@ -177,7 +180,9 @@ function joinSource(ctx: CompletionContext): CompletionResult | null {
   const line = lineBeforeCursor(ctx)
   if (!/\bon\b[^=]*$/i.test(line)) return null
   const idx = getCompletionIndex()
-  const conds = joinConditions(tablesFromText(ctx.state.doc.toString(), idx), idx)
+  // Slice only up to the cursor so multi-statement buffers don't bleed aliases
+  // from later (or earlier unrelated) statements into the FK suggestions.
+  const conds = joinConditions(tablesFromText(ctx.state.doc.sliceString(0, ctx.pos), idx), idx)
   if (!conds.length) return null
   const word = ctx.matchBefore(/[\w.]*/)
   return {

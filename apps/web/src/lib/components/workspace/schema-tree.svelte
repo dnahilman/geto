@@ -66,7 +66,9 @@
   }
 
   function toggle(schema: string) {
-    collapsed[schema] = !collapsed[schema]
+    // No-op while a filter is active: expanded() ignores collapsed state during
+    // filtering, so mutating it would silently apply the wrong state on filter clear.
+    if (!debounced) collapsed[schema] = !collapsed[schema]
   }
   // While a filter is active, force every (matching) schema open so results show.
   function expanded(schema: string) {

@@ -101,11 +101,13 @@
   })
 
   // Reload schema entities + rebuild the SQL language source when data arrives.
+  // Guard: never call setCompletionEntities with null — the module-level store is shared
+  // across all editor instances, so clearing it would break completion in other open tabs.
   $effect(() => {
     const data = completion
     const d = dialect
     if (!view) return
-    setCompletionEntities(data ?? { tables: [], columns: [], functions: [], foreignKeys: [] })
+    if (data != null) setCompletionEntities(data)
     view.dispatch({ effects: langComp.reconfigure(sqlExtensions(d)) })
   })
 
