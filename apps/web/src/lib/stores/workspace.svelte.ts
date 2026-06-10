@@ -8,6 +8,10 @@ type PersistedSession = {
   nextN: number
 }
 
+/**
+ * Must be instantiated inside a Svelte component's <script> block —
+ * the constructor calls $effect, which requires a component reactive context.
+ */
 export class Workspace {
   tabs = $state<Tab[]>([])
   activeId = $state<string | null>(null)
@@ -35,7 +39,9 @@ export class Workspace {
       const data = JSON.parse(raw) as Partial<PersistedSession>
       if (Array.isArray(data.tabs) && data.tabs.length > 0) {
         this.tabs = data.tabs
-        this.activeId = data.activeId ?? null
+        this.activeId = data.tabs.some((t) => t.id === data.activeId)
+          ? (data.activeId ?? null)
+          : (data.tabs[0]?.id ?? null)
         this.nextN = typeof data.nextN === 'number' ? data.nextN : 1
       } else {
         this.openConsole()
