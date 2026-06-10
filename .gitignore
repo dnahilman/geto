@@ -17,3 +17,6 @@ data/
 # misc
 *.log
 .vite/
+
+# local docs / planning (not for repo)
+docs/
