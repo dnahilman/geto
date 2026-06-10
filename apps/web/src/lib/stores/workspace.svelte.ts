@@ -2,11 +2,48 @@ export type Tab =
   | { kind: 'table'; schema: string; table: string; id: string; title: string }
   | { kind: 'console'; id: string; title: string; n: number; sql: string }
 
+type PersistedSession = {
+  tabs: Tab[]
+  activeId: string | null
+  nextN: number
+}
+
 export class Workspace {
   tabs = $state<Tab[]>([])
   activeId = $state<string | null>(null)
   // $state so the sessionStorage $effect in the constructor tracks counter changes.
   nextN = $state(1)
+  private readonly storageKey: string
+
+  constructor(connId: string) {
+    this.storageKey = `geto:session:${connId}`
+    this.restore()
+    $effect(() => {
+      const session: PersistedSession = {
+        tabs: this.tabs,
+        activeId: this.activeId,
+        nextN: this.nextN,
+      }
+      sessionStorage.setItem(this.storageKey, JSON.stringify(session))
+    })
+  }
+
+  private restore() {
+    try {
+      const raw = sessionStorage.getItem(this.storageKey)
+      if (!raw) { this.openConsole(); return }
+      const data = JSON.parse(raw) as Partial<PersistedSession>
+      if (Array.isArray(data.tabs) && data.tabs.length > 0) {
+        this.tabs = data.tabs
+        this.activeId = data.activeId ?? null
+        this.nextN = typeof data.nextN === 'number' ? data.nextN : 1
+      } else {
+        this.openConsole()
+      }
+    } catch {
+      this.openConsole()
+    }
+  }
 
   openTable(schema: string, table: string) {
     const id = `t:${schema}.${table}`
@@ -43,6 +80,7 @@ export class Workspace {
   }
 
   reset() {
+    sessionStorage.removeItem(this.storageKey)
     this.tabs = []
     this.activeId = null
     this.nextN = 1
