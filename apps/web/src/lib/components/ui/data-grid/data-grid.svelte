@@ -2,6 +2,7 @@
   import { setContext } from 'svelte'
   import { toast } from 'svelte-sonner'
   import { FlexRender, DataTablePagination, formatCell } from '$lib/components/ui/data-table'
+  import { copyText } from '$lib/clipboard'
   import DataGridCell from './data-grid-cell.svelte'
   import {
     DATA_GRID_KEY,
@@ -54,10 +55,29 @@
   function copyFocused() {
     const text = focusedText()
     if (text == null) return
-    navigator.clipboard
-      ?.writeText(text)
+    copyText(text)
       .then(() => toast.success('Copied to clipboard'))
-      .catch(() => {})
+      .catch((e) => toast.error((e as Error).message))
+  }
+
+  // Copy the selected rows as TSV with a leading header row (pastes into spreadsheets).
+  function copyRows() {
+    const cols = api.ctx.columns
+    const selected = Object.keys(api.ctx.selectedRows)
+      .map(Number)
+      .sort((a, b) => a - b)
+    if (!selected.length) return
+    const header = cols.map((col) => col.name).join('\t')
+    const body = selected.map((idx) => {
+      const row = rows.find((r) => r.index === idx)
+      const orig = (row?.original ?? []) as unknown[]
+      return cols
+        .map((_col, c) => api.ctx.cellPending(idx, c) ?? formatCell(orig[c]).text)
+        .join('\t')
+    })
+    copyText([header, ...body].join('\n'))
+      .then(() => toast.success(`Copied ${selected.length} row${selected.length === 1 ? '' : 's'}`))
+      .catch((e) => toast.error((e as Error).message))
   }
 
   // Click outside the grid (and outside portalled editors / the toolbar) unfocuses.
@@ -68,7 +88,7 @@
       if (!t || rootEl?.contains(t)) return
       if (
         t.closest(
-          '[data-datagrid-toolbar],[data-slot="popover-content"],[data-slot="select-content"],[role="dialog"],[role="listbox"]',
+          '[data-datagrid-toolbar],[data-slot="popover-content"],[data-slot="select-content"],[data-slot="dropdown-menu-content"],[role="dialog"],[role="listbox"]',
         )
       )
         return
@@ -78,14 +98,17 @@
     return () => window.removeEventListener('pointerdown', onDown, true)
   })
 
-  // Ctrl/Cmd+C copies the focused cell's value (unless editing or text is selected).
+  // Ctrl/Cmd+C copies the selected rows (with header) if any, else the focused cell.
   $effect(() => {
     function onKey(e: KeyboardEvent) {
       if (!(e.ctrlKey || e.metaKey) || e.key !== 'c') return
-      if (api.ctx.editingCell || !api.ctx.focusedCell) return
-      if (window.getSelection()?.toString()) return
+      if (api.ctx.editingCell) return
+      if (window.getSelection()?.toString()) return // let native text copy win
+      const hasRows = Object.keys(api.ctx.selectedRows).length > 0
+      if (!hasRows && !api.ctx.focusedCell) return
       e.preventDefault()
-      copyFocused()
+      if (hasRows) copyRows()
+      else copyFocused()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -127,12 +150,24 @@
       {#each rows as row (row.id)}
         {@const deleted = api.ctx.isDeleted(row.index)}
         {@const rowFocused = api.ctx.focusedCell?.r === row.index}
+        {@const rowSelected = api.ctx.isRowSelected(row.index)}
         <tr
-          class="hover:bg-accent/40 border-b {rowFocused ? 'bg-accent/40' : ''} {deleted
-            ? 'text-muted-foreground line-through opacity-60'
-            : ''}"
+          class="hover:bg-accent/40 border-b {rowFocused ? 'bg-accent/40' : ''} {rowSelected
+            ? 'bg-primary/15'
+            : ''} {deleted ? 'text-muted-foreground line-through opacity-60' : ''}"
         >
-          <td class="text-muted-foreground px-2 py-1 tabular-nums">{offset + row.index + 1}</td>
+          <td
+            class="cursor-pointer px-2 py-1 text-right tabular-nums select-none {rowSelected
+              ? 'bg-primary/20 text-foreground'
+              : 'text-muted-foreground hover:bg-accent/60'}"
+            onclick={(e) =>
+              api.ctx.selectRow(
+                row.index,
+                e.shiftKey ? 'range' : e.ctrlKey || e.metaKey ? 'toggle' : 'replace',
+              )}
+          >
+            {offset + row.index + 1}
+          </td>
           {#each row.getVisibleCells() as c (c.id)}
             {@const colIndex = c.column.columnDef.meta?.colIndex ?? c.column.getIndex()}
             {@const value = c.getValue()}

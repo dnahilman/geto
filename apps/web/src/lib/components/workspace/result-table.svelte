@@ -104,7 +104,7 @@
       <ExportMenu api={grid} baseName={`${source.schema}.${source.table}`} />
     </DataGridToolbar>
   {:else}
-    <div class="flex items-center justify-end border-b px-2 py-1">
+    <div class="flex items-center justify-end gap-2 border-b px-2 py-1" data-datagrid-toolbar>
       <ExportMenu api={grid} baseName="query-result" />
     </div>
   {/if}
