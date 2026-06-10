@@ -1,7 +1,8 @@
 <script lang="ts">
   import { page } from '$app/state'
   import { createQuery } from '@tanstack/svelte-query'
-  import { ArrowLeft, Database, SquareTerminal, X, Table2 } from 'lucide-svelte'
+  import { toast } from 'svelte-sonner'
+  import { ArrowLeft, Database, SquareTerminal, X, Table2, KeyRound, Plus } from 'lucide-svelte'
   import * as Resizable from '$lib/components/ui/resizable'
   import { Button } from '$lib/components/ui/button'
   import { Badge } from '$lib/components/ui/badge'
@@ -10,15 +11,38 @@
   import SqlConsole from '$lib/components/workspace/sql-console.svelte'
   import DatabaseManager from '$lib/components/workspace/database-manager.svelte'
   import { Workspace } from '$lib/stores/workspace.svelte'
-  import { connectionsKey, listConnections } from '$lib/api/connections'
+  import { connectionsKey, listConnections, getConnectionString } from '$lib/api/connections'
+  import { copyText } from '$lib/clipboard'
 
   const connId = $derived(page.params.connId!)
 
   const connections = createQuery(() => ({ queryKey: connectionsKey, queryFn: listConnections }))
   const conn = $derived(connections.data?.find((c) => c.id === connId))
 
-  const ws = new Workspace()
+  const ws = new Workspace(page.params.connId!)
+
+  $effect(() => {
+    function onKeydown(e: KeyboardEvent) {
+      if (!(e.ctrlKey || e.metaKey) || e.key !== 't') return
+      const t = e.target as Element | null
+      if (t?.closest('input, textarea, .cm-editor')) return
+      e.preventDefault()
+      ws.openConsole()
+    }
+    window.addEventListener('keydown', onKeydown)
+    return () => window.removeEventListener('keydown', onKeydown)
+  })
   let dbManagerOpen = $state(false)
+
+  // Copy the full DSN (with password) for the currently selected database.
+  async function copyConnString() {
+    try {
+      await copyText(await getConnectionString(connId, true))
+      toast.success('Connection string copied (with password)')
+    } catch (e) {
+      toast.error((e as Error).message)
+    }
+  }
 </script>
 
 <div class="flex h-screen flex-col">
@@ -33,11 +57,14 @@
       {#if conn?.readonly}<Badge variant="outline" class="text-xs">read-only</Badge>{/if}
     </div>
     <div class="ml-auto flex items-center gap-2">
+      <Button variant="ghost" size="sm" onclick={copyConnString} title="Copy connection string (with password)">
+        <KeyRound class="size-4" /> Copy connection string
+      </Button>
       <Button variant="ghost" size="sm" onclick={() => (dbManagerOpen = true)}>
         <Database class="size-4" /> Databases
       </Button>
       <Button variant="outline" size="sm" onclick={() => ws.openConsole()}>
-        <SquareTerminal class="size-4" /> SQL console
+        <SquareTerminal class="size-4" /> New SQL Console
       </Button>
     </div>
   </header>
@@ -86,6 +113,13 @@
               </button>
             </div>
           {/each}
+          <button
+            class="hover:bg-accent text-muted-foreground rounded p-1"
+            title="New SQL console (Ctrl+T)"
+            onclick={() => ws.openConsole()}
+          >
+            <Plus class="size-3.5" />
+          </button>
         </div>
 
         <!-- active content (keep tables mounted to preserve grid state) -->
@@ -95,7 +129,11 @@
               {#if tab.kind === 'table'}
                 <TableView {connId} schema={tab.schema} table={tab.table} />
               {:else if tab.kind === 'console'}
-                <SqlConsole {connId} />
+                <SqlConsole
+                  {connId}
+                  initialSql={tab.sql}
+                  onSqlChange={(s) => ws.updateSql(tab.id, s)}
+                />
               {/if}
             </div>
           {/each}
