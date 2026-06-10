@@ -25,7 +25,9 @@ export const metaRoutes = new Elysia({ prefix: '/connections' })
   })
   .get('/:id/databases', ({ sql }) => listDatabases(sql))
   .get('/:id/schemas', ({ sql }) => listSchemas(sql))
-  .get('/:id/tree', ({ sql }) => getTree(sql))
+  .get('/:id/tree', ({ sql, query }) => getTree(sql, query.search), {
+    query: t.Object({ search: t.Optional(t.String()) }),
+  })
   .get(
     '/:id/tables/:schema/:table',
     async ({ sql, params }) => {

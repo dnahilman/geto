@@ -38,7 +38,8 @@ export interface SchemaTree {
   relations: { name: string; type: RelationType }[]
 }
 
-export async function getTree(sql: Sql): Promise<SchemaTree[]> {
+export async function getTree(sql: Sql, search?: string): Promise<SchemaTree[]> {
+  const pattern = search?.trim() ? `%${search.trim()}%` : null
   const rows = await sql<{ schema: string; name: string; kind: string }[]>`
     SELECT n.nspname AS schema, c.relname AS name, c.relkind AS kind
     FROM pg_class c
@@ -46,6 +47,7 @@ export async function getTree(sql: Sql): Promise<SchemaTree[]> {
     WHERE c.relkind IN ('r','v','m','p')
       AND n.nspname NOT IN ('information_schema')
       AND n.nspname NOT LIKE 'pg_%'
+      AND (${pattern}::text IS NULL OR c.relname ILIKE ${pattern})
     ORDER BY n.nspname, c.relname`
 
   const map = new Map<string, SchemaTree>()

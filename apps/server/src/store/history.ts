@@ -52,3 +52,8 @@ export function listHistory(connectionId: string, limit = 100): HistoryEntry[] {
       .all(connectionId, limit) as Row[]
   ).map(toEntry)
 }
+
+/** Delete all query history for a connection. Returns the number of rows removed. */
+export function clearHistory(connectionId: string): number {
+  return db.query('DELETE FROM query_history WHERE connection_id = ?').run(connectionId).changes
+}

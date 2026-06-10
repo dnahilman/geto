@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-query'
-  import { ChevronRight, Table2, Eye, Layers, RefreshCw, Trash2, Eraser, Plus, EllipsisVertical } from 'lucide-svelte'
+  import { createQuery, createMutation, useQueryClient, keepPreviousData } from '@tanstack/svelte-query'
+  import { ChevronRight, Table2, Eye, Layers, RefreshCw, Trash2, Eraser, Plus, EllipsisVertical, Loader2 } from 'lucide-svelte'
   import { toast } from 'svelte-sonner'
   import { Input } from '$lib/components/ui/input'
   import { Button } from '$lib/components/ui/button'
@@ -8,21 +8,38 @@
   import * as DropdownMenu from '$lib/components/ui/dropdown-menu'
   import * as AlertDialog from '$lib/components/ui/alert-dialog'
   import CreateTableDialog from './create-table-dialog.svelte'
-  import { getTree, treeKey, type SchemaTree } from '$lib/api/introspect'
+  import { getTree, treeKey } from '$lib/api/introspect'
   import { dropTable, truncateTable } from '$lib/api/mutations'
 
   let { connId, onopen }: { connId: string; onopen: (schema: string, table: string) => void } =
     $props()
 
   const qc = useQueryClient()
-  const tree = createQuery(() => ({ queryKey: treeKey(connId), queryFn: () => getTree(connId) }))
 
-  let filter = $state('')
+  // Server-side, debounced relation search. `filterInput` is what the user types;
+  // `debounced` (300ms later) drives the query key + request. placeholderData keeps
+  // the previous results on screen while the new ones load, so the tree never flashes.
+  let filterInput = $state('')
+  let debounced = $state('')
+  $effect(() => {
+    const v = filterInput
+    const timer = setTimeout(() => (debounced = v.trim()), 300)
+    return () => clearTimeout(timer)
+  })
+
+  const tree = createQuery(() => ({
+    queryKey: [...treeKey(connId), debounced],
+    queryFn: () => getTree(connId, debounced || undefined),
+    placeholderData: keepPreviousData,
+  }))
+
   let collapsed = $state<Record<string, boolean>>({})
   let confirm = $state<{ kind: 'drop' | 'truncate'; schema: string; table: string } | null>(null)
   let createState = $state<{ open: boolean; schema: string }>({ open: false, schema: 'public' })
 
   function refreshTree() {
+    // treeKey(connId) is a prefix of the search-scoped keys, so this invalidates
+    // every cached search variant for this connection.
     qc.invalidateQueries({ queryKey: treeKey(connId) })
     qc.invalidateQueries({ queryKey: ['completion', connId] })
   }
@@ -51,40 +68,48 @@
   function toggle(schema: string) {
     collapsed[schema] = !collapsed[schema]
   }
-  function visibleRelations(s: SchemaTree) {
-    const f = filter.trim().toLowerCase()
-    return f ? s.relations.filter((r) => r.name.toLowerCase().includes(f)) : s.relations
+  // While a filter is active, force every (matching) schema open so results show.
+  function expanded(schema: string) {
+    return debounced ? true : !collapsed[schema]
   }
 </script>
 
 <div class="flex h-full flex-col">
   <div class="flex items-center gap-1 p-2">
-    <Input bind:value={filter} placeholder="Filter tables…" class="h-8" />
+    <div class="relative flex-1">
+      <Input bind:value={filterInput} placeholder="Filter tables…" class="h-8" />
+      {#if tree.isFetching && !tree.isLoading}
+        <Loader2 class="text-muted-foreground absolute top-1/2 right-2 size-3.5 -translate-y-1/2 animate-spin" />
+      {/if}
+    </div>
     <Button variant="ghost" size="icon" class="size-8 shrink-0" title="Refresh" onclick={refreshTree}>
       <RefreshCw class="size-4" />
     </Button>
   </div>
 
-  <ScrollArea class="flex-1">
+  <ScrollArea class="min-h-0 flex-1">
     <div class="px-2 pb-4 text-sm">
       {#if tree.isLoading}
         <p class="text-muted-foreground p-2 text-xs">loading schema…</p>
       {:else if tree.isError}
         <p class="text-destructive p-2 text-xs">{tree.error.message}</p>
+      {:else if tree.data && tree.data.length === 0}
+        <p class="text-muted-foreground p-2 text-xs">
+          {debounced ? 'No tables match.' : 'No tables.'}
+        </p>
       {:else if tree.data}
         {#each tree.data as s (s.schema)}
-          {@const rels = visibleRelations(s)}
-          {#if !filter || rels.length > 0}
+          {@const open = expanded(s.schema)}
             <div>
               <div class="group hover:bg-accent flex items-center gap-1 rounded pr-1 font-medium">
                 <button
                   class="flex min-w-0 flex-1 items-center gap-1 px-1 py-1"
                   onclick={() => toggle(s.schema)}
                 >
-                  <ChevronRight class="size-3.5 shrink-0 transition-transform {collapsed[s.schema] ? '' : 'rotate-90'}" />
+                  <ChevronRight class="size-3.5 shrink-0 transition-transform {open ? 'rotate-90' : ''}" />
                   <Layers class="text-muted-foreground size-3.5 shrink-0" />
                   <span class="truncate">{s.schema}</span>
-                  <span class="text-muted-foreground ml-auto text-xs">{rels.length}</span>
+                  <span class="text-muted-foreground ml-auto text-xs">{s.relations.length}</span>
                 </button>
                 <DropdownMenu.Root>
                   <DropdownMenu.Trigger>
@@ -102,9 +127,9 @@
                 </DropdownMenu.Root>
               </div>
 
-              {#if !collapsed[s.schema]}
+              {#if open}
                 <div class="ml-3 border-l pl-1">
-                  {#each rels as r (r.name)}
+                  {#each s.relations as r (r.name)}
                     <div class="group hover:bg-accent flex items-center gap-1 rounded pr-1">
                       <button
                         class="flex min-w-0 flex-1 items-center gap-1.5 px-1.5 py-1 text-left"
@@ -146,7 +171,6 @@
                 </div>
               {/if}
             </div>
-          {/if}
         {/each}
       {/if}
     </div>

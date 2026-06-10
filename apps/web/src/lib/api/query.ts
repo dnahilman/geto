@@ -63,3 +63,6 @@ export const getCompletion = (id: string): Promise<CompletionData> =>
 export const historyKey = (id: string) => ['history', id] as const
 export const getHistory = (id: string): Promise<HistoryEntry[]> =>
   unwrap(conn(id).history.get()) as Promise<HistoryEntry[]>
+
+export const clearHistory = (id: string): Promise<{ deleted: number }> =>
+  unwrap(conn(id).history.delete()) as Promise<{ deleted: number }>

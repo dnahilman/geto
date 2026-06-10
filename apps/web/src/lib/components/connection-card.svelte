@@ -8,6 +8,7 @@
   import * as AlertDialog from '$lib/components/ui/alert-dialog'
   import { Badge } from '$lib/components/ui/badge'
   import { Button } from '$lib/components/ui/button'
+  import { copyText } from '$lib/clipboard'
   import {
     connectionsKey,
     deleteConnection,
@@ -33,7 +34,7 @@
   async function copyString(withPassword: boolean) {
     try {
       const s = await getConnectionString(connection.id, withPassword)
-      await navigator.clipboard.writeText(s)
+      await copyText(s)
       toast.success(withPassword ? 'Copied (with password)' : 'Copied (masked)')
     } catch (e) {
       toast.error((e as Error).message)

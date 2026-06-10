@@ -6,7 +6,7 @@ import { executeSql } from '../pg/marshal'
 import { analyzeSql, inspectSelect } from '../pg/safety'
 import { resolveSource } from '../pg/introspect'
 import { pgErrorMessage } from '../pg/error'
-import { recordHistory, listHistory } from '../store/history'
+import { recordHistory, listHistory, clearHistory } from '../store/history'
 
 export const queryRoutes = new Elysia({ prefix: '/connections' })
   .use(requireAuth)
@@ -118,3 +118,4 @@ export const queryRoutes = new Elysia({ prefix: '/connections' })
     body: t.Object({ sql: t.String() }),
   })
   .get('/:id/history', ({ connId }) => listHistory(connId, 100))
+  .delete('/:id/history', ({ connId }) => ({ deleted: clearHistory(connId) }))

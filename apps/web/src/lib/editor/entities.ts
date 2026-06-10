@@ -1,7 +1,8 @@
-// Lightweight (no monaco import) shared store of schema entities for completion.
-// The console writes them; the monaco completion service reads them. A derived
-// index (built lazily, memoised per entities object) gives the completion
-// service fast lookups: columns by table, relations by bare name, FKs by table.
+// Lightweight shared store of schema entities for completion. The SQL editor
+// writes them (from the connection's /completion data); the CodeMirror completion
+// sources read them. A derived index (built lazily, memoised per entities object)
+// gives the completion fast lookups: columns by table, relations by bare name,
+// FKs by table.
 export interface CompletionTable {
   schema: string
   name: string

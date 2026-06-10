@@ -25,8 +25,8 @@ export interface TableData {
 const conn = (id: string) => client.api.connections({ id })
 
 export const treeKey = (id: string) => ['tree', id] as const
-export const getTree = (id: string): Promise<SchemaTree[]> =>
-  unwrap(conn(id).tree.get()) as Promise<SchemaTree[]>
+export const getTree = (id: string, search?: string): Promise<SchemaTree[]> =>
+  unwrap(conn(id).tree.get(search ? { query: { search } } : undefined)) as Promise<SchemaTree[]>
 
 export const databasesKey = (id: string) => ['databases', id] as const
 export const getDatabases = (id: string): Promise<DatabaseInfo[]> =>
