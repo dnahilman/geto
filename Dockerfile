@@ -19,7 +19,7 @@ COPY apps/server/package.json apps/server/
 COPY apps/web/package.json apps/web/
 RUN bun install --frozen-lockfile
 COPY . .
-RUN bun run --filter web build
+RUN bun run --filter @geto/web build
 
 # ---- stage 2: server runtime deps only (standalone, no web toolchain) ----
 FROM base AS server-deps
