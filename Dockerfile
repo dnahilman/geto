@@ -1,15 +1,19 @@
 # syntax=docker/dockerfile:1
 #
-# geto single image (multi-stage): the SPA is built in-container, then only the
-# built assets + the server's lean runtime deps land in the final image.
+# geto single image — multi-stage, Alpine base for every stage.
 #
-#   podman build -t geto .
-#   podman compose up --build
+#   stage 1 (build)       compile the SvelteKit SPA with the full toolchain
+#   stage 2 (server-deps) install ONLY the server's production deps (no dev deps)
+#   stage 3 (runtime)     copy just the SPA build + server prod deps + server src
+#                         — no test files, no dev sqlite, no tsconfig: minimal surface
+#
+#   docker build -t geto .
+#   docker compose up --build
 #
 # ⚠️ diosone note: its Docker bridge has no IPv6 egress, which can hang
 # `bun install`. Build elsewhere or force IPv4 DNS there.
 
-FROM oven/bun:1 AS base
+FROM oven/bun:alpine AS base
 WORKDIR /app
 
 # ---- stage 1: build the SvelteKit SPA (heavy toolchain, discarded) ----
@@ -21,20 +25,21 @@ RUN bun install --frozen-lockfile
 COPY . .
 RUN bun run --filter @geto/web build
 
-# ---- stage 2: server runtime deps only (standalone, no web toolchain) ----
+# ---- stage 2: server production deps only (no web toolchain, no dev deps) ----
 FROM base AS server-deps
 COPY apps/server/package.json ./
 RUN bun install --production
 
 # ---- stage 3: minimal runtime ----
-FROM oven/bun:1-alpine AS runtime
-ENV NODE_ENV=production
-ENV GETO_DATA_DIR=/data
-ENV GETO_WEB_DIR=../web/build
-ENV PORT=7020
+FROM base AS runtime
+ENV NODE_ENV=production \
+    GETO_DATA_DIR=/data \
+    GETO_WEB_DIR=../web/build \
+    PORT=7020
 
 COPY --from=server-deps /app/node_modules ./apps/server/node_modules
-COPY apps/server ./apps/server
+COPY apps/server/package.json ./apps/server/package.json
+COPY apps/server/src ./apps/server/src
 COPY --from=build /app/apps/web/build ./apps/web/build
 
 VOLUME ["/data"]

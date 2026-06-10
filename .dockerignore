@@ -3,6 +3,7 @@ apps/*/node_modules
 apps/web/build
 apps/web/.svelte-kit
 data
+apps/*/data
 .env
 .env.local
 .git
