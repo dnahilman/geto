@@ -34,6 +34,6 @@ export type {
   ColumnInfo,
   IndexInfo,
   ConstraintInfo,
-} from './pg/introspect'
-export type { ColumnMeta, QueryResult } from './pg/marshal'
-export type { SafetyReport, StatementRisk } from './pg/safety'
+} from './db/drivers/postgres/introspect'
+export type { ColumnMeta, QueryResult } from './db/shared/marshal'
+export type { SafetyReport, StatementRisk } from './db/shared/safety'

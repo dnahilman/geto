@@ -10,8 +10,9 @@ import {
   updateConnection,
   type ConnectionInput,
 } from '../store/connections'
-import { closePool, testConnection } from '../pg/pool'
-import { buildConnectionString } from '../pg/connection-string'
+import { closeDriver } from '../db/registry'
+import { testConnection } from '../db/drivers/postgres/pool'
+import { buildConnectionString } from '../db/drivers/postgres/connection-string'
 
 const sslMode = t.Union([
   t.Literal('disable'),
@@ -62,7 +63,7 @@ export const connectionsRoutes = new Elysia({ prefix: '/connections' })
     async ({ params, body, status }) => {
       const updated = updateConnection(params.id, toInput(body))
       if (!updated) return status(404, { error: 'Not found' })
-      await closePool(params.id) // creds may have changed
+      await closeDriver(params.id) // creds may have changed
       return updated
     },
     { body: connectionBody },
@@ -70,7 +71,7 @@ export const connectionsRoutes = new Elysia({ prefix: '/connections' })
   .delete('/:id', async ({ params, status }) => {
     const ok = deleteConnection(params.id)
     if (!ok) return status(404, { error: 'Not found' })
-    await closePool(params.id)
+    await closeDriver(params.id)
     return { deleted: true as const }
   })
   // Switch the active database (reconnects the pool to the new database).
@@ -79,7 +80,7 @@ export const connectionsRoutes = new Elysia({ prefix: '/connections' })
     async ({ params, body, status }) => {
       const updated = setConnectionDatabase(params.id, body.name)
       if (!updated) return status(404, { error: 'Not found' })
-      await closePool(params.id)
+      await closeDriver(params.id)
       return updated
     },
     { body: t.Object({ name: t.String({ minLength: 1 }) }) },

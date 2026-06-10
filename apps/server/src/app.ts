@@ -1,6 +1,6 @@
 import { Elysia, t } from 'elysia'
 import { authController } from './auth/gate'
-import { pgErrorMessage } from './pg/error'
+import { pgErrorMessage } from './db/shared/error'
 import { connectionsRoutes } from './routes/connections'
 import { providersRoutes } from './routes/providers'
 import { metaRoutes } from './routes/meta'
