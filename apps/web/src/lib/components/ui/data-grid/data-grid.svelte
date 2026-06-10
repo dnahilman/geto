@@ -3,6 +3,7 @@
   import { toast } from 'svelte-sonner'
   import { FlexRender, DataTablePagination, formatCell } from '$lib/components/ui/data-table'
   import { copyText } from '$lib/clipboard'
+  import { collectRows } from '$lib/export'
   import DataGridCell from './data-grid-cell.svelte'
   import {
     DATA_GRID_KEY,
@@ -61,22 +62,14 @@
   }
 
   // Copy the selected rows as TSV with a leading header row (pastes into spreadsheets).
+  // Shares `collectRows` with file export so the two never diverge.
   function copyRows() {
-    const cols = api.ctx.columns
-    const selected = Object.keys(api.ctx.selectedRows)
-      .map(Number)
-      .sort((a, b) => a - b)
-    if (!selected.length) return
-    const header = cols.map((col) => col.name).join('\t')
-    const body = selected.map((idx) => {
-      const row = rows.find((r) => r.index === idx)
-      const orig = (row?.original ?? []) as unknown[]
-      return cols
-        .map((_col, c) => api.ctx.cellPending(idx, c) ?? formatCell(orig[c]).text)
-        .join('\t')
-    })
+    const { columns, rows: picked } = collectRows(api as unknown as DataGridApi)
+    if (!picked.length) return
+    const header = columns.join('\t')
+    const body = picked.map((r) => r.map((v) => formatCell(v).text).join('\t'))
     copyText([header, ...body].join('\n'))
-      .then(() => toast.success(`Copied ${selected.length} row${selected.length === 1 ? '' : 's'}`))
+      .then(() => toast.success(`Copied ${picked.length} row${picked.length === 1 ? '' : 's'}`))
       .catch((e) => toast.error((e as Error).message))
   }
 
