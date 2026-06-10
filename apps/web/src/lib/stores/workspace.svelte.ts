@@ -90,5 +90,6 @@ export class Workspace {
     this.tabs = []
     this.activeId = null
     this.nextN = 1
+    this.openConsole()
   }
 }
