@@ -88,6 +88,7 @@
   const pagination = $derived<PaginationState>({ pageIndex: page, pageSize })
   const onSortingChange: OnChangeFn<SortingState> = (updater) => {
     if (grid.dirty) return
+    grid.ctx.clearSelection() // row selection is page/order-local — drop it on re-sort
     const next = typeof updater === 'function' ? updater(sorting) : updater
     if (next.length) {
       orderBy = parseColId(next[0].id).name
@@ -99,6 +100,7 @@
   }
   const onPaginationChange: OnChangeFn<PaginationState> = (updater) => {
     if (grid.dirty) return
+    grid.ctx.clearSelection() // selection is page-local — drop it on page change
     const next = typeof updater === 'function' ? updater(pagination) : updater
     page = next.pageIndex
   }
@@ -174,6 +176,7 @@
     <PageSizeSelect
       value={pageSize}
       onChange={(v) => {
+        grid.ctx.clearSelection()
         pageSize = v
         page = 0
       }}

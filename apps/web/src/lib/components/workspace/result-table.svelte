@@ -89,6 +89,14 @@
       onApplied?.()
     },
   })
+
+  // A new query result or page replaces `rows`; selection is keyed by page-local
+  // index, so drop it to avoid carrying stale highlights onto the new rows.
+  $effect(() => {
+    void rows
+    void startIndex
+    grid.ctx.clearSelection()
+  })
 </script>
 
 <div class="flex h-full flex-col">
