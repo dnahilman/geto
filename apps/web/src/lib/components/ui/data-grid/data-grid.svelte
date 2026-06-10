@@ -64,7 +64,7 @@
   // Copy the selected rows as TSV with a leading header row (pastes into spreadsheets).
   // Shares `collectRows` with file export so the two never diverge.
   function copyRows() {
-    const { columns, rows: picked } = collectRows(api as unknown as DataGridApi)
+    const { columns, rows: picked } = collectRows(api)
     if (!picked.length) return
     const header = columns.join('\t')
     const body = picked.map((r) => r.map((v) => formatCell(v).text).join('\t'))
