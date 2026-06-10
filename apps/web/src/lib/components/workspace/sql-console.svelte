@@ -9,6 +9,7 @@
     CircleX,
     ChevronLeft,
     ChevronRight,
+    Trash2,
   } from 'lucide-svelte'
   import { PageSizeSelect } from '$lib/components/ui/data-grid'
   import * as Resizable from '$lib/components/ui/resizable'
@@ -18,21 +19,33 @@
   import SqlEditor from '$lib/editor/sql-editor.svelte'
   import ResultTable from './result-table.svelte'
   import { formatSql } from '$lib/editor/format'
-  import { setCompletionEntities } from '$lib/editor/entities'
   import {
     runQuery,
     getCompletion,
     getHistory,
+    clearHistory,
     completionKey,
     historyKey,
     type RunResult,
     type SafetyReport,
   } from '$lib/api/query'
 
-  let { connId }: { connId: string } = $props()
+  let {
+    connId,
+    initialSql,
+    onSqlChange,
+  }: {
+    connId: string
+    initialSql: string
+    onSqlChange: (sql: string) => void
+  } = $props()
 
   const qc = useQueryClient()
-  let sql = $state('SELECT * FROM ')
+  let sql = $state(initialSql)
+
+  $effect(() => {
+    onSqlChange(sql)
+  })
   let uppercase = $state(true)
   let editorRef = $state<ReturnType<typeof SqlEditor>>()
   let result = $state<RunResult | null>(null)
@@ -46,13 +59,16 @@
     queryKey: completionKey(connId),
     queryFn: () => getCompletion(connId),
   }))
-  $effect(() => {
-    if (completion.data) setCompletionEntities(completion.data)
-  })
 
   const history = createQuery(() => ({
     queryKey: historyKey(connId),
     queryFn: () => getHistory(connId),
+  }))
+
+  let clearConfirm = $state(false)
+  const clear = createMutation(() => ({
+    mutationFn: () => clearHistory(connId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: historyKey(connId) }),
   }))
 
   function loadFromHistory(sqlText: string) {
@@ -140,7 +156,13 @@
       <span class="text-muted-foreground ml-auto text-xs">⌘/Ctrl + Enter to run</span>
     </div>
     <div class="min-h-0 flex-1">
-      <SqlEditor bind:this={editorRef} bind:value={sql} {uppercase} onrun={doRun} />
+      <SqlEditor
+        bind:this={editorRef}
+        bind:value={sql}
+        {uppercase}
+        completion={completion.data}
+        onrun={doRun}
+      />
     </div>
   </Resizable.Pane>
 
@@ -217,9 +239,20 @@
         {/if}
       </Tabs.Content>
 
-      <Tabs.Content value="history" class="min-h-0 flex-1 overflow-auto">
+      <Tabs.Content value="history" class="flex min-h-0 flex-1 flex-col">
         {#if history.data && history.data.length > 0}
-          <ul class="divide-y text-xs">
+          <div class="flex items-center justify-end border-b px-2 py-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              class="text-muted-foreground hover:text-destructive h-6 gap-1.5 text-xs"
+              disabled={clear.isPending}
+              onclick={() => (clearConfirm = true)}
+            >
+              <Trash2 class="size-3.5" /> Clear history
+            </Button>
+          </div>
+          <ul class="divide-y overflow-auto text-xs">
             {#each history.data as h (h.id)}
               <li>
                 <button
@@ -270,6 +303,26 @@
         onclick={confirmRun}
       >
         Run anyway
+      </AlertDialog.Action>
+    </AlertDialog.Footer>
+  </AlertDialog.Content>
+</AlertDialog.Root>
+
+<AlertDialog.Root bind:open={clearConfirm}>
+  <AlertDialog.Content>
+    <AlertDialog.Header>
+      <AlertDialog.Title>Clear query history?</AlertDialog.Title>
+      <AlertDialog.Description>
+        This permanently removes all recorded queries for this connection.
+      </AlertDialog.Description>
+    </AlertDialog.Header>
+    <AlertDialog.Footer>
+      <AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
+      <AlertDialog.Action
+        class="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+        onclick={() => clear.mutate()}
+      >
+        Clear history
       </AlertDialog.Action>
     </AlertDialog.Footer>
   </AlertDialog.Content>
