@@ -109,44 +109,62 @@ function needsQuoting(name: string): boolean {
 }
 
 /** Build lang-sql's nested namespace (schema → table → columns) from the index.
- *  Reserved-word tables (e.g. `user`, `order`) are excluded here so schemaCompletionSource
- *  does not insert them unquoted. reservedTableSource handles those exclusively. */
+ *  Reserved-word / special tables (e.g. `user`, `order`) use lang-sql's `{ self, children }`
+ *  form with a quoted `apply`, so the table name is inserted as `"user"` (valid SQL) while
+ *  its columns are still exposed for qualified completion (`"user".x`). lang-sql only
+ *  auto-quotes names with non-identifier chars, so a bare reserved word would otherwise be
+ *  emitted unquoted — hence the explicit self-tag. */
 function buildSchema(idx: CompletionIndex): SQLNamespace {
-  const root: Record<string, Record<string, Completion[]>> = {}
+  const root: Record<string, Record<string, SQLNamespace>> = {}
   for (const tbl of idx.entities.tables) {
-    if (needsQuoting(tbl.name)) continue
-    const cols = idx.columnsByTable.get(`${tbl.schema}.${tbl.name}`.toLowerCase()) ?? []
-    ;(root[tbl.schema] ??= {})[tbl.name] = cols.map((c) => ({
-      label: c.name,
-      type: 'property',
-      detail: c.type,
-    }))
+    const cols: Completion[] = (
+      idx.columnsByTable.get(`${tbl.schema}.${tbl.name}`.toLowerCase()) ?? []
+    ).map((c) => ({ label: c.name, type: 'property', detail: c.type }))
+    const schema = (root[tbl.schema] ??= {})
+    schema[tbl.name] = needsQuoting(tbl.name)
+      ? {
+          self: { label: tbl.name, type: 'type', detail: tbl.type, apply: `"${tbl.name}"` },
+          children: cols,
+        }
+      : cols
   }
   return root as SQLNamespace
 }
 
 /**
- * Offers tables whose names are PostgreSQL reserved keywords (e.g. `user`, `order`)
- * with double-quote wrapping so the inserted SQL is valid: `"user"` not `user`.
- * This runs alongside schemaCompletionSource and takes priority via boost.
+ * Columns of the current statement's FROM/JOIN tables, offered *unqualified* in
+ * column positions (after WHERE/SELECT/ON/SET/…). lang-sql only completes columns
+ * after an explicit `table.`/alias qualifier (no defaultTable is configured), so
+ * without this `SELECT * FROM "user" WHERE <here>` would show no field suggestions.
  */
-function reservedTableSource(ctx: CompletionContext): CompletionResult | null {
+function columnSource(ctx: CompletionContext): CompletionResult | null {
   const line = lineBeforeCursor(ctx)
-  if (!/\b(from|join)\s+[\w"]*$/i.test(line)) return null
-  const word = ctx.matchBefore(/[\w"]*/)
+  // After a (possibly quoted) qualifier dot — schemaSource handles `t.col` / `"user".col`.
+  if (/(?:"[\w]+"|[\w$]+)\s*\.\s*[\w$]*$/.test(line)) return null
+  // Don't offer columns where a table name is expected.
+  if (/\b(from|join|into|update|table)\s+[\w".]*$/i.test(line)) return null
+  const word = ctx.matchBefore(/[\w]+/)
+  if (!word && !ctx.explicit) return null
   const idx = getCompletionIndex()
-  const reserved = idx.entities.tables.filter((t) => needsQuoting(t.name))
-  if (!reserved.length) return null
-  return {
-    from: word ? word.from : ctx.pos,
-    options: reserved.map((t) => ({
-      label: `"${t.name}"`,
-      type: 'type',
-      detail: t.type,
-      boost: 10,
-    })),
-    validFor: /^"?[\w]*"?$/,
+  const refs = tablesFromText(ctx.state.doc.sliceString(0, ctx.pos), idx)
+  if (!refs.length) return null
+  const seen = new Set<string>()
+  const options: Completion[] = []
+  for (const ref of refs) {
+    const cols =
+      idx.columnsByTable.get(`${ref.schema ?? ''}.${ref.name}`.toLowerCase()) ??
+      idx.columnsByTable.get(ref.name.toLowerCase()) ??
+      []
+    const owner = ref.alias ?? ref.name
+    for (const c of cols) {
+      const key = c.name.toLowerCase()
+      if (seen.has(key)) continue
+      seen.add(key)
+      options.push({ label: c.name, type: 'property', detail: `${c.type} · ${owner}`, boost: 20 })
+    }
   }
+  if (!options.length) return null
+  return { from: word ? word.from : ctx.pos, options, validFor: /^[\w]*$/ }
 }
 
 function functionCompletion(fn: CompletionFunction): Completion {
@@ -203,7 +221,7 @@ export function sqlExtensions(dialect: SQLDialect = PostgreSQL): Extension {
   return [
     sql({ dialect }),
     autocompletion({
-      override: [reservedTableSource, schemaSource, keywordSource, functionSource, joinSource],
+      override: [schemaSource, columnSource, keywordSource, functionSource, joinSource],
       activateOnTyping: true,
       icons: true,
     }),
