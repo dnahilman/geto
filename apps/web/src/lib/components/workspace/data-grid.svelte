@@ -1,5 +1,10 @@
 <script lang="ts">
-  import { createQuery, createMutation, keepPreviousData, useQueryClient } from '@tanstack/svelte-query'
+  import {
+    createQuery,
+    createMutation,
+    keepPreviousData,
+    useQueryClient,
+  } from '@tanstack/svelte-query'
   import type { OnChangeFn, PaginationState, SortingState } from '@tanstack/table-core'
   import { RefreshCw } from 'lucide-svelte'
   import { toast } from 'svelte-sonner'
@@ -7,19 +12,38 @@
   import { DataTablePagination, colId, parseColId } from '$lib/components/ui/data-table'
   import {
     DataGrid,
+    JsonView,
     DataGridToolbar,
     PageSizeSelect,
     ExportMenu,
     createDataGrid,
     variantFor,
     type GridColumn,
+    type RelationsConfig,
   } from '$lib/components/ui/data-grid'
+  import { X } from 'lucide-svelte'
   import { getTableRows } from '$lib/api/introspect'
   import { getTableDetail, tableDetailKey } from '$lib/api/introspect'
   import { insertRow, updateRow, deleteRow, type Row } from '$lib/api/mutations'
-  import { historyKey } from '$lib/api/query'
+  import { historyKey, getCompletion, completionKey } from '$lib/api/query'
+  import { buildRelationMap, type RelationTarget } from '$lib/relations'
+  import type { TabFilter } from '$lib/stores/workspace.svelte'
 
-  let { connId, schema, table }: { connId: string; schema: string; table: string } = $props()
+  let {
+    connId,
+    schema,
+    table,
+    filter = undefined,
+    onOpenTable,
+    view = 'table',
+  }: {
+    connId: string
+    schema: string
+    table: string
+    filter?: TabFilter
+    onOpenTable?: (schema: string, table: string, filter?: TabFilter) => void
+    view?: 'table' | 'json'
+  } = $props()
 
   let pageSize = $state(500)
   let page = $state(0)
@@ -27,7 +51,7 @@
   let orderDir = $state<'ASC' | 'DESC'>('ASC')
   const qc = useQueryClient()
 
-  const rowsKey = $derived(['table-rows', connId, schema, table] as const)
+  const rowsKey = $derived(['table-rows', connId, schema, table, filter ?? null] as const)
   const rows = createQuery(() => ({
     queryKey: [...rowsKey, page, pageSize, orderBy, orderDir],
     queryFn: () =>
@@ -36,12 +60,17 @@
         offset: page * pageSize,
         orderBy,
         orderDir,
+        filter: filter ? { column: filter.column, value: filter.value } : undefined,
       }),
     placeholderData: keepPreviousData,
   }))
   const detail = createQuery(() => ({
     queryKey: tableDetailKey(connId, schema, table),
     queryFn: () => getTableDetail(connId, schema, table),
+  }))
+  const completion = createQuery(() => ({
+    queryKey: completionKey(connId),
+    queryFn: () => getCompletion(connId),
   }))
 
   type RowT = unknown[]
@@ -62,9 +91,35 @@
     qc.invalidateQueries({ queryKey: rowsKey })
   }
 
+  // ---- relation viewer wiring ----
+  const relationMap = $derived(
+    completion.data
+      ? buildRelationMap(
+          completion.data,
+          schema,
+          table,
+          cols.map((c) => ({ name: c.name })),
+          pk,
+        )
+      : null,
+  )
+  const relations = $derived<RelationsConfig | undefined>(
+    onOpenTable
+      ? {
+          connId,
+          openInTab: (t: RelationTarget, v: unknown) =>
+            onOpenTable(t.schema, t.table, {
+              column: t.column,
+              value: String(v),
+              label: `${t.column} = ${v}`,
+            }),
+        }
+      : undefined,
+  )
+
   // ---- normalized columns (variant + options + editability per column) ----
   const gridColumns = $derived<GridColumn[]>(
-    cols.map((c) => {
+    cols.map((c, i) => {
       const info = colInfo.get(c.name)
       const variant = variantFor(info ?? { type: c.typeName, enumValues: null })
       return {
@@ -74,6 +129,7 @@
         options: info?.enumValues ?? [],
         sortable: true,
         editable: pk.length > 0 && !pk.includes(c.name),
+        relation: relationMap?.[i] ?? null,
       }
     }),
   )
@@ -89,6 +145,7 @@
   const onSortingChange: OnChangeFn<SortingState> = (updater) => {
     if (grid.dirty) return
     grid.ctx.clearSelection() // row selection is page/order-local — drop it on re-sort
+    grid.clearExpanded()
     const next = typeof updater === 'function' ? updater(sorting) : updater
     if (next.length) {
       orderBy = parseColId(next[0].id).name
@@ -101,6 +158,7 @@
   const onPaginationChange: OnChangeFn<PaginationState> = (updater) => {
     if (grid.dirty) return
     grid.ctx.clearSelection() // selection is page-local — drop it on page change
+    grid.clearExpanded()
     const next = typeof updater === 'function' ? updater(pagination) : updater
     page = next.pageIndex
   }
@@ -166,17 +224,47 @@
   <div class="min-h-0 flex-1 overflow-auto">
     {#if rows.isError}
       <p class="text-destructive p-4 text-sm">{rows.error.message}</p>
+    {:else if view === 'json'}
+      <JsonView
+        columns={cols}
+        rows={data}
+        offset={page * pageSize}
+        {relations}
+        relationMap={relationMap ?? undefined}
+      />
     {:else}
-      <DataGrid api={grid} offset={page * pageSize} loading={rows.isLoading} />
+      <DataGrid api={grid} offset={page * pageSize} loading={rows.isLoading} {relations} />
     {/if}
   </div>
 
   <div class="text-muted-foreground flex items-center gap-3 border-t px-3 py-1.5 text-xs">
-    <span class="mr-auto">~{est.toLocaleString()} rows{pk.length ? ' · double-click a cell to edit' : ''}</span>
+    {#if filter}
+      <span
+        class="bg-accent text-foreground flex items-center gap-1 rounded px-1.5 py-0.5 font-mono"
+        title="Filtered view"
+      >
+        {filter.label}
+        <button
+          type="button"
+          class="hover:text-destructive"
+          title="Remove filter (open the full table)"
+          aria-label="Remove filter"
+          onclick={() => onOpenTable?.(schema, table)}
+        >
+          <X class="size-3" />
+        </button>
+      </span>
+    {/if}
+    <span class="mr-auto">
+      {filter ? '' : '~'}{est.toLocaleString()} rows{pk.length
+        ? ' · double-click a cell to edit'
+        : ''}
+    </span>
     <PageSizeSelect
       value={pageSize}
       onChange={(v) => {
         grid.ctx.clearSelection()
+        grid.clearExpanded()
         pageSize = v
         page = 0
       }}

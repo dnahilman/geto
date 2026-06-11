@@ -53,11 +53,18 @@
     <div class="flex items-center gap-2">
       <Database class="size-4" />
       <span class="text-sm font-medium">{conn?.name ?? connId}</span>
-      {#if conn?.database}<span class="text-muted-foreground font-mono text-xs">/ {conn.database}</span>{/if}
+      {#if conn?.database}<span class="text-muted-foreground font-mono text-xs"
+          >/ {conn.database}</span
+        >{/if}
       {#if conn?.readonly}<Badge variant="outline" class="text-xs">read-only</Badge>{/if}
     </div>
     <div class="ml-auto flex items-center gap-2">
-      <Button variant="ghost" size="sm" onclick={copyConnString} title="Copy connection string (with password)">
+      <Button
+        variant="ghost"
+        size="sm"
+        onclick={copyConnString}
+        title="Copy connection string (with password)"
+      >
         <KeyRound class="size-4" /> Copy connection string
       </Button>
       <Button variant="ghost" size="sm" onclick={() => (dbManagerOpen = true)}>
@@ -93,9 +100,7 @@
           {#each ws.tabs as tab (tab.id)}
             <div
               class="group flex items-center gap-1 border-b-2 px-2 py-1.5 text-xs
-                {ws.activeId === tab.id
-                ? 'border-primary'
-                : 'hover:bg-accent border-transparent'}"
+                {ws.activeId === tab.id ? 'border-primary' : 'hover:bg-accent border-transparent'}"
             >
               <button class="flex items-center gap-1.5" onclick={() => (ws.activeId = tab.id)}>
                 {#if tab.kind === 'console'}
@@ -128,12 +133,19 @@
           {#each ws.tabs as tab (tab.id)}
             <div class="h-full {ws.activeId === tab.id ? '' : 'hidden'}">
               {#if tab.kind === 'table'}
-                <TableView {connId} schema={tab.schema} table={tab.table} />
+                <TableView
+                  {connId}
+                  schema={tab.schema}
+                  table={tab.table}
+                  filter={tab.filter}
+                  onOpenTable={(s, t, f) => ws.openTable(s, t, f)}
+                />
               {:else if tab.kind === 'console'}
                 <SqlConsole
                   {connId}
                   initialSql={tab.sql}
                   onSqlChange={(s) => ws.updateSql(tab.id, s)}
+                  onOpenTable={(s, t, f) => ws.openTable(s, t, f)}
                 />
               {/if}
             </div>

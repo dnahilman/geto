@@ -1,5 +1,5 @@
 import { Elysia, t } from 'elysia'
-import { requireAuth } from '../auth/gate'
+import { requireAuth } from '$src/auth/gate'
 import {
   createConnection,
   deleteConnection,
@@ -9,10 +9,10 @@ import {
   setConnectionDatabase,
   updateConnection,
   type ConnectionInput,
-} from '../store/connections'
-import { closeDriver } from '../db/registry'
-import { testConnection } from '../db/drivers/postgres/pool'
-import { buildConnectionString } from '../db/drivers/postgres/connection-string'
+} from '$src/store/connections'
+import { closeDriver } from '$src/db/registry'
+import { testConnection } from '$src/db/drivers/postgres/pool'
+import { buildConnectionString } from '$src/db/drivers/postgres/connection-string'
 
 const sslMode = t.Union([
   t.Literal('disable'),
@@ -57,7 +57,10 @@ export const connectionsRoutes = new Elysia({ prefix: '/connections' })
       }),
     { body: connectionBody },
   )
-  .get('/:id', ({ params, status }) => getConnection(params.id) ?? status(404, { error: 'Not found' }))
+  .get(
+    '/:id',
+    ({ params, status }) => getConnection(params.id) ?? status(404, { error: 'Not found' }),
+  )
   .patch(
     '/:id',
     async ({ params, body, status }) => {

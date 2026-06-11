@@ -1,7 +1,7 @@
 import { Elysia, t } from 'elysia'
-import { requireAuth } from '../auth/gate'
-import { getConnection } from '../store/connections'
-import { getDriver } from '../db/registry'
+import { requireAuth } from '$src/auth/gate'
+import { getConnection } from '$src/store/connections'
+import { getDriver } from '$src/db/registry'
 
 export const databasesRoutes = new Elysia({ prefix: '/connections' })
   .use(requireAuth)

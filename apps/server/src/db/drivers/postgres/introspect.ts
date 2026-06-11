@@ -1,7 +1,7 @@
-import type { Sql } from './pool'
-import { executeSql } from './exec'
-import type { QueryResult } from '../../shared/marshal'
-import { quoteIdent } from '../../shared/ident'
+import type { Sql } from '$src/db/drivers/postgres/pool'
+import { executeSql } from '$src/db/drivers/postgres/exec'
+import type { QueryResult } from '$src/db/shared/marshal'
+import { quoteIdent } from '$src/db/shared/ident'
 
 export interface DatabaseInfo {
   name: string
@@ -350,6 +350,10 @@ export interface TableDataOptions {
   offset: number
   orderBy?: string
   orderDir?: 'ASC' | 'DESC'
+  /** Optional single-column equality filter; the value is bound as a parameter
+   *  and matched against the column's type by PostgreSQL (e.g. text '5' = int 5). */
+  filterColumn?: string
+  filterValue?: string
 }
 
 /** Read a page of rows from a table. Identifiers are quoted; paging is params. */
@@ -360,15 +364,33 @@ export async function getTableData(
   opts: TableDataOptions,
 ): Promise<{ result: QueryResult; estimatedRows: number }> {
   const rel = `${quoteIdent(schema)}.${quoteIdent(table)}`
+  const filtered = opts.filterColumn != null && opts.filterColumn !== ''
+  // When filtered the value takes $1, so LIMIT/OFFSET shift to $2/$3.
+  const where = filtered ? ` WHERE ${quoteIdent(opts.filterColumn!)} = $1` : ''
   const order = opts.orderBy
     ? ` ORDER BY ${quoteIdent(opts.orderBy)} ${opts.orderDir === 'DESC' ? 'DESC' : 'ASC'}`
     : ''
-  const text = `SELECT * FROM ${rel}${order} LIMIT $1 OFFSET $2`
-  const result = await executeSql(sql, text, [opts.limit, opts.offset])
+  const limPos = filtered ? 2 : 1
+  const text = `SELECT * FROM ${rel}${where}${order} LIMIT $${limPos} OFFSET $${limPos + 1}`
+  const params = filtered
+    ? [opts.filterValue ?? null, opts.limit, opts.offset]
+    : [opts.limit, opts.offset]
+  const result = await executeSql(sql, text, params)
 
-  const est = await sql<{ n: number }[]>`
-    SELECT GREATEST(c.reltuples, 0)::bigint AS n
-    FROM pg_class c JOIN pg_namespace ns ON ns.oid = c.relnamespace
-    WHERE ns.nspname = ${schema} AND c.relname = ${table}`
-  return { result, estimatedRows: Number(est[0]?.n ?? 0) }
+  // Unfiltered: the planner's reltuples estimate is instant. Filtered: the
+  // narrowed set is small/indexed, so an exact count is cheap and more useful.
+  let estimatedRows: number
+  if (filtered) {
+    const cnt = await executeSql(sql, `SELECT count(*) AS n FROM ${rel}${where}`, [
+      opts.filterValue ?? null,
+    ])
+    estimatedRows = Number(cnt.rows[0]?.[0] ?? 0)
+  } else {
+    const est = await sql<{ n: number }[]>`
+      SELECT GREATEST(c.reltuples, 0)::bigint AS n
+      FROM pg_class c JOIN pg_namespace ns ON ns.oid = c.relnamespace
+      WHERE ns.nspname = ${schema} AND c.relname = ${table}`
+    estimatedRows = Number(est[0]?.n ?? 0)
+  }
+  return { result, estimatedRows }
 }

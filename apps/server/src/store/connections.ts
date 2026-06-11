@@ -1,6 +1,6 @@
-import { db } from './db'
-import { decryptSecret, encryptSecret } from '../crypto/secret'
-import { DEFAULT_PROVIDER, type ProviderId } from '../providers'
+import { db } from '$src/store/db'
+import { decryptSecret, encryptSecret } from '$src/crypto/secret'
+import { DEFAULT_PROVIDER, type ProviderId } from '$src/providers'
 
 export type SslMode = 'disable' | 'allow' | 'prefer' | 'require' | 'verify-ca' | 'verify-full'
 

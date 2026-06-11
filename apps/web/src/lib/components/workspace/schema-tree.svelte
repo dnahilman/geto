@@ -1,6 +1,22 @@
 <script lang="ts">
-  import { createQuery, createMutation, useQueryClient, keepPreviousData } from '@tanstack/svelte-query'
-  import { ChevronRight, Table2, Eye, Layers, RefreshCw, Trash2, Eraser, Plus, EllipsisVertical, Loader2 } from 'lucide-svelte'
+  import {
+    createQuery,
+    createMutation,
+    useQueryClient,
+    keepPreviousData,
+  } from '@tanstack/svelte-query'
+  import {
+    ChevronRight,
+    Table2,
+    Eye,
+    Layers,
+    RefreshCw,
+    Trash2,
+    Eraser,
+    Plus,
+    EllipsisVertical,
+    Loader2,
+  } from 'lucide-svelte'
   import { toast } from 'svelte-sonner'
   import { Input } from '$lib/components/ui/input'
   import { Button } from '$lib/components/ui/button'
@@ -81,10 +97,18 @@
     <div class="relative flex-1">
       <Input bind:value={filterInput} placeholder="Filter tables…" class="h-8" />
       {#if tree.isFetching && !tree.isLoading}
-        <Loader2 class="text-muted-foreground absolute top-1/2 right-2 size-3.5 -translate-y-1/2 animate-spin" />
+        <Loader2
+          class="text-muted-foreground absolute top-1/2 right-2 size-3.5 -translate-y-1/2 animate-spin"
+        />
       {/if}
     </div>
-    <Button variant="ghost" size="icon" class="size-8 shrink-0" title="Refresh" onclick={refreshTree}>
+    <Button
+      variant="ghost"
+      size="icon"
+      class="size-8 shrink-0"
+      title="Refresh"
+      onclick={refreshTree}
+    >
       <RefreshCw class="size-4" />
     </Button>
   </div>
@@ -102,77 +126,98 @@
       {:else if tree.data}
         {#each tree.data as s (s.schema)}
           {@const open = expanded(s.schema)}
-            <div>
-              <div class="group hover:bg-accent flex items-center gap-1 rounded pr-1 font-medium">
-                <button
-                  class="flex min-w-0 flex-1 items-center gap-1 px-1 py-1"
-                  onclick={() => toggle(s.schema)}
-                >
-                  <ChevronRight class="size-3.5 shrink-0 transition-transform {open ? 'rotate-90' : ''}" />
-                  <Layers class="text-muted-foreground size-3.5 shrink-0" />
-                  <span class="truncate">{s.schema}</span>
-                  <span class="text-muted-foreground ml-auto text-xs">{s.relations.length}</span>
-                </button>
-                <DropdownMenu.Root>
-                  <DropdownMenu.Trigger>
-                    {#snippet child({ props })}
-                      <button {...props} class="shrink-0 p-0.5 opacity-0 group-hover:opacity-100" aria-label="Schema actions">
-                        <EllipsisVertical class="size-3.5" />
-                      </button>
-                    {/snippet}
-                  </DropdownMenu.Trigger>
-                  <DropdownMenu.Content align="end" class="w-auto">
-                    <DropdownMenu.Item onSelect={() => newTable(s.schema)}>
-                      <Plus class="size-4" /> New table
-                    </DropdownMenu.Item>
-                  </DropdownMenu.Content>
-                </DropdownMenu.Root>
-              </div>
-
-              {#if open}
-                <div class="ml-3 border-l pl-1">
-                  {#each s.relations as r (r.name)}
-                    <div class="group hover:bg-accent flex items-center gap-1 rounded pr-1">
-                      <button
-                        class="flex min-w-0 flex-1 items-center gap-1.5 px-1.5 py-1 text-left"
-                        onclick={() => onopen(s.schema, r.name)}
-                      >
-                        {#if r.type === 'view' || r.type === 'matview'}
-                          <Eye class="text-muted-foreground size-3.5 shrink-0" />
-                        {:else}
-                          <Table2 class="text-muted-foreground size-3.5 shrink-0" />
-                        {/if}
-                        <span class="truncate">{r.name}</span>
-                      </button>
-                      {#if r.type === 'table'}
-                        <DropdownMenu.Root>
-                          <DropdownMenu.Trigger>
-                            {#snippet child({ props })}
-                              <button {...props} class="shrink-0 p-0.5 opacity-0 group-hover:opacity-100" aria-label="Table actions">
-                                <EllipsisVertical class="size-3.5" />
-                              </button>
-                            {/snippet}
-                          </DropdownMenu.Trigger>
-                          <DropdownMenu.Content align="end" class="w-auto">
-                            <DropdownMenu.Item onSelect={() => onopen(s.schema, r.name)}>Open</DropdownMenu.Item>
-                            <DropdownMenu.Separator />
-                            <DropdownMenu.Item onSelect={() => afterMenuClose(() => (confirm = { kind: 'truncate', schema: s.schema, table: r.name }))}>
-                              <Eraser class="size-4" /> Truncate {r.name}
-                            </DropdownMenu.Item>
-                            <DropdownMenu.Item
-                              class="text-destructive data-highlighted:text-destructive"
-                              onSelect={() => afterMenuClose(() => (confirm = { kind: 'drop', schema: s.schema, table: r.name }))}
-                            >
-                              <Trash2 class="size-4" /> Drop {r.name}
-                            </DropdownMenu.Item>
-                          </DropdownMenu.Content>
-                        </DropdownMenu.Root>
-                      {/if}
-                    </div>
-                  {/each}
-                </div>
-              {/if}
+          <div>
+            <div class="group hover:bg-accent flex items-center gap-1 rounded pr-1 font-medium">
+              <button
+                class="flex min-w-0 flex-1 items-center gap-1 px-1 py-1"
+                onclick={() => toggle(s.schema)}
+              >
+                <ChevronRight
+                  class="size-3.5 shrink-0 transition-transform {open ? 'rotate-90' : ''}"
+                />
+                <Layers class="text-muted-foreground size-3.5 shrink-0" />
+                <span class="truncate">{s.schema}</span>
+                <span class="text-muted-foreground ml-auto text-xs">{s.relations.length}</span>
+              </button>
+              <DropdownMenu.Root>
+                <DropdownMenu.Trigger>
+                  {#snippet child({ props })}
+                    <button
+                      {...props}
+                      class="shrink-0 p-0.5 opacity-0 group-hover:opacity-100"
+                      aria-label="Schema actions"
+                    >
+                      <EllipsisVertical class="size-3.5" />
+                    </button>
+                  {/snippet}
+                </DropdownMenu.Trigger>
+                <DropdownMenu.Content align="end" class="w-auto">
+                  <DropdownMenu.Item onSelect={() => newTable(s.schema)}>
+                    <Plus class="size-4" /> New table
+                  </DropdownMenu.Item>
+                </DropdownMenu.Content>
+              </DropdownMenu.Root>
             </div>
+
+            {#if open}
+              <div class="ml-3 border-l pl-1">
+                {#each s.relations as r (r.name)}
+                  <div class="group hover:bg-accent flex items-center gap-1 rounded pr-1">
+                    <button
+                      class="flex min-w-0 flex-1 items-center gap-1.5 px-1.5 py-1 text-left"
+                      onclick={() => onopen(s.schema, r.name)}
+                    >
+                      {#if r.type === 'view' || r.type === 'matview'}
+                        <Eye class="text-muted-foreground size-3.5 shrink-0" />
+                      {:else}
+                        <Table2 class="text-muted-foreground size-3.5 shrink-0" />
+                      {/if}
+                      <span class="truncate">{r.name}</span>
+                    </button>
+                    {#if r.type === 'table'}
+                      <DropdownMenu.Root>
+                        <DropdownMenu.Trigger>
+                          {#snippet child({ props })}
+                            <button
+                              {...props}
+                              class="shrink-0 p-0.5 opacity-0 group-hover:opacity-100"
+                              aria-label="Table actions"
+                            >
+                              <EllipsisVertical class="size-3.5" />
+                            </button>
+                          {/snippet}
+                        </DropdownMenu.Trigger>
+                        <DropdownMenu.Content align="end" class="w-auto">
+                          <DropdownMenu.Item onSelect={() => onopen(s.schema, r.name)}
+                            >Open</DropdownMenu.Item
+                          >
+                          <DropdownMenu.Separator />
+                          <DropdownMenu.Item
+                            onSelect={() =>
+                              afterMenuClose(
+                                () =>
+                                  (confirm = { kind: 'truncate', schema: s.schema, table: r.name }),
+                              )}
+                          >
+                            <Eraser class="size-4" /> Truncate {r.name}
+                          </DropdownMenu.Item>
+                          <DropdownMenu.Item
+                            class="text-destructive data-highlighted:text-destructive"
+                            onSelect={() =>
+                              afterMenuClose(
+                                () => (confirm = { kind: 'drop', schema: s.schema, table: r.name }),
+                              )}
+                          >
+                            <Trash2 class="size-4" /> Drop {r.name}
+                          </DropdownMenu.Item>
+                        </DropdownMenu.Content>
+                      </DropdownMenu.Root>
+                    {/if}
+                  </div>
+                {/each}
+              </div>
+            {/if}
+          </div>
         {/each}
       {/if}
     </div>
@@ -183,7 +228,8 @@
   <AlertDialog.Content>
     <AlertDialog.Header>
       <AlertDialog.Title>
-        {confirm?.kind === 'drop' ? 'Drop' : 'Truncate'} {confirm?.schema}.{confirm?.table}?
+        {confirm?.kind === 'drop' ? 'Drop' : 'Truncate'}
+        {confirm?.schema}.{confirm?.table}?
       </AlertDialog.Title>
       <AlertDialog.Description>
         {#if confirm?.kind === 'drop'}

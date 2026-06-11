@@ -1,7 +1,7 @@
-import type { DbDriver, Capabilities, EditableSource } from '../../driver'
-import type { ProviderId } from '../../../providers'
-import { makeSql, type PgOptions } from './pool'
-import { executeSql } from './exec'
+import type { DbDriver, Capabilities, EditableSource } from '$src/db/driver'
+import type { ProviderId } from '$src/providers'
+import { makeSql, type PgOptions } from '$src/db/drivers/postgres/pool'
+import { executeSql } from '$src/db/drivers/postgres/exec'
 import {
   listDatabases,
   listSchemas,
@@ -15,11 +15,11 @@ import {
   getFunctions,
   getForeignKeys,
   getTableData,
-} from './introspect'
-import { buildCreateTable, type ColumnSpec } from './dml'
-import { quoteIdent } from '../../shared/ident'
-import { analyzeSql, inspectSelect } from '../../shared/safety'
-import type { ColumnMeta } from '../../shared/marshal'
+} from '$src/db/drivers/postgres/introspect'
+import { buildCreateTable, type ColumnSpec } from '$src/db/drivers/postgres/dml'
+import { quoteIdent } from '$src/db/shared/ident'
+import { analyzeSql, inspectSelect } from '$src/db/shared/safety'
+import type { ColumnMeta } from '$src/db/shared/marshal'
 
 const PG_CAPABILITIES: Capabilities = {
   hasDatabases: true,
@@ -102,7 +102,11 @@ export class PostgresDriver implements DbDriver {
     this.safety = { analyze: analyzeSql, inspectSelect }
 
     this.lifecycle = {
-      close: () => sql.end({ timeout: 5 }).then(() => {}).catch(() => {}),
+      close: () =>
+        sql
+          .end({ timeout: 5 })
+          .then(() => {})
+          .catch(() => {}),
     }
   }
 }

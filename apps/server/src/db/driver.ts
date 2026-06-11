@@ -11,9 +11,9 @@
 // NOTE (Phase 1): the shared domain types still physically live in the postgres
 // driver dir + db/shared (minimal-churn relocation). When a second dialect lands,
 // these move to a neutral db/types.ts.
-import type { ProviderId } from '../providers'
-import type { ColumnMeta, QueryResult } from './shared/marshal'
-import type { SafetyReport } from './shared/safety'
+import type { ProviderId } from '$src/providers'
+import type { ColumnMeta, QueryResult } from '$src/db/shared/marshal'
+import type { SafetyReport } from '$src/db/shared/safety'
 import type {
   DatabaseInfo,
   SchemaTree,
@@ -24,8 +24,8 @@ import type {
   CompletionFunction,
   CompletionForeignKey,
   TableDataOptions,
-} from './drivers/postgres/introspect'
-import type { ColumnSpec } from './drivers/postgres/dml'
+} from '$src/db/drivers/postgres/introspect'
+import type { ColumnSpec } from '$src/db/drivers/postgres/dml'
 
 /** The verdict on whether a query result maps to one editable base table. */
 export interface EditableSource {

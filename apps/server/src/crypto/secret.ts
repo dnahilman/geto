@@ -1,5 +1,5 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:crypto'
-import { env } from '../env'
+import { env } from '$src/env'
 
 /**
  * Symmetric encryption for secrets at rest (saved DB passwords).

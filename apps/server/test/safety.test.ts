@@ -14,12 +14,12 @@ describe('shared/safety analyzeSql', () => {
   })
 
   test('flags UPDATE without WHERE', async () => {
-    const r = await analyzeSql("UPDATE users SET active = false")
+    const r = await analyzeSql('UPDATE users SET active = false')
     expect(r.dangerous).toBe(true)
   })
 
   test('allows UPDATE with WHERE', async () => {
-    const r = await analyzeSql("UPDATE users SET active = false WHERE id = 1")
+    const r = await analyzeSql('UPDATE users SET active = false WHERE id = 1')
     expect(r.dangerous).toBe(false)
   })
 

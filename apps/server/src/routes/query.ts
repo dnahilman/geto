@@ -1,9 +1,9 @@
 import { Elysia, t } from 'elysia'
-import { requireAuth } from '../auth/gate'
-import { getConnection } from '../store/connections'
-import { getDriver } from '../db/registry'
-import { pgErrorMessage } from '../db/shared/error'
-import { recordHistory, listHistory, clearHistory } from '../store/history'
+import { requireAuth } from '$src/auth/gate'
+import { getConnection } from '$src/store/connections'
+import { getDriver } from '$src/db/registry'
+import { pgErrorMessage } from '$src/db/shared/error'
+import { recordHistory, listHistory, clearHistory } from '$src/store/history'
 
 export const queryRoutes = new Elysia({ prefix: '/connections' })
   .use(requireAuth)

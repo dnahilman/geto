@@ -1,11 +1,11 @@
 {
   "name": "geto",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "private": true,
   "type": "module",
   "workspaces": ["apps/*"],
   "scripts": {
-    "dev": "bun run --filter '*' dev",
+    "dev": "bun run --filter '*' --parallel dev",
     "dev:server": "bun run --filter @geto/server dev",
     "dev:web": "bun run --filter @geto/web dev",
     "build": "bun run --filter @geto/web build",

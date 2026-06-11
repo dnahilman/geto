@@ -1,12 +1,12 @@
 import { Elysia, t } from 'elysia'
-import { requireAuth } from '../auth/gate'
-import { getConnection } from '../store/connections'
-import { getDriver } from '../db/registry'
-import type { DbDriver } from '../db/driver'
-import type { QueryResult } from '../db/shared/marshal'
-import { buildDelete, buildInsert, buildUpdate, inlineParams } from '../db/drivers/postgres/dml'
-import { recordHistory } from '../store/history'
-import { pgErrorMessage } from '../db/shared/error'
+import { requireAuth } from '$src/auth/gate'
+import { getConnection } from '$src/store/connections'
+import { getDriver } from '$src/db/registry'
+import type { DbDriver } from '$src/db/driver'
+import type { QueryResult } from '$src/db/shared/marshal'
+import { buildDelete, buildInsert, buildUpdate, inlineParams } from '$src/db/drivers/postgres/dml'
+import { recordHistory } from '$src/store/history'
+import { pgErrorMessage } from '$src/db/shared/error'
 
 const tableParams = t.Object({ id: t.String(), schema: t.String(), table: t.String() })
 const rowValues = t.Record(t.String(), t.Unknown())
@@ -90,6 +90,9 @@ export const tablesRoutes = new Elysia({ prefix: '/connections' })
         offset: query.offset ?? 0,
         orderBy: query.orderBy,
         orderDir: query.orderDir === 'DESC' ? 'DESC' : 'ASC',
+        // Single-column equality filter (powers the relation viewer + filtered tabs).
+        filterColumn: query.filterColumn,
+        filterValue: query.filterValue,
       }),
     {
       params: tableParams,
@@ -98,6 +101,8 @@ export const tablesRoutes = new Elysia({ prefix: '/connections' })
         offset: t.Optional(t.Integer({ minimum: 0 })),
         orderBy: t.Optional(t.String()),
         orderDir: t.Optional(t.Union([t.Literal('ASC'), t.Literal('DESC')])),
+        filterColumn: t.Optional(t.String()),
+        filterValue: t.Optional(t.String()),
       }),
     },
   )

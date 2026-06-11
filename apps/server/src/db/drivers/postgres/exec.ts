@@ -1,5 +1,5 @@
-import type { Sql } from './pool'
-import { marshalValue, typeName, type ColumnMeta, type QueryResult } from '../../shared/marshal'
+import type { Sql } from '$src/db/drivers/postgres/pool'
+import { marshalValue, typeName, type ColumnMeta, type QueryResult } from '$src/db/shared/marshal'
 
 interface RawResult extends Array<unknown[]> {
   // porsager exposes `table` (source table OID) and `number` (source attnum) per column.

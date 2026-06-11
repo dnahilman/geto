@@ -1,4 +1,4 @@
-import type { SslMode } from '../../../store/connections'
+import type { SslMode } from '$src/store/connections'
 
 interface Parts {
   host: string

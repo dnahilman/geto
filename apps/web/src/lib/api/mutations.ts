@@ -2,8 +2,7 @@ import { client, unwrap } from '$lib/api/eden'
 import type { QueryResult } from '@geto/server'
 
 const conn = (id: string) => client.api.connections({ id })
-const tbl = (id: string, schema: string, table: string) =>
-  conn(id).tables({ schema })({ table })
+const tbl = (id: string, schema: string, table: string) => conn(id).tables({ schema })({ table })
 
 export type Row = Record<string, unknown>
 

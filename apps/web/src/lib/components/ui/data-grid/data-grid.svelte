@@ -5,10 +5,12 @@
   import { copyText } from '$lib/clipboard'
   import { collectRows } from '$lib/export'
   import DataGridCell from './data-grid-cell.svelte'
+  import RelationPanel from './relation-panel.svelte'
   import {
     DATA_GRID_KEY,
     draftRowIndex,
     type DataGridApi,
+    type RelationsConfig,
   } from './data-grid-context'
 
   let {
@@ -19,6 +21,7 @@
     canPrevious = undefined,
     canNext = undefined,
     emptyText = 'No rows',
+    relations = undefined,
   }: {
     api: DataGridApi<RowT>
     offset?: number
@@ -27,6 +30,7 @@
     canPrevious?: boolean
     canNext?: boolean
     emptyText?: string
+    relations?: RelationsConfig
   } = $props()
 
   // api is a stable, single-instance object; ctx exposes live state via getters.
@@ -34,6 +38,27 @@
   setContext(DATA_GRID_KEY, api.ctx)
 
   let rootEl = $state<HTMLElement>()
+
+  // Width of the nearest horizontally-scrolling ancestor (the grid's viewport).
+  // Expanded relation panels are sized to this so they stay pinned to the left
+  // and own their horizontal scroll instead of riding the parent table's width.
+  let viewportWidth = $state(0)
+  $effect(() => {
+    if (!rootEl) return
+    let el: HTMLElement | null = rootEl.parentElement
+    while (el) {
+      const ox = getComputedStyle(el).overflowX
+      if (ox === 'auto' || ox === 'scroll') break
+      el = el.parentElement
+    }
+    if (!el) return
+    const scroller = el
+    const update = () => (viewportWidth = scroller.clientWidth)
+    const ro = new ResizeObserver(update)
+    ro.observe(scroller)
+    update()
+    return () => ro.disconnect()
+  })
 
   const headerGroups = $derived.by(() => api.table.getHeaderGroups())
   const rows = $derived.by(() => api.table.getRowModel().rows)
@@ -113,11 +138,16 @@
     <thead class="bg-muted sticky top-0 z-10">
       {#each headerGroups as hg (hg.id)}
         <tr>
-          <th class="text-muted-foreground bg-muted sticky top-0 border-b px-2 py-1.5 font-normal">#</th>
+          <th class="text-muted-foreground bg-muted sticky top-0 border-b px-2 py-1.5 font-normal"
+            >#</th
+          >
           {#each hg.headers as header (header.id)}
             <th class="bg-muted sticky top-0 border-b px-2 py-1.5 font-medium whitespace-nowrap">
               {#if !header.isPlaceholder}
-                <FlexRender content={header.column.columnDef.header} context={header.getContext()} />
+                <FlexRender
+                  content={header.column.columnDef.header}
+                  context={header.getContext()}
+                />
               {/if}
             </th>
           {/each}
@@ -166,19 +196,50 @@
             {@const value = c.getValue()}
             {@const dirty = api.ctx.cellPending(row.index, colIndex) !== undefined}
             <td
-              class="max-w-md truncate px-2 py-1 font-mono {dirty
+              class="group/cell relative max-w-md truncate px-2 py-1 font-mono {dirty
                 ? 'bg-amber-400/15'
                 : isFocusedCell(row.index, colIndex)
                   ? 'bg-accent'
                   : ''}"
               title={formatCell(value).text}
-              onclick={() => api.ctx.focusCell(row.index, colIndex)}
+              onclick={(e) => {
+                // Modifier-click selects the row (spreadsheet behavior); a plain
+                // click focuses the cell. The row-number column does the same.
+                if (e.shiftKey) api.ctx.selectRow(row.index, 'range')
+                else if (e.ctrlKey || e.metaKey) api.ctx.selectRow(row.index, 'toggle')
+                else api.ctx.focusCell(row.index, colIndex)
+              }}
               ondblclick={() => api.ctx.startEdit(row.index, colIndex)}
             >
-              <DataGridCell rowIndex={row.index} {colIndex} {value} />
+              <DataGridCell
+                rowIndex={row.index}
+                {colIndex}
+                {value}
+                relationsEnabled={!!relations}
+              />
             </td>
           {/each}
         </tr>
+        {#if relations}
+          {@const exp = api.ctx.expandedFor(row.index)}
+          {#if exp}
+            <tr class="bg-muted/40 border-b">
+              <td colspan={colSpan} class="p-0">
+                <div
+                  class="sticky left-0 py-2 pr-2 pl-6"
+                  style={viewportWidth ? `width:${viewportWidth}px` : ''}
+                >
+                  <RelationPanel
+                    connId={relations.connId}
+                    expansion={exp}
+                    onOpenInTab={() => relations.openInTab(exp.target, exp.value)}
+                    onCollapse={() => api.ctx.collapseRelation(row.index)}
+                  />
+                </div>
+              </td>
+            </tr>
+          {/if}
+        {/if}
       {/each}
       {#if !loading && rows.length === 0 && api.ctx.newRows.length === 0}
         <tr>

@@ -19,6 +19,7 @@
   import SqlEditor from '$lib/editor/sql-editor.svelte'
   import ResultTable from './result-table.svelte'
   import { formatSql } from '$lib/editor/format'
+  import type { TabFilter } from '$lib/stores/workspace.svelte'
   import {
     runQuery,
     getCompletion,
@@ -34,10 +35,12 @@
     connId,
     initialSql,
     onSqlChange,
+    onOpenTable,
   }: {
     connId: string
     initialSql: string
     onSqlChange: (sql: string) => void
+    onOpenTable?: (schema: string, table: string, filter?: TabFilter) => void
   } = $props()
 
   const qc = useQueryClient()
@@ -76,8 +79,17 @@
   }
 
   const run = createMutation(() => ({
-    mutationFn: ({ text, confirm, off, lim }: { text: string; confirm: boolean; off: number; lim: number }) =>
-      runQuery(connId, text, confirm, { offset: off, limit: lim }),
+    mutationFn: ({
+      text,
+      confirm,
+      off,
+      lim,
+    }: {
+      text: string
+      confirm: boolean
+      off: number
+      lim: number
+    }) => runQuery(connId, text, confirm, { offset: off, limit: lim }),
     onSuccess: (r) => {
       if (r.requiresConfirmation) {
         pending = { sql: pendingSql, report: r.report }
@@ -143,7 +155,9 @@
         disabled={run.isPending}
         onclick={() => doRun(editorRef?.getSelectedOrAll() ?? sql)}
       >
-        {#if run.isPending}<Loader2 class="size-4 animate-spin" />{:else}<Play class="size-4" />{/if}
+        {#if run.isPending}<Loader2 class="size-4 animate-spin" />{:else}<Play
+            class="size-4"
+          />{/if}
         Run
       </Button>
       <Button size="sm" variant="outline" class="h-7" onclick={format}>
@@ -190,7 +204,8 @@
 
       <Tabs.Content value="result" class="flex min-h-0 flex-1 flex-col">
         {#if error}
-          <pre class="text-destructive overflow-auto p-3 font-mono text-xs whitespace-pre-wrap">{error}</pre>
+          <pre
+            class="text-destructive overflow-auto p-3 font-mono text-xs whitespace-pre-wrap">{error}</pre>
         {:else if result && result.columns.length > 0}
           <div class="min-h-0 flex-1">
             <ResultTable
@@ -200,12 +215,14 @@
               startIndex={result.offset}
               source={result.source}
               onApplied={rerun}
+              {onOpenTable}
             />
           </div>
           {#if result.paginated}
             <div class="text-muted-foreground flex items-center gap-3 border-t px-3 py-1.5 text-xs">
               <span class="mr-auto">
-                rows {result.rows.length ? result.offset + 1 : 0}–{result.offset + result.rows.length}
+                rows {result.rows.length ? result.offset + 1 : 0}–{result.offset +
+                  result.rows.length}
               </span>
               <PageSizeSelect value={pageSize} onChange={setPageSize} />
               <Button
@@ -267,7 +284,8 @@
                   {/if}
                   <span class="min-w-0 flex-1 truncate font-mono">{h.sql}</span>
                   <span class="text-muted-foreground shrink-0">
-                    {h.status === 'ok' ? `${h.rowCount ?? 0} rows` : 'error'} · {h.durationMs ?? 0}ms
+                    {h.status === 'ok' ? `${h.rowCount ?? 0} rows` : 'error'} · {h.durationMs ??
+                      0}ms
                   </span>
                 </button>
               </li>
@@ -287,9 +305,7 @@
       <AlertDialog.Title class="flex items-center gap-2">
         <TriangleAlert class="text-destructive size-5" /> Dangerous query
       </AlertDialog.Title>
-      <AlertDialog.Description>
-        This statement was flagged as destructive:
-      </AlertDialog.Description>
+      <AlertDialog.Description>This statement was flagged as destructive:</AlertDialog.Description>
     </AlertDialog.Header>
     <ul class="text-destructive list-disc space-y-1 pl-5 text-sm">
       {#each pending?.report.reasons ?? [] as reason (reason)}

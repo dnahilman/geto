@@ -99,6 +99,34 @@ suite('integration: real PostgreSQL', () => {
     expect(result.rows.length).toBeGreaterThanOrEqual(1)
   })
 
+  test('getTableData applies a single-column equality filter (text + int binding)', async () => {
+    const nameIdx = (cols: { name: string }[]) => cols.findIndex((c) => c.name === 'name')
+
+    // text column
+    const byName = await getTableData(sql, 'geto_it', 't', {
+      limit: 100,
+      offset: 0,
+      filterColumn: 'name',
+      filterValue: 'widget',
+    })
+    expect(byName.result.rows.length).toBeGreaterThanOrEqual(1)
+    expect(byName.result.rows.every((r) => r[nameIdx(byName.result.columns)] === 'widget')).toBe(
+      true,
+    )
+    // filtered count is exact (not the planner estimate)
+    expect(byName.estimatedRows).toBe(byName.result.rows.length)
+
+    // string value bound against an int8 column (PG infers the column's type)
+    const byBig = await getTableData(sql, 'geto_it', 't', {
+      limit: 100,
+      offset: 0,
+      filterColumn: 'big',
+      filterValue: '9223372036854775807',
+    })
+    expect(byBig.result.rows.length).toBeGreaterThanOrEqual(1)
+    expect(byBig.result.rows.every((r) => r[nameIdx(byBig.result.columns)] === 'widget')).toBe(true)
+  })
+
   test('safety guard matches real parser behavior', async () => {
     expect((await analyzeSql('DELETE FROM geto_it.t')).dangerous).toBe(true)
     expect((await analyzeSql('DELETE FROM geto_it.t WHERE id = 1')).dangerous).toBe(false)

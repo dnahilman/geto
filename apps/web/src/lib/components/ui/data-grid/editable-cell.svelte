@@ -1,5 +1,6 @@
 <script lang="ts">
   import { toast } from 'svelte-sonner'
+  import { Maximize2 } from 'lucide-svelte'
   import { formatCell } from '$lib/components/ui/data-table'
   import { Checkbox } from '$lib/components/ui/checkbox'
   import { Textarea } from '$lib/components/ui/textarea'
@@ -43,9 +44,11 @@
   let draft = $state('') // text / number / json
   let dtDate = $state<CalendarDate | undefined>(undefined) // datetime
   let dtTime = $state('') // datetime, 'HH:MM'
+  let expanded = $state(false) // text: user popped out to the multiline editor
   let prevEditing = false
   $effect.pre(() => {
     if (editing && !prevEditing) {
+      expanded = false
       if (variant === 'datetime') {
         const p = toDateTimeParts(value)
         dtDate = p.date
@@ -56,6 +59,12 @@
     }
     prevEditing = editing
   })
+
+  // Long / multi-line text gets the popover textarea instead of a cramped input —
+  // either auto (newline or long) or when the user clicks the expand affordance.
+  const multiline = $derived(
+    variant === 'text' && (expanded || draft.includes('\n') || draft.length > 60),
+  )
 
   const display = $derived(formatCell(value))
 
@@ -158,18 +167,56 @@
       </div>
     </Popover.Content>
   </Popover.Root>
-{:else}
-  <!-- text / number -->
-  <!-- svelte-ignore a11y_autofocus -->
-  <input
-    class="border-primary bg-background w-full min-w-32 border px-1 font-mono"
-    type={variant === 'number' ? 'number' : 'text'}
-    bind:value={draft}
-    autofocus
-    onkeydown={(e) => {
-      if (e.key === 'Enter') commitText()
-      else if (e.key === 'Escape') oncancel()
+{:else if multiline}
+  <!-- long / multi-line text: focusable popover textarea ("Multiline editor") -->
+  <Popover.Root
+    open={editing}
+    onOpenChange={(o) => {
+      if (!o) oncancel()
     }}
-    onblur={commitText}
-  />
+  >
+    <Popover.Trigger class="w-full truncate text-left font-mono">{display.text}</Popover.Trigger>
+    <Popover.Content class="w-80 p-2" align="start">
+      <Textarea
+        bind:value={draft}
+        class="h-40 font-mono text-xs"
+        onkeydown={(e) => {
+          if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) commitText()
+          else if (e.key === 'Escape') oncancel()
+        }}
+      />
+      <div class="mt-2 flex justify-end gap-1">
+        <Button size="xs" variant="ghost" onclick={oncancel}>Cancel</Button>
+        <Button size="xs" onclick={commitText}>Save</Button>
+      </div>
+    </Popover.Content>
+  </Popover.Root>
+{:else}
+  <!-- text / number: inline input. Text gets an expand affordance to pop out. -->
+  <!-- svelte-ignore a11y_autofocus -->
+  <div class="flex items-center gap-1">
+    <input
+      class="border-primary bg-background w-full min-w-32 border px-1 font-mono"
+      type={variant === 'number' ? 'number' : 'text'}
+      bind:value={draft}
+      autofocus
+      onkeydown={(e) => {
+        if (e.key === 'Enter') commitText()
+        else if (e.key === 'Escape') oncancel()
+      }}
+      onblur={commitText}
+    />
+    {#if variant === 'text'}
+      <button
+        type="button"
+        class="text-muted-foreground hover:text-foreground shrink-0"
+        title="Expand editor"
+        aria-label="Expand editor"
+        onmousedown={(e) => e.preventDefault()}
+        onclick={() => (expanded = true)}
+      >
+        <Maximize2 class="size-3" />
+      </button>
+    {/if}
+  </div>
 {/if}

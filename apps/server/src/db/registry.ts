@@ -2,9 +2,9 @@
 // constructs the right DbDriver for a saved connection (dispatched by provider),
 // caches it by connection id, and sweeps idle drivers. The only place that knows
 // which concrete driver a provider maps to.
-import { getConnectionSecret } from '../store/connections'
-import type { DbDriver } from './driver'
-import { PostgresDriver } from './drivers/postgres/driver'
+import { getConnectionSecret } from '$src/store/connections'
+import type { DbDriver } from '$src/db/driver'
+import { PostgresDriver } from '$src/db/drivers/postgres/driver'
 
 type Secret = NonNullable<ReturnType<typeof getConnectionSecret>>
 

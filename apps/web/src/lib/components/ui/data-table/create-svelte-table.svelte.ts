@@ -79,10 +79,8 @@ export function createSvelteTable<TData extends RowData>(options: TableOptions<T
       state: {},
       onStateChange() {},
       renderFallbackValue: null,
-      mergeOptions: (
-        defaultOptions: TableOptions<TData>,
-        opts: Partial<TableOptions<TData>>,
-      ) => mergeObjects(defaultOptions, opts),
+      mergeOptions: (defaultOptions: TableOptions<TData>, opts: Partial<TableOptions<TData>>) =>
+        mergeObjects(defaultOptions, opts),
     } as unknown as Record<string, unknown>,
     options as unknown as Record<string, unknown>,
   ) as unknown as TableOptionsResolved<TData>
@@ -91,22 +89,27 @@ export function createSvelteTable<TData extends RowData>(options: TableOptions<T
   let state = $state<Partial<TableState>>(table.initialState)
 
   function updateOptions() {
-    table.setOptions((prev) =>
-      mergeObjects(
-        prev as unknown as Record<string, unknown>,
-        options as unknown as Record<string, unknown>,
-        {
-          state: mergeObjects(
-            state as Record<string, unknown>,
-            (options.state ?? {}) as Record<string, unknown>,
-          ),
-          onStateChange: (updater: unknown) => {
-            if (updater instanceof Function) state = updater(state)
-            else state = mergeObjects(state as Record<string, unknown>, updater as Record<string, unknown>)
-            options.onStateChange?.(updater as never)
+    table.setOptions(
+      (prev) =>
+        mergeObjects(
+          prev as unknown as Record<string, unknown>,
+          options as unknown as Record<string, unknown>,
+          {
+            state: mergeObjects(
+              state as Record<string, unknown>,
+              (options.state ?? {}) as Record<string, unknown>,
+            ),
+            onStateChange: (updater: unknown) => {
+              if (updater instanceof Function) state = updater(state)
+              else
+                state = mergeObjects(
+                  state as Record<string, unknown>,
+                  updater as Record<string, unknown>,
+                )
+              options.onStateChange?.(updater as never)
+            },
           },
-        },
-      ) as never,
+        ) as never,
     )
   }
 

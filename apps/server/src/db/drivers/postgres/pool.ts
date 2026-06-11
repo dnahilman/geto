@@ -1,6 +1,6 @@
 import postgres from 'postgres'
-import type { SslMode } from '../../../store/connections'
-import { pgErrorMessage } from '../../shared/error'
+import type { SslMode } from '$src/store/connections'
+import { pgErrorMessage } from '$src/db/shared/error'
 
 export type Sql = postgres.Sql<{}>
 
