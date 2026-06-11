@@ -43,13 +43,13 @@ jobs:
       - run: bun install --frozen-lockfile
 
       - name: Typecheck server
-        run: bun run --filter server typecheck
+        run: bun run --filter @geto/server typecheck
 
       - name: Typecheck web
-        run: bun run --filter web check
+        run: bun run --filter @geto/web check
 
       - name: Build SPA
-        run: bun run --filter web build
+        run: bun run --filter @geto/web build
 
       - name: Test server
-        run: bun run --filter server test
+        run: bun run --filter @geto/server test

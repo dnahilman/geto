@@ -17,6 +17,7 @@ import {
   isDraftRow,
   type DataGridApi,
   type DataGridContext,
+  type ExpandedRelation,
   type GridColumn,
 } from './data-grid-context'
 
@@ -55,6 +56,8 @@ export function createDataGrid<RowT = unknown[]>(
   let deletes = $state<Record<number, true>>({})
   let selectedRows = $state<Record<number, true>>({})
   let lastSelected = $state<number | null>(null)
+  // Relation panels open beneath rows, keyed by page-local row index.
+  let expanded = $state<Record<number, ExpandedRelation>>({})
 
   const dirty = $derived(
     newRows.length > 0 ||
@@ -68,7 +71,11 @@ export function createDataGrid<RowT = unknown[]>(
         id: colId(i, col.name),
         accessorFn: (row) => (row as unknown[])[i],
         header: ({ column }) =>
-          renderComponent(DataTableColumnHeader, { column, label: col.name, typeName: col.typeName }),
+          renderComponent(DataTableColumnHeader, {
+            column,
+            label: col.name,
+            typeName: col.typeName,
+          }),
         enableSorting: col.sortable,
         meta: { typeName: col.typeName, colIndex: i },
       }),
@@ -205,6 +212,23 @@ export function createDataGrid<RowT = unknown[]>(
     return edits[r]?.[c]
   }
 
+  // ---- relation expansion (accordion panels) ----
+  function expandedFor(r: number): ExpandedRelation | null {
+    return expanded[r] ?? null
+  }
+  function expandRelation(r: number, rel: ExpandedRelation) {
+    expanded = { ...expanded, [r]: rel }
+  }
+  function collapseRelation(r: number) {
+    if (!(r in expanded)) return
+    const { [r]: _omit, ...rest } = expanded
+    void _omit
+    expanded = rest
+  }
+  function clearExpanded() {
+    if (Object.keys(expanded).length) expanded = {}
+  }
+
   // ---- apply / cancel ----
   function namedValues(cells: Record<number, string>): Record<string, string> {
     const cols = opts.getColumns()
@@ -291,6 +315,9 @@ export function createDataGrid<RowT = unknown[]>(
     toggleDelete,
     isDeleted,
     cellPending,
+    expandedFor,
+    expandRelation,
+    collapseRelation,
   }
 
   return {
@@ -302,5 +329,6 @@ export function createDataGrid<RowT = unknown[]>(
     addRow,
     applyChanges,
     cancelChanges,
+    clearExpanded,
   }
 }

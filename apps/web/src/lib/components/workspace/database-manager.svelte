@@ -73,7 +73,9 @@
 <Dialog.Root bind:open>
   <Dialog.Content class="sm:max-w-lg">
     <Dialog.Header>
-      <Dialog.Title class="flex items-center gap-2"><Database class="size-5" /> Databases</Dialog.Title>
+      <Dialog.Title class="flex items-center gap-2"
+        ><Database class="size-5" /> Databases</Dialog.Title
+      >
     </Dialog.Header>
 
     <div class="flex gap-2">
@@ -90,7 +92,9 @@
           <div class="hover:bg-accent/40 flex items-center justify-between px-3 py-2 text-sm">
             <div class="flex items-center gap-2">
               <span class="font-mono">{db.name}</span>
-              {#if isCurrent}<Badge variant="secondary" class="gap-1 text-xs"><Check class="size-3" /> current</Badge>{/if}
+              {#if isCurrent}<Badge variant="secondary" class="gap-1 text-xs"
+                  ><Check class="size-3" /> current</Badge
+                >{/if}
               <span class="text-muted-foreground text-xs">{db.size} · {db.owner}</span>
             </div>
             <div class="flex items-center gap-1">
@@ -110,7 +114,9 @@
                 size="icon"
                 class="text-destructive size-7"
                 disabled={isCurrent}
-                title={isCurrent ? 'Cannot drop the database you are connected to' : 'Drop database'}
+                title={isCurrent
+                  ? 'Cannot drop the database you are connected to'
+                  : 'Drop database'}
                 onclick={() => (confirmDrop = db.name)}
               >
                 <Trash2 class="size-4" />

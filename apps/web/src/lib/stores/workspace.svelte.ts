@@ -1,5 +1,12 @@
+/** A single-column equality filter carried by a table tab (from the relation viewer). */
+export interface TabFilter {
+  column: string
+  value: string
+  label: string
+}
+
 export type Tab =
-  | { kind: 'table'; schema: string; table: string; id: string; title: string }
+  | { kind: 'table'; schema: string; table: string; id: string; title: string; filter?: TabFilter }
   | { kind: 'console'; id: string; title: string; n: number; sql: string }
 
 type PersistedSession = {
@@ -35,7 +42,10 @@ export class Workspace {
   private restore() {
     try {
       const raw = sessionStorage.getItem(this.storageKey)
-      if (!raw) { this.openConsole(); return }
+      if (!raw) {
+        this.openConsole()
+        return
+      }
       const data = JSON.parse(raw) as Partial<PersistedSession>
       if (Array.isArray(data.tabs) && data.tabs.length > 0) {
         this.tabs = data.tabs
@@ -51,10 +61,20 @@ export class Workspace {
     }
   }
 
-  openTable(schema: string, table: string) {
-    const id = `t:${schema}.${table}`
+  openTable(schema: string, table: string, filter?: TabFilter) {
+    // A filtered view is a distinct tab so it can coexist with the full table.
+    const id = filter
+      ? `t:${schema}.${table}|${filter.column}=${filter.value}`
+      : `t:${schema}.${table}`
     if (!this.tabs.some((t) => t.id === id)) {
-      this.tabs.push({ kind: 'table', schema, table, id, title: table })
+      this.tabs.push({
+        kind: 'table',
+        schema,
+        table,
+        id,
+        title: filter ? `${table} · ${filter.label}` : table,
+        filter,
+      })
     }
     this.activeId = id
   }

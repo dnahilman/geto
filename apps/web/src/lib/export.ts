@@ -12,7 +12,10 @@ import type { DataGridApi } from '$lib/components/ui/data-grid/data-grid-context
  * excluded from selection. Rows toggled for deletion are still visible
  * (struck-through) and are intentionally included, matching the grid's TSV copy.
  */
-export function collectRows<RowT>(api: DataGridApi<RowT>): { columns: string[]; rows: unknown[][] } {
+export function collectRows<RowT>(api: DataGridApi<RowT>): {
+  columns: string[]
+  rows: unknown[][]
+} {
   const cols = api.ctx.columns
   const columns = cols.map((c) => c.name)
   const model = api.table.getRowModel().rows

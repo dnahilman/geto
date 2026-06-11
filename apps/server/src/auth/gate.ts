@@ -1,6 +1,6 @@
 import { Elysia, t } from 'elysia'
 import { createHmac, timingSafeEqual } from 'node:crypto'
-import { env } from '../env'
+import { env } from '$src/env'
 
 const COOKIE = 'geto_session'
 const MAX_AGE = 60 * 60 * 24 * 30 // 30 days

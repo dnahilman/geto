@@ -1,8 +1,8 @@
 import { Elysia } from 'elysia'
 import { cors } from '@elysiajs/cors'
-import { env } from './env'
-import { api } from './app'
-import { staticPlugin } from './static'
+import { env } from '$src/env'
+import { api } from '$src/app'
+import { staticPlugin } from '$src/static'
 
 const app = new Elysia()
   // In dev the web UI runs on a separate Vite origin; allow it. In prod the UI
@@ -34,6 +34,6 @@ export type {
   ColumnInfo,
   IndexInfo,
   ConstraintInfo,
-} from './pg/introspect'
-export type { ColumnMeta, QueryResult } from './pg/marshal'
-export type { SafetyReport, StatementRisk } from './pg/safety'
+} from './db/drivers/postgres/introspect'
+export type { ColumnMeta, QueryResult } from './db/shared/marshal'
+export type { SafetyReport, StatementRisk } from './db/shared/safety'

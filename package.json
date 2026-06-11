@@ -1,15 +1,15 @@
 {
   "name": "geto",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "private": true,
   "type": "module",
   "workspaces": ["apps/*"],
   "scripts": {
-    "dev": "bun run --filter '*' dev",
-    "dev:server": "bun run --filter server dev",
-    "dev:web": "bun run --filter web dev",
-    "build": "bun run --filter web build",
-    "start": "bun run --filter server start",
+    "dev": "bun run --filter '*' --parallel dev",
+    "dev:server": "bun run --filter @geto/server dev",
+    "dev:web": "bun run --filter @geto/web dev",
+    "build": "bun run --filter @geto/web build",
+    "start": "bun run --filter @geto/server start",
     "format": "prettier --write \"apps/**/*.{ts,svelte,js,json,css}\""
   },
   "devDependencies": {

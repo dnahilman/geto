@@ -11,6 +11,13 @@ const config = {
       precompress: false,
       strict: false,
     }),
+    // `@geto/server` is consumed as raw TypeScript; its source uses a `$src` alias,
+    // so svelte-check (which follows the package into that source for types) needs to
+    // resolve it too. Declaring it here makes SvelteKit add it to the generated
+    // tsconfig — the idiomatic alternative to hand-editing tsconfig `paths`.
+    alias: {
+      $src: '../server/src',
+    },
   },
 }
 

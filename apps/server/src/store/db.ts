@@ -1,7 +1,7 @@
 import { Database } from 'bun:sqlite'
 import { mkdirSync } from 'node:fs'
 import { join, resolve } from 'node:path'
-import { env } from '../env'
+import { env } from '$src/env'
 
 const dir = resolve(env.GETO_DATA_DIR)
 mkdirSync(dir, { recursive: true })

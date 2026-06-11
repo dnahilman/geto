@@ -1,13 +1,12 @@
 import { Elysia, t } from 'elysia'
-import { requireAuth } from '../auth/gate'
-import { getConnection } from '../store/connections'
-import { getPool } from '../pg/pool'
-import { getTableData, quoteIdent } from '../pg/introspect'
-import { executeSql, type QueryResult } from '../pg/marshal'
-import { buildCreateTable, buildDelete, buildInsert, buildUpdate, inlineParams } from '../pg/dml'
-import { recordHistory } from '../store/history'
-import { pgErrorMessage } from '../pg/error'
-import type { Sql } from '../pg/pool'
+import { requireAuth } from '$src/auth/gate'
+import { getConnection } from '$src/store/connections'
+import { getDriver } from '$src/db/registry'
+import type { DbDriver } from '$src/db/driver'
+import type { QueryResult } from '$src/db/shared/marshal'
+import { buildDelete, buildInsert, buildUpdate, inlineParams } from '$src/db/drivers/postgres/dml'
+import { recordHistory } from '$src/store/history'
+import { pgErrorMessage } from '$src/db/shared/error'
 
 const tableParams = t.Object({ id: t.String(), schema: t.String(), table: t.String() })
 const rowValues = t.Record(t.String(), t.Unknown())
@@ -47,11 +46,11 @@ async function logged(
 }
 
 /** Run a DDL statement (no result rows), logging it to history. */
-async function loggedDdl(connId: string, sql: Sql, ddl: string): Promise<void> {
+async function loggedDdl(connId: string, driver: DbDriver, ddl: string): Promise<void> {
   const startedAt = new Date().toISOString()
   const t0 = performance.now()
   try {
-    await sql.unsafe(ddl)
+    await driver.ddl.exec(ddl)
     recordHistory({
       connectionId: connId,
       sql: ddl,
@@ -80,17 +79,20 @@ export const tablesRoutes = new Elysia({ prefix: '/connections' })
   .resolve(({ params, status }) => {
     const id = (params as { id?: string }).id
     if (!id || !getConnection(id)) return status(404, { error: 'Connection not found' })
-    return { sql: getPool(id), connId: id }
+    return { driver: getDriver(id), connId: id }
   })
   // ---- read a page of rows ----
   .get(
     '/:id/tables/:schema/:table/rows',
-    ({ sql, params, query }) =>
-      getTableData(sql, params.schema, params.table, {
+    ({ driver, params, query }) =>
+      driver.introspect.getTableData(params.schema, params.table, {
         limit: Math.min(query.limit ?? 500, 10000),
         offset: query.offset ?? 0,
         orderBy: query.orderBy,
         orderDir: query.orderDir === 'DESC' ? 'DESC' : 'ASC',
+        // Single-column equality filter (powers the relation viewer + filtered tabs).
+        filterColumn: query.filterColumn,
+        filterValue: query.filterValue,
       }),
     {
       params: tableParams,
@@ -99,40 +101,42 @@ export const tablesRoutes = new Elysia({ prefix: '/connections' })
         offset: t.Optional(t.Integer({ minimum: 0 })),
         orderBy: t.Optional(t.String()),
         orderDir: t.Optional(t.Union([t.Literal('ASC'), t.Literal('DESC')])),
+        filterColumn: t.Optional(t.String()),
+        filterValue: t.Optional(t.String()),
       }),
     },
   )
   // ---- row CRUD (writes blocked by PG on read-only connections) ----
   .post(
     '/:id/tables/:schema/:table/rows',
-    ({ sql, connId, params, body }) => {
+    ({ driver, connId, params, body }) => {
       const { text, params: p } = buildInsert(params.schema, params.table, body.values)
-      return logged(connId, inlineParams(text, p), () => executeSql(sql, text, p))
+      return logged(connId, inlineParams(text, p), () => driver.exec.query(text, p))
     },
     { params: tableParams, body: t.Object({ values: rowValues }) },
   )
   .patch(
     '/:id/tables/:schema/:table/rows',
-    ({ sql, connId, params, body }) => {
+    ({ driver, connId, params, body }) => {
       const { text, params: p } = buildUpdate(params.schema, params.table, body.pk, body.values)
-      return logged(connId, inlineParams(text, p), () => executeSql(sql, text, p))
+      return logged(connId, inlineParams(text, p), () => driver.exec.query(text, p))
     },
     { params: tableParams, body: t.Object({ pk: rowValues, values: rowValues }) },
   )
   .delete(
     '/:id/tables/:schema/:table/rows',
-    ({ sql, connId, params, body }) => {
+    ({ driver, connId, params, body }) => {
       const { text, params: p } = buildDelete(params.schema, params.table, body.pk)
-      return logged(connId, inlineParams(text, p), () => executeSql(sql, text, p))
+      return logged(connId, inlineParams(text, p), () => driver.exec.query(text, p))
     },
     { params: tableParams, body: t.Object({ pk: rowValues }) },
   )
   // ---- table DDL ----
   .post(
     '/:id/tables',
-    async ({ sql, connId, body }) => {
-      const ddl = buildCreateTable(body.schema, body.name, body.columns)
-      await loggedDdl(connId, sql, ddl)
+    async ({ driver, connId, body }) => {
+      const ddl = driver.ddl.buildCreateTable(body.schema, body.name, body.columns)
+      await loggedDdl(connId, driver, ddl)
       return { created: true as const, schema: body.schema, name: body.name }
     },
     {
@@ -155,16 +159,24 @@ export const tablesRoutes = new Elysia({ prefix: '/connections' })
   )
   .delete(
     '/:id/tables/:schema/:table',
-    async ({ sql, connId, params }) => {
-      await loggedDdl(connId, sql, `DROP TABLE ${quoteIdent(params.schema)}.${quoteIdent(params.table)}`)
+    async ({ driver, connId, params }) => {
+      await loggedDdl(
+        connId,
+        driver,
+        `DROP TABLE ${driver.ddl.quoteIdent(params.schema)}.${driver.ddl.quoteIdent(params.table)}`,
+      )
       return { dropped: true as const }
     },
     { params: tableParams },
   )
   .post(
     '/:id/tables/:schema/:table/truncate',
-    async ({ sql, connId, params }) => {
-      await loggedDdl(connId, sql, `TRUNCATE ${quoteIdent(params.schema)}.${quoteIdent(params.table)}`)
+    async ({ driver, connId, params }) => {
+      await loggedDdl(
+        connId,
+        driver,
+        `TRUNCATE ${driver.ddl.quoteIdent(params.schema)}.${driver.ddl.quoteIdent(params.table)}`,
+      )
       return { truncated: true as const }
     },
     { params: tableParams },

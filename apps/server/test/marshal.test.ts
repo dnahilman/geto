@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
-import { marshalValue, typeName } from '$src/pg/marshal'
+import { marshalValue, typeName } from '$src/db/shared/marshal'
 
-describe('pg/marshal marshalValue', () => {
+describe('shared/marshal marshalValue', () => {
   test('bigint -> string (no precision loss)', () => {
     expect(marshalValue(9223372036854775807n)).toBe('9223372036854775807')
   })
@@ -37,7 +37,7 @@ describe('pg/marshal marshalValue', () => {
   })
 })
 
-describe('pg/marshal typeName', () => {
+describe('shared/marshal typeName', () => {
   test('maps common oids', () => {
     expect(typeName(20)).toBe('int8')
     expect(typeName(3802)).toBe('jsonb')

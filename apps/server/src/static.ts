@@ -1,5 +1,5 @@
 import { Elysia } from 'elysia'
-import { env } from './env'
+import { env } from '$src/env'
 import { existsSync } from 'node:fs'
 import { join, normalize, resolve } from 'node:path'
 

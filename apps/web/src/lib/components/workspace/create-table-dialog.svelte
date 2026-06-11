@@ -17,10 +17,25 @@
   }: { open?: boolean; connId: string; schema: string } = $props()
 
   const qc = useQueryClient()
-  const COMMON_TYPES = ['serial', 'bigserial', 'int', 'bigint', 'text', 'varchar(255)', 'boolean', 'numeric', 'jsonb', 'uuid', 'timestamptz', 'date']
+  const COMMON_TYPES = [
+    'serial',
+    'bigserial',
+    'int',
+    'bigint',
+    'text',
+    'varchar(255)',
+    'boolean',
+    'numeric',
+    'jsonb',
+    'uuid',
+    'timestamptz',
+    'date',
+  ]
 
   let name = $state('')
-  let columns = $state<ColumnSpec[]>([{ name: 'id', type: 'serial', primaryKey: true, notNull: false }])
+  let columns = $state<ColumnSpec[]>([
+    { name: 'id', type: 'serial', primaryKey: true, notNull: false },
+  ])
 
   $effect(() => {
     if (open) {
@@ -38,7 +53,12 @@
 
   const create = createMutation(() => ({
     mutationFn: () =>
-      createTable(connId, schema, name, columns.filter((c) => c.name.trim() && c.type.trim())),
+      createTable(
+        connId,
+        schema,
+        name,
+        columns.filter((c) => c.name.trim() && c.type.trim()),
+      ),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: treeKey(connId) })
       qc.invalidateQueries({ queryKey: ['completion', connId] })
@@ -63,7 +83,9 @@
     </datalist>
 
     <div class="mt-2 space-y-2">
-      <div class="text-muted-foreground grid grid-cols-[1fr_1fr_auto_auto_auto] items-center gap-2 text-xs font-medium">
+      <div
+        class="text-muted-foreground grid grid-cols-[1fr_1fr_auto_auto_auto] items-center gap-2 text-xs font-medium"
+      >
         <span>Name</span><span>Type</span><span>NN</span><span>PK</span><span></span>
       </div>
       {#each columns as col, i (i)}
@@ -77,7 +99,9 @@
           </Button>
         </div>
       {/each}
-      <Button variant="outline" size="sm" onclick={addCol}><Plus class="size-4" /> Add column</Button>
+      <Button variant="outline" size="sm" onclick={addCol}
+        ><Plus class="size-4" /> Add column</Button
+      >
     </div>
 
     <Dialog.Footer class="mt-2">

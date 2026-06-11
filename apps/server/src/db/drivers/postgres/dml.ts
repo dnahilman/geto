@@ -1,4 +1,4 @@
-import { quoteIdent } from './introspect'
+import { quoteIdent } from '$src/db/shared/ident'
 
 export interface Built {
   text: string
@@ -20,11 +20,7 @@ export function inlineParams(text: string, params: unknown[]): string {
   return text.replace(/\$(\d+)/g, (_, n) => formatLiteral(params[Number(n) - 1]))
 }
 
-export function buildInsert(
-  schema: string,
-  table: string,
-  values: Record<string, unknown>,
-): Built {
+export function buildInsert(schema: string, table: string, values: Record<string, unknown>): Built {
   const cols = Object.keys(values)
   if (cols.length === 0) {
     return { text: `INSERT INTO ${rel(schema, table)} DEFAULT VALUES RETURNING *`, params: [] }
@@ -65,11 +61,7 @@ export function buildUpdate(
   }
 }
 
-export function buildDelete(
-  schema: string,
-  table: string,
-  pk: Record<string, unknown>,
-): Built {
+export function buildDelete(schema: string, table: string, pk: Record<string, unknown>): Built {
   const whereCols = Object.keys(pk)
   if (whereCols.length === 0) throw new Error('Refusing to delete without a primary key')
   const params: unknown[] = []

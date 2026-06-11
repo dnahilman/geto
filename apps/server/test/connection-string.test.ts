@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { buildConnectionString } from '$src/pg/connection-string'
+import { buildConnectionString } from '$src/db/drivers/postgres/connection-string'
 
 const base = {
   host: 'localhost',
@@ -9,7 +9,7 @@ const base = {
   sslMode: 'disable' as const,
 }
 
-describe('pg/connection-string', () => {
+describe('postgres/connection-string', () => {
   test('includes the password when given', () => {
     expect(buildConnectionString(base, 'secret')).toBe(
       'postgresql://postgres:secret@localhost:5432/app?sslmode=disable',

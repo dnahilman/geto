@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
-import { analyzeSql } from '$src/pg/safety'
+import { analyzeSql } from '$src/db/shared/safety'
 
-describe('pg/safety analyzeSql', () => {
+describe('shared/safety analyzeSql', () => {
   test('flags DELETE without WHERE', async () => {
     const r = await analyzeSql('DELETE FROM users')
     expect(r.dangerous).toBe(true)
@@ -14,12 +14,12 @@ describe('pg/safety analyzeSql', () => {
   })
 
   test('flags UPDATE without WHERE', async () => {
-    const r = await analyzeSql("UPDATE users SET active = false")
+    const r = await analyzeSql('UPDATE users SET active = false')
     expect(r.dangerous).toBe(true)
   })
 
   test('allows UPDATE with WHERE', async () => {
-    const r = await analyzeSql("UPDATE users SET active = false WHERE id = 1")
+    const r = await analyzeSql('UPDATE users SET active = false WHERE id = 1')
     expect(r.dangerous).toBe(false)
   })
 

@@ -18,11 +18,7 @@ import {
   type SQLDialect,
   type SQLNamespace,
 } from '@codemirror/lang-sql'
-import {
-  getCompletionIndex,
-  type CompletionFunction,
-  type CompletionIndex,
-} from './entities'
+import { getCompletionIndex, type CompletionFunction, type CompletionIndex } from './entities'
 
 // ---------------------------------------------------------------------------
 // Shared text helpers (ported from the old monaco.ts — Monaco-free already).

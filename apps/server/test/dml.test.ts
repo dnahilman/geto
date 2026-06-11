@@ -1,7 +1,12 @@
 import { describe, expect, test } from 'bun:test'
-import { buildInsert, buildUpdate, buildDelete, buildCreateTable } from '$src/pg/dml'
+import {
+  buildInsert,
+  buildUpdate,
+  buildDelete,
+  buildCreateTable,
+} from '$src/db/drivers/postgres/dml'
 
-describe('pg/dml', () => {
+describe('postgres/dml', () => {
   test('buildInsert with values', () => {
     const { text, params } = buildInsert('s', 't', { a: 1, b: 'x' })
     expect(text).toContain('INSERT INTO "s"."t" ("a", "b")')
@@ -51,6 +56,8 @@ describe('pg/dml', () => {
   })
 
   test('buildCreateTable rejects an invalid type', () => {
-    expect(() => buildCreateTable('s', 't', [{ name: 'x', type: 'text); DROP TABLE u; --' }])).toThrow()
+    expect(() =>
+      buildCreateTable('s', 't', [{ name: 'x', type: 'text); DROP TABLE u; --' }]),
+    ).toThrow()
   })
 })

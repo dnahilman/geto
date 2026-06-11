@@ -37,6 +37,12 @@ export const tableDetailKey = (id: string, schema: string, table: string) =>
 export const getTableDetail = (id: string, schema: string, table: string): Promise<TableDetail> =>
   unwrap(conn(id).tables({ schema })({ table }).get()) as Promise<TableDetail>
 
+/** Optional single-column equality filter applied server-side. */
+export interface RowFilter {
+  column: string
+  value: string
+}
+
 export const tableRowsKey = (
   id: string,
   schema: string,
@@ -44,13 +50,20 @@ export const tableRowsKey = (
   page: number,
   orderBy: string | undefined,
   orderDir: 'ASC' | 'DESC',
-) => ['table-rows', id, schema, table, page, orderBy, orderDir] as const
+  filter?: RowFilter,
+) => ['table-rows', id, schema, table, page, orderBy, orderDir, filter ?? null] as const
 
 export const getTableRows = (
   id: string,
   schema: string,
   table: string,
-  opts: { limit: number; offset: number; orderBy?: string; orderDir?: 'ASC' | 'DESC' },
+  opts: {
+    limit: number
+    offset: number
+    orderBy?: string
+    orderDir?: 'ASC' | 'DESC'
+    filter?: RowFilter
+  },
 ): Promise<TableData> =>
   unwrap(
     conn(id)
@@ -60,6 +73,21 @@ export const getTableRows = (
           limit: opts.limit,
           offset: opts.offset,
           ...(opts.orderBy ? { orderBy: opts.orderBy, orderDir: opts.orderDir ?? 'ASC' } : {}),
+          ...(opts.filter
+            ? { filterColumn: opts.filter.column, filterValue: opts.filter.value }
+            : {}),
         },
       }),
   ) as Promise<TableData>
+
+/** Fetch rows of `schema.table` where `column = value` — the relation viewer's data source. */
+export const getRelatedRows = (
+  id: string,
+  schema: string,
+  table: string,
+  column: string,
+  value: string,
+  limit = 50,
+  offset = 0,
+): Promise<TableData> =>
+  getTableRows(id, schema, table, { limit, offset, filter: { column, value } })

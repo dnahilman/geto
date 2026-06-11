@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { createMutation } from '@tanstack/svelte-query'
+  import { createMutation, createQuery } from '@tanstack/svelte-query'
   import { toast } from 'svelte-sonner'
   import type { ColumnMeta } from '@geto/server'
-  import type { ResultSource } from '$lib/api/query'
+  import { getCompletion, completionKey, type ResultSource } from '$lib/api/query'
   import {
     DataGrid,
     DataGridToolbar,
@@ -10,8 +10,11 @@
     createDataGrid,
     variantFor,
     type GridColumn,
+    type RelationsConfig,
   } from '$lib/components/ui/data-grid'
+  import { buildRelationMap, type RelationTarget } from '$lib/relations'
   import { insertRow, updateRow, deleteRow, type Row } from '$lib/api/mutations'
+  import type { TabFilter } from '$lib/stores/workspace.svelte'
 
   let {
     connId,
@@ -20,6 +23,7 @@
     startIndex = 0,
     source = null,
     onApplied,
+    onOpenTable,
   }: {
     connId: string
     columns: ColumnMeta[]
@@ -27,7 +31,42 @@
     startIndex?: number
     source?: ResultSource | null
     onApplied?: () => void
+    onOpenTable?: (schema: string, table: string, filter?: TabFilter) => void
   } = $props()
+
+  // FK/relation metadata (cached per connection); only used when the result maps
+  // to a known base table (source != null).
+  const completion = createQuery(() => ({
+    queryKey: completionKey(connId),
+    queryFn: () => getCompletion(connId),
+    enabled: !!source,
+  }))
+
+  const relationMap = $derived(
+    source && completion.data
+      ? buildRelationMap(
+          completion.data,
+          source.schema,
+          source.table,
+          source.columnNames.map((n) => ({ name: n ?? '' })),
+          source.primaryKey,
+        )
+      : null,
+  )
+
+  const relations = $derived<RelationsConfig | undefined>(
+    source && onOpenTable
+      ? {
+          connId,
+          openInTab: (t: RelationTarget, v: unknown) =>
+            onOpenTable(t.schema, t.table, {
+              column: t.column,
+              value: String(v),
+              label: `${t.column} = ${v}`,
+            }),
+        }
+      : undefined,
+  )
 
   const gridColumns = $derived<GridColumn[]>(
     columns.map((c, i) => {
@@ -39,6 +78,7 @@
         options: [],
         sortable: false,
         editable: !!source && real !== null && !source.primaryKey.includes(real),
+        relation: relationMap?.[i] ?? null,
       }
     }),
   )
@@ -74,7 +114,12 @@
     editable: () => !!source,
     onUpdateRow: async (r, values) => {
       if (!source) return
-      await update.mutateAsync({ schema: source.schema, table: source.table, pk: buildPk(rows[r], source), values })
+      await update.mutateAsync({
+        schema: source.schema,
+        table: source.table,
+        pk: buildPk(rows[r], source),
+        values,
+      })
     },
     onInsertRow: async (values) => {
       if (!source) return
@@ -82,7 +127,11 @@
     },
     onDeleteRow: async (r) => {
       if (!source) return
-      await remove.mutateAsync({ schema: source.schema, table: source.table, pk: buildPk(rows[r], source) })
+      await remove.mutateAsync({
+        schema: source.schema,
+        table: source.table,
+        pk: buildPk(rows[r], source),
+      })
     },
     onApplied: (ok) => {
       if (ok) toast.success('Changes applied')
@@ -96,6 +145,7 @@
     void rows
     void startIndex
     grid.ctx.clearSelection()
+    grid.clearExpanded()
   })
 </script>
 
@@ -117,6 +167,6 @@
     </div>
   {/if}
   <div class="min-h-0 flex-1 overflow-auto">
-    <DataGrid api={grid} offset={startIndex} emptyText="No rows returned" />
+    <DataGrid api={grid} offset={startIndex} emptyText="No rows returned" {relations} />
   </div>
 </div>

@@ -65,7 +65,8 @@
             class="max-w-md truncate px-2 py-1 font-mono"
             title={formatCell(value).text}
             ondblclick={onCellActivate
-              ? () => onCellActivate({ value, rowIndex: row.index, colIndex, columnId: c.column.id })
+              ? () =>
+                  onCellActivate({ value, rowIndex: row.index, colIndex, columnId: c.column.id })
               : undefined}
           >
             {#if cell}

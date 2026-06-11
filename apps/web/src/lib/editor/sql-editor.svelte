@@ -11,7 +11,12 @@
   } from '@codemirror/view'
   import { EditorState, Compartment } from '@codemirror/state'
   import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands'
-  import { indentOnInput, indentUnit, bracketMatching, syntaxHighlighting } from '@codemirror/language'
+  import {
+    indentOnInput,
+    indentUnit,
+    bracketMatching,
+    syntaxHighlighting,
+  } from '@codemirror/language'
   import { closeBrackets, closeBracketsKeymap, completionKeymap } from '@codemirror/autocomplete'
   import { sqlExtensions, uppercaseKeywords, PostgreSQL, type SQLDialect } from './completion'
   import { setCompletionEntities, type CompletionEntities } from './entities'

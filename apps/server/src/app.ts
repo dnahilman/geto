@@ -1,12 +1,12 @@
 import { Elysia, t } from 'elysia'
-import { authController } from './auth/gate'
-import { pgErrorMessage } from './pg/error'
-import { connectionsRoutes } from './routes/connections'
-import { providersRoutes } from './routes/providers'
-import { metaRoutes } from './routes/meta'
-import { tablesRoutes } from './routes/tables'
-import { queryRoutes } from './routes/query'
-import { databasesRoutes } from './routes/databases'
+import { authController } from '$src/auth/gate'
+import { pgErrorMessage } from '$src/db/shared/error'
+import { connectionsRoutes } from '$src/routes/connections'
+import { providersRoutes } from '$src/routes/providers'
+import { metaRoutes } from '$src/routes/meta'
+import { tablesRoutes } from '$src/routes/tables'
+import { queryRoutes } from '$src/routes/query'
+import { databasesRoutes } from '$src/routes/databases'
 
 /**
  * The API surface. Grouped under `/api`. Each feature area is added as its own

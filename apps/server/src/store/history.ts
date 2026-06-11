@@ -1,4 +1,4 @@
-import { db } from './db'
+import { db } from '$src/store/db'
 
 export interface HistoryEntry {
   id: string
