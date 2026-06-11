@@ -5,7 +5,9 @@
 #   stage 1 (build)       compile the SvelteKit SPA with the full toolchain
 #   stage 2 (server-deps) install ONLY the server's production deps (no dev deps)
 #   stage 3 (runtime)     copy just the SPA build + server prod deps + server src
-#                         — no test files, no dev sqlite, no tsconfig: minimal surface
+#                         + tsconfig files (so bun resolves the server's `$src/*`
+#                         path aliases at runtime) — no test files, no dev
+#                         sqlite: minimal surface
 #
 #   docker build -t geto .
 #   docker compose up --build
@@ -40,6 +42,9 @@ ENV NODE_ENV=production \
 COPY --from=server-deps /app/node_modules ./apps/server/node_modules
 COPY apps/server/package.json ./apps/server/package.json
 COPY apps/server/src ./apps/server/src
+# tsconfigs carry the `$src/*` -> ./src/* path map bun needs to resolve imports.
+COPY tsconfig.base.json ./tsconfig.base.json
+COPY apps/server/tsconfig.json ./apps/server/tsconfig.json
 COPY --from=build /app/apps/web/build ./apps/web/build
 
 VOLUME ["/data"]
