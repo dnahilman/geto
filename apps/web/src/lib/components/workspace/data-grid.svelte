@@ -6,10 +6,11 @@
     useQueryClient,
   } from '@tanstack/svelte-query'
   import type { OnChangeFn, PaginationState, SortingState } from '@tanstack/table-core'
-  import { RefreshCw } from 'lucide-svelte'
+  import { RefreshCw, ChevronLeft, ChevronRight, X } from 'lucide-svelte'
+  import { ScrollArea } from '$lib/components/ui/scroll-area'
   import { toast } from 'svelte-sonner'
   import { Button } from '$lib/components/ui/button'
-  import { DataTablePagination, colId, parseColId } from '$lib/components/ui/data-table'
+  import { colId, parseColId } from '$lib/components/ui/data-table'
   import {
     DataGrid,
     JsonView,
@@ -21,7 +22,6 @@
     type GridColumn,
     type RelationsConfig,
   } from '$lib/components/ui/data-grid'
-  import { X } from 'lucide-svelte'
   import { getTableRows } from '$lib/api/introspect'
   import { getTableDetail, tableDetailKey } from '$lib/api/introspect'
   import { insertRow, updateRow, deleteRow, type Row } from '$lib/api/mutations'
@@ -36,13 +36,15 @@
     filter = undefined,
     onOpenTable,
     view = 'table',
+    onViewChange,
   }: {
     connId: string
     schema: string
     table: string
     filter?: TabFilter
     onOpenTable?: (schema: string, table: string, filter?: TabFilter) => void
-    view?: 'table' | 'json'
+    view?: 'table' | 'json' | 'structure'
+    onViewChange?: (v: 'table' | 'json' | 'structure') => void
   } = $props()
 
   let pageSize = $state(500)
@@ -91,7 +93,6 @@
     qc.invalidateQueries({ queryKey: rowsKey })
   }
 
-  // ---- relation viewer wiring ----
   const relationMap = $derived(
     completion.data
       ? buildRelationMap(
@@ -117,7 +118,6 @@
       : undefined,
   )
 
-  // ---- normalized columns (variant + options + editability per column) ----
   const gridColumns = $derived<GridColumn[]>(
     cols.map((c, i) => {
       const info = colInfo.get(c.name)
@@ -134,7 +134,6 @@
     }),
   )
 
-  // ---- server-side sorting + pagination adapters (locked while dirty) ----
   const sorting = $derived.by<SortingState>(() => {
     if (!orderBy) return []
     const i = colIndex(orderBy)
@@ -144,7 +143,7 @@
   const pagination = $derived<PaginationState>({ pageIndex: page, pageSize })
   const onSortingChange: OnChangeFn<SortingState> = (updater) => {
     if (grid.dirty) return
-    grid.ctx.clearSelection() // row selection is page/order-local — drop it on re-sort
+    grid.ctx.clearSelection()
     grid.clearExpanded()
     const next = typeof updater === 'function' ? updater(sorting) : updater
     if (next.length) {
@@ -157,13 +156,12 @@
   }
   const onPaginationChange: OnChangeFn<PaginationState> = (updater) => {
     if (grid.dirty) return
-    grid.ctx.clearSelection() // selection is page-local — drop it on page change
+    grid.ctx.clearSelection()
     grid.clearExpanded()
     const next = typeof updater === 'function' ? updater(pagination) : updater
     page = next.pageIndex
   }
 
-  // ---- mutations ----
   const update = createMutation(() => ({
     mutationFn: ({ row, values }: { row: RowT; values: Record<string, string> }) =>
       updateRow(connId, schema, table, buildPk(row), values),
@@ -210,20 +208,86 @@
     >
       <RefreshCw class="size-4" />
     </Button>
-    {#if pk.length === 0}
-      <span class="text-muted-foreground text-xs">no primary key — read-only grid</span>
-    {/if}
+    <span class="text-muted-foreground text-xs"
+      >{pk.length > 0 ? 'editable' : 'read-only'} · {schema}.{table}</span
+    >
     <div class="ml-auto flex items-center gap-2">
       {#if grid.dirty}
         <span class="text-muted-foreground text-xs">unsaved changes — Apply or Cancel</span>
       {/if}
-      <ExportMenu api={grid} baseName={`${schema}.${table}`} />
+      <ExportMenu api={grid} baseName={`${schema}.${table}`} {view} {onViewChange} />
     </div>
   </DataGridToolbar>
 
   <div class="min-h-0 flex-1 overflow-auto">
     {#if rows.isError}
       <p class="text-destructive p-4 text-sm">{rows.error.message}</p>
+    {:else if view === 'structure'}
+      <ScrollArea class="h-full">
+        <div class="space-y-6 p-4 text-sm">
+          {#if detail.data}
+            <section>
+              <h3 class="text-muted-foreground mb-2 text-xs font-semibold uppercase">Columns</h3>
+              <table class="w-full text-left text-xs">
+                <thead class="text-muted-foreground">
+                  <tr>
+                    <th class="py-1 pr-4">Name</th>
+                    <th class="py-1 pr-4">Type</th>
+                    <th class="py-1 pr-4">Nullable</th>
+                    <th class="py-1 pr-4">Default</th>
+                    <th class="py-1">Key</th>
+                  </tr>
+                </thead>
+                <tbody class="font-mono">
+                  {#each detail.data.columns as c (c.name)}
+                    <tr class="border-t">
+                      <td class="py-1 pr-4">{c.name}</td>
+                      <td class="py-1 pr-4">{c.type}</td>
+                      <td class="py-1 pr-4">{c.notNull ? 'NOT NULL' : 'null'}</td>
+                      <td class="text-muted-foreground py-1 pr-4">{c.default ?? ''}</td>
+                      <td class="py-1">{c.isPrimaryKey ? 'PK' : ''}</td>
+                    </tr>
+                  {/each}
+                </tbody>
+              </table>
+            </section>
+
+            <section>
+              <h3 class="text-muted-foreground mb-2 text-xs font-semibold uppercase">Indexes</h3>
+              {#if detail.data.indexes.length}
+                <ul class="space-y-1 font-mono text-xs">
+                  {#each detail.data.indexes as idx (idx.name)}
+                    <li>
+                      <span class="font-medium">{idx.name}</span>
+                      <span class="text-muted-foreground"> — {idx.definition}</span>
+                    </li>
+                  {/each}
+                </ul>
+              {:else}
+                <p class="text-muted-foreground text-xs">none</p>
+              {/if}
+            </section>
+
+            <section>
+              <h3 class="text-muted-foreground mb-2 text-xs font-semibold uppercase">Constraints</h3>
+              {#if detail.data.constraints.length}
+                <ul class="space-y-1 font-mono text-xs">
+                  {#each detail.data.constraints as c (c.name)}
+                    <li>
+                      <span class="font-medium">{c.name}</span>
+                      <span class="text-muted-foreground"> ({c.type}) — {c.definition}</span>
+                    </li>
+                  {/each}
+                </ul>
+              {:else}
+                <p class="text-muted-foreground text-xs">none</p>
+              {/if}
+            </section>
+          {:else}
+            <p class="text-muted-foreground text-xs">Loading…</p>
+          {/if}
+        </div>
+      </ScrollArea>
     {:else if view === 'json'}
       <JsonView
         columns={cols}
@@ -237,42 +301,66 @@
     {/if}
   </div>
 
-  <div class="text-muted-foreground flex items-center gap-3 border-t px-3 py-1.5 text-xs">
-    {#if filter}
-      <span
-        class="bg-accent text-foreground flex items-center gap-1 rounded px-1.5 py-0.5 font-mono"
-        title="Filtered view"
+  <!-- Bottom bar: info (left) · [←] pagesize [→] (right) -->
+  <div class="flex shrink-0 items-center justify-between border-t px-3 py-1.5 text-xs">
+    <!-- Left: filter chip + row count + duration -->
+    <div class="flex items-center gap-2">
+      {#if view !== 'structure'}
+        {#if filter}
+          <span
+            class="bg-accent text-foreground flex items-center gap-1 rounded px-1.5 py-0.5 font-mono"
+            title="Filtered view"
+          >
+            {filter.label}
+            <button
+              type="button"
+              class="hover:text-destructive"
+              title="Remove filter"
+              aria-label="Remove filter"
+              onclick={() => onOpenTable?.(schema, table)}
+            >
+              <X class="size-3" />
+            </button>
+          </span>
+        {/if}
+        <span class={rows.isSuccess ? 'text-emerald-500' : 'text-muted-foreground'}>
+          {#if rows.isLoading}
+            Loading…
+          {:else}
+            {filter ? '' : '~'}{est.toLocaleString()} rows · {rows.data?.durationMs ?? 0}ms
+          {/if}
+        </span>
+      {/if}
+    </div>
+    <!-- Right: [←] page-size [→] -->
+    <div class="flex items-center gap-1">
+      <Button
+        variant="ghost"
+        size="icon"
+        class="size-7"
+        disabled={page === 0 || grid.dirty || view === 'structure'}
+        onclick={() => grid.table.previousPage()}
       >
-        {filter.label}
-        <button
-          type="button"
-          class="hover:text-destructive"
-          title="Remove filter (open the full table)"
-          aria-label="Remove filter"
-          onclick={() => onOpenTable?.(schema, table)}
-        >
-          <X class="size-3" />
-        </button>
-      </span>
-    {/if}
-    <span class="mr-auto">
-      {filter ? '' : '~'}{est.toLocaleString()} rows{pk.length
-        ? ' · double-click a cell to edit'
-        : ''}
-    </span>
-    <PageSizeSelect
-      value={pageSize}
-      onChange={(v) => {
-        grid.ctx.clearSelection()
-        grid.clearExpanded()
-        pageSize = v
-        page = 0
-      }}
-    />
-    <DataTablePagination
-      table={grid.table}
-      canPrevious={page > 0 && !grid.dirty}
-      canNext={!atEnd && !grid.dirty}
-    />
+        <ChevronLeft class="size-4" />
+      </Button>
+      <PageSizeSelect
+        value={pageSize}
+        onChange={(v) => {
+          grid.ctx.clearSelection()
+          grid.clearExpanded()
+          pageSize = v
+          page = 0
+        }}
+      />
+      <Button
+        variant="ghost"
+        size="icon"
+        class="size-7"
+        disabled={atEnd || grid.dirty || view === 'structure'}
+        onclick={() => grid.table.nextPage()}
+      >
+        <ChevronRight class="size-4" />
+      </Button>
+    </div>
   </div>
 </div>

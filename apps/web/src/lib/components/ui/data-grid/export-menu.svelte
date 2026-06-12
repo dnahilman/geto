@@ -1,6 +1,6 @@
 <script lang="ts">
   import { toast } from 'svelte-sonner'
-  import { Download } from 'lucide-svelte'
+  import { Download, Table2, Braces, List } from 'lucide-svelte'
   import * as DropdownMenu from '$lib/components/ui/dropdown-menu'
   import { Button } from '$lib/components/ui/button'
   import { cn } from '$lib/utils'
@@ -11,7 +11,15 @@
     api,
     baseName,
     class: className = '',
-  }: { api: DataGridApi; baseName: string; class?: string } = $props()
+    view,
+    onViewChange,
+  }: {
+    api: DataGridApi
+    baseName: string
+    class?: string
+    view?: 'table' | 'json' | 'structure'
+    onViewChange?: (v: 'table' | 'json' | 'structure') => void
+  } = $props()
 
   // Scope hint shown on each menu item so users know it's page-local, not the whole result set.
   const selectedCount = $derived(Object.keys(api.ctx.selectedRows).length)
@@ -38,6 +46,44 @@
     toast.success(`Exported ${rows.length} row${rows.length === 1 ? '' : 's'}`)
   }
 </script>
+
+{#if onViewChange}
+  <div class="flex rounded border">
+    <button
+      type="button"
+      class="flex items-center gap-1 rounded-l px-2 py-0.5 text-xs transition-colors {(view ??
+        'table') === 'table'
+        ? 'bg-background text-foreground shadow-sm'
+        : 'text-muted-foreground hover:text-foreground'}"
+      onclick={() => onViewChange('table')}
+      aria-pressed={(view ?? 'table') === 'table'}
+    >
+      <Table2 class="size-3.5" /> Table
+    </button>
+    <button
+      type="button"
+      class="flex items-center gap-1 border-l px-2 py-0.5 text-xs transition-colors {(view ??
+        'table') === 'json'
+        ? 'bg-background text-foreground shadow-sm'
+        : 'text-muted-foreground hover:text-foreground'}"
+      onclick={() => onViewChange('json')}
+      aria-pressed={(view ?? 'table') === 'json'}
+    >
+      <Braces class="size-3.5" /> JSON
+    </button>
+    <button
+      type="button"
+      class="flex items-center gap-1 rounded-r border-l px-2 py-0.5 text-xs transition-colors {(view ??
+        'table') === 'structure'
+        ? 'bg-background text-foreground shadow-sm'
+        : 'text-muted-foreground hover:text-foreground'}"
+      onclick={() => onViewChange('structure')}
+      aria-pressed={(view ?? 'table') === 'structure'}
+    >
+      <List class="size-3.5" /> Structure
+    </button>
+  </div>
+{/if}
 
 <DropdownMenu.Root>
   <DropdownMenu.Trigger>

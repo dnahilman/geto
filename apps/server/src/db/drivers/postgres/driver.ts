@@ -1,4 +1,4 @@
-import type { DbDriver, Capabilities, EditableSource } from '$src/db/driver'
+import type { DbDriver, Capabilities, EditableSource, ScriptRunner } from '$src/db/driver'
 import type { ProviderId } from '$src/providers'
 import { makeSql, type PgOptions } from '$src/db/drivers/postgres/pool'
 import { executeSql } from '$src/db/drivers/postgres/exec'
@@ -49,6 +49,13 @@ export class PostgresDriver implements DbDriver {
 
     this.exec = {
       query: (text, params = []) => executeSql(sql, text, params),
+      reserve: async (): Promise<ScriptRunner> => {
+        const reserved = await sql.reserve()
+        return {
+          query: (text, params = []) => executeSql(reserved, text, params),
+          release: () => reserved.release(),
+        }
+      },
     }
 
     this.introspect = {

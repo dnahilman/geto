@@ -7,6 +7,7 @@
     DataGrid,
     DataGridToolbar,
     ExportMenu,
+    JsonView,
     createDataGrid,
     variantFor,
     type GridColumn,
@@ -22,6 +23,8 @@
     rows,
     startIndex = 0,
     source = null,
+    view = 'table',
+    onViewChange,
     onApplied,
     onOpenTable,
   }: {
@@ -30,6 +33,8 @@
     rows: unknown[][]
     startIndex?: number
     source?: ResultSource | null
+    view?: 'table' | 'json' | 'structure'
+    onViewChange?: (v: 'table' | 'json' | 'structure') => void
     onApplied?: () => void
     onOpenTable?: (schema: string, table: string, filter?: TabFilter) => void
   } = $props()
@@ -152,21 +157,45 @@
 <div class="flex h-full flex-col">
   {#if source}
     <DataGridToolbar api={grid} editable>
-      {#if grid.dirty}
-        <span class="text-muted-foreground ml-auto text-xs">unsaved changes — Apply or Cancel</span>
-      {:else}
-        <span class="text-muted-foreground ml-auto text-xs"
-          >editable · {source.schema}.{source.table}</span
-        >
-      {/if}
-      <ExportMenu api={grid} baseName={`${source.schema}.${source.table}`} />
+      <span class="text-muted-foreground text-xs">editable · {source.schema}.{source.table}</span>
+      <div class="ml-auto flex items-center gap-2">
+        {#if grid.dirty}
+          <span class="text-muted-foreground text-xs">unsaved changes — Apply or Cancel</span>
+        {/if}
+        <ExportMenu api={grid} baseName={`${source.schema}.${source.table}`} {view} {onViewChange} />
+      </div>
     </DataGridToolbar>
   {:else}
     <div class="flex items-center justify-end gap-2 border-b px-2 py-1" data-datagrid-toolbar>
-      <ExportMenu api={grid} baseName="query-result" />
+      <ExportMenu api={grid} baseName="query-result" {view} {onViewChange} />
     </div>
   {/if}
   <div class="min-h-0 flex-1 overflow-auto">
-    <DataGrid api={grid} offset={startIndex} emptyText="No rows returned" {relations} />
+    {#if view === 'structure'}
+      <div class="p-4 text-xs">
+        <table class="w-full text-left">
+          <thead class="text-muted-foreground">
+            <tr>
+              <th class="py-1 pr-4">#</th>
+              <th class="py-1 pr-4">Name</th>
+              <th class="py-1">Type</th>
+            </tr>
+          </thead>
+          <tbody class="font-mono">
+            {#each columns as c, i (c.name)}
+              <tr class="border-t">
+                <td class="text-muted-foreground py-1 pr-4">{i + 1}</td>
+                <td class="py-1 pr-4">{c.name}</td>
+                <td class="text-muted-foreground py-1">{c.typeName}</td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      </div>
+    {:else if view === 'json'}
+      <JsonView {columns} {rows} offset={startIndex} {relations} relationMap={relationMap ?? undefined} />
+    {:else}
+      <DataGrid api={grid} offset={startIndex} emptyText="No rows returned" {relations} />
+    {/if}
   </div>
 </div>

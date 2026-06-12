@@ -11,6 +11,29 @@ export interface ResultSource {
   /** Per result-column real base-column name (null for computed/aliased columns). */
   columnNames: (string | null)[]
 }
+
+/** One statement's execution result within a multi-statement run response. */
+export interface StatementResult {
+  index: number
+  sql: string
+  command: string | null
+  columns: NonNullable<QueryResult['columns']>
+  rows: unknown[][]
+  rowCount: number
+  durationMs: number
+  /** True only in the single-statement path when a LIMIT/OFFSET was appended. */
+  paginated: boolean
+  limit: number
+  offset: number
+  /** Set when the statement is a single-table SELECT that maps to an editable source. */
+  source: ResultSource | null
+  /** Set on the statement that failed; rows/columns will be empty. */
+  error: string | null
+}
+
+/** Legacy flat shape kept for backward compatibility with existing consumers
+ *  (result-table, pagination footer, editable grid).  Mirrors `StatementResult`
+ *  for single-statement runs where the server produces exactly one result. */
 export interface RunResult extends QueryResult {
   requiresConfirmation: false
   durationMs: number
@@ -19,7 +42,10 @@ export interface RunResult extends QueryResult {
   offset: number
   source: ResultSource | null
 }
-export type RunResponse = RunResult | { requiresConfirmation: true; report: SafetyReport }
+
+export type RunResponse =
+  | { requiresConfirmation: false; results: StatementResult[] }
+  | { requiresConfirmation: true; report: SafetyReport }
 
 export interface CompletionData {
   tables: { schema: string; name: string; type: 'table' | 'view' | 'matview' }[]

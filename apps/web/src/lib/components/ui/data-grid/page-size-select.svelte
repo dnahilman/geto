@@ -20,10 +20,9 @@
 </script>
 
 <div class="flex items-center gap-1">
-  <span class="text-muted-foreground">rows</span>
   <Popover.Root bind:open>
     <Popover.Trigger
-      class="bg-background hover:bg-muted flex h-7 w-20 items-center justify-between rounded-md border px-2 font-mono"
+      class="bg-background hover:bg-muted flex h-7 w-auto items-center justify-between gap-1.5 rounded-md border px-2 font-mono"
     >
       {value}
       <ChevronDown class="size-3 opacity-50" />

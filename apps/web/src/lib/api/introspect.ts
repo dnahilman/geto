@@ -20,6 +20,7 @@ export interface TableDetail {
 export interface TableData {
   result: QueryResult
   estimatedRows: number
+  durationMs: number
 }
 
 const conn = (id: string) => client.api.connections({ id })

@@ -21,17 +21,25 @@
   import { sqlExtensions, uppercaseKeywords, PostgreSQL, type SQLDialect } from './completion'
   import { setCompletionEntities, type CompletionEntities } from './entities'
   import { vscodeDark, vscodeHighlight } from './theme'
+  import { runGutter, setRunStatementHandler, runGutterState } from './run-gutter'
+  import { statementRanges } from './statements'
 
   let {
     value = $bindable(''),
     uppercase = true,
     onrun,
+    onrunstatement,
+    onstatementschange,
     completion,
     dialect = PostgreSQL,
   }: {
     value?: string
     uppercase?: boolean
     onrun?: (sql: string) => void
+    /** Called when the gutter ▶ is clicked for a single statement. */
+    onrunstatement?: (sql: string) => void
+    /** Called whenever the statement count changes (for the count badge). */
+    onstatementschange?: (count: number) => void
     /** Schema entities for IntelliSense (tables/columns/functions/FKs). */
     completion?: CompletionEntities
     /** SQL dialect — swap for MySQL/etc. as more providers land. */
@@ -63,6 +71,9 @@
   onMount(() => {
     // Seed entities before the first build so initial completion has the schema.
     if (completion) setCompletionEntities(completion)
+    // Register the gutter click handler (module-level ref, swapped without
+    // rebuilding the extension when the prop changes via the $effect below).
+    setRunStatementHandler(onrunstatement ?? null)
     view = new EditorView({
       parent: container,
       doc: value,
@@ -97,12 +108,26 @@
         upperComp.of(uppercase ? [uppercaseKeywords] : []),
         vscodeDark,
         syntaxHighlighting(vscodeHighlight),
+        // Run-statement gutter (▶ markers, revealed on hover).
+        ...runGutter,
         EditorView.updateListener.of((u) => {
-          if (u.docChanged) value = u.state.doc.toString()
+          if (u.docChanged) {
+            value = u.state.doc.toString()
+            // Emit statement count whenever the doc changes.
+            const count = u.state.field(runGutterState).byLine.size || 1
+            onstatementschange?.(count)
+          }
         }),
       ],
     })
+    // Emit initial count.
+    onstatementschange?.(statementRanges(view.state).length || 1)
     ready = true
+  })
+
+  // Keep the run-statement handler in sync when the prop changes.
+  $effect(() => {
+    setRunStatementHandler(onrunstatement ?? null)
   })
 
   // Reload schema entities + rebuild the SQL language source when data arrives.

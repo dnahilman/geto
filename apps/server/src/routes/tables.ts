@@ -84,16 +84,18 @@ export const tablesRoutes = new Elysia({ prefix: '/connections' })
   // ---- read a page of rows ----
   .get(
     '/:id/tables/:schema/:table/rows',
-    ({ driver, params, query }) =>
-      driver.introspect.getTableData(params.schema, params.table, {
+    async ({ driver, params, query }) => {
+      const t0 = performance.now()
+      const data = await driver.introspect.getTableData(params.schema, params.table, {
         limit: Math.min(query.limit ?? 500, 10000),
         offset: query.offset ?? 0,
         orderBy: query.orderBy,
         orderDir: query.orderDir === 'DESC' ? 'DESC' : 'ASC',
-        // Single-column equality filter (powers the relation viewer + filtered tabs).
         filterColumn: query.filterColumn,
         filterValue: query.filterValue,
-      }),
+      })
+      return { ...data, durationMs: Math.round(performance.now() - t0) }
+    },
     {
       params: tableParams,
       query: t.Object({

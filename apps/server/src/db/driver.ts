@@ -48,6 +48,14 @@ export interface Capabilities {
   connectionShape: 'network' | 'file'
 }
 
+/** A dedicated connection borrowed from the pool for sequential batch execution.
+ *  Preserves session state (SET, temp tables, transactions) across statements.
+ *  Always call `release()` in a finally block. */
+export interface ScriptRunner {
+  query(text: string, params?: unknown[]): Promise<QueryResult>
+  release(): void
+}
+
 export interface DbDriver {
   readonly id: ProviderId
   readonly capabilities: Capabilities
@@ -55,6 +63,8 @@ export interface DbDriver {
   readonly exec: {
     /** Run already-built SQL text + positional params, return marshalled rows. */
     query(text: string, params?: unknown[]): Promise<QueryResult>
+    /** Borrow a dedicated connection for sequential multi-statement execution. */
+    reserve(): Promise<ScriptRunner>
   }
 
   readonly introspect: {
