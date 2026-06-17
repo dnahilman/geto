@@ -7,6 +7,7 @@ declare global {
     // interface PageState {}
     // interface Platform {}
   }
+  const __APP_VERSION__: string
 }
 
 export {}

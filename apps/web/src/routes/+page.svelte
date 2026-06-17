@@ -1,6 +1,6 @@
 <script lang="ts">
   import { createQuery } from '@tanstack/svelte-query'
-  import { Plus, Database, LogOut } from 'lucide-svelte'
+  import { Plus, LogOut } from 'lucide-svelte'
   import { Button } from '$lib/components/ui/button'
   import { Skeleton } from '$lib/components/ui/skeleton'
   import ConnectionForm from '$lib/components/connection-form.svelte'
@@ -28,9 +28,9 @@
 
 <div class="mx-auto max-w-5xl p-6">
   <header class="mb-8 flex items-center justify-between">
-    <div class="flex items-center gap-2">
-      <Database class="size-6" />
-      <h1 class="text-xl font-semibold tracking-tight">geto</h1>
+    <div class="flex items-center gap-2.5">
+      <img src="/logo.svg" alt="geto" class="h-7 w-auto invert" />
+      <span class="text-muted-foreground font-mono text-xs">v{__APP_VERSION__}</span>
     </div>
     <div class="flex items-center gap-2">
       <Button onclick={add}><Plus class="size-4" /> New connection</Button>
@@ -58,7 +58,7 @@
     <div
       class="border-border flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed py-20 text-center"
     >
-      <Database class="text-muted-foreground size-10" />
+      <img src="/logo.svg" alt="geto" class="size-10 invert opacity-30" />
       <div>
         <p class="font-medium">No connections yet</p>
         <p class="text-muted-foreground text-sm">Add a PostgreSQL connection to get started.</p>

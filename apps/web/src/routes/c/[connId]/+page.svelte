@@ -2,7 +2,7 @@
   import { page } from '$app/state'
   import { createQuery } from '@tanstack/svelte-query'
   import { toast } from 'svelte-sonner'
-  import { ArrowLeft, Database, SquareTerminal, X, Table2, KeyRound, Plus } from 'lucide-svelte'
+  import { ArrowLeft, Database, SquareTerminal, X, Table2, KeyRound, Plus, PanelLeft } from 'lucide-svelte'
   import * as Resizable from '$lib/components/ui/resizable'
   import { Button } from '$lib/components/ui/button'
   import { Badge } from '$lib/components/ui/badge'
@@ -33,6 +33,7 @@
     return () => window.removeEventListener('keydown', onKeydown)
   })
   let dbManagerOpen = $state(false)
+  let sidebarOpen = $state(true)
 
   // Copy the full DSN (with password) for the currently selected database.
   async function copyConnString() {
@@ -49,6 +50,15 @@
   <header class="flex items-center gap-2 border-b px-3 py-2">
     <Button variant="ghost" size="icon" class="size-8" href="/" title="Connections">
       <ArrowLeft class="size-4" />
+    </Button>
+    <Button
+      variant="ghost"
+      size="icon"
+      class="size-8"
+      title="Toggle sidebar"
+      onclick={() => (sidebarOpen = !sidebarOpen)}
+    >
+      <PanelLeft class="size-4" />
     </Button>
     <div class="flex items-center gap-2">
       <Database class="size-4" />
@@ -84,11 +94,19 @@
   />
 
   <Resizable.PaneGroup direction="horizontal" class="min-h-0 flex-1">
-    <Resizable.Pane defaultSize={20} minSize={12} maxSize={40} class="bg-sidebar">
-      <SchemaTree {connId} onopen={(s, t) => ws.openTable(s, t)} />
-    </Resizable.Pane>
-    <Resizable.Handle withHandle />
-    <Resizable.Pane defaultSize={80} class="flex min-w-0 flex-col">
+    {#if sidebarOpen}
+      <Resizable.Pane order={1} defaultSize={20} minSize={12} maxSize={40} class="bg-sidebar flex flex-col">
+        <div class="flex shrink-0 items-center gap-2 border-b px-3 py-2">
+          <img src="/logo.svg" alt="geto" class="h-5 w-auto invert" />
+          <span class="text-muted-foreground ml-auto font-mono text-xs">v{__APP_VERSION__}</span>
+        </div>
+        <div class="min-h-0 flex-1">
+          <SchemaTree {connId} onopen={(s, t) => ws.openTable(s, t)} />
+        </div>
+      </Resizable.Pane>
+      <Resizable.Handle withHandle />
+    {/if}
+    <Resizable.Pane order={2} defaultSize={80} class="flex min-w-0 flex-col">
       {#if ws.tabs.length === 0}
         <div class="text-muted-foreground flex h-full flex-col items-center justify-center gap-2">
           <Table2 class="size-8" />

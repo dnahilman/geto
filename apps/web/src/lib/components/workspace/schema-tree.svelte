@@ -243,7 +243,7 @@
       <AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
       <AlertDialog.Action
         class="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-        onclick={() => confirm && act.mutate(confirm)}
+        onclick={() => { if (confirm) { act.mutate(confirm); confirm = null } }}
       >
         {confirm?.kind === 'drop' ? 'Drop table' : 'Truncate'}
       </AlertDialog.Action>

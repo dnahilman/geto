@@ -17,8 +17,8 @@
 
 <div class="flex min-h-screen items-center justify-center p-4">
   <Card.Root class="w-full max-w-sm">
-    <Card.Header>
-      <Card.Title class="text-2xl">geto</Card.Title>
+    <Card.Header class="items-center">
+      <img src="/logo.svg" alt="geto" class="mb-1 h-10 w-auto invert" />
       <Card.Description>Enter the access password to continue.</Card.Description>
     </Card.Header>
     <form onsubmit={submit}>

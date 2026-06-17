@@ -127,7 +127,7 @@
       <AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
       <AlertDialog.Action
         class="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-        onclick={() => remove.mutate()}
+        onclick={() => { remove.mutate(); confirmOpen = false }}
       >
         Delete
       </AlertDialog.Action>
