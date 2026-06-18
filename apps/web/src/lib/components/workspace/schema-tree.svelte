@@ -24,11 +24,20 @@
   import * as DropdownMenu from '$lib/components/ui/dropdown-menu'
   import * as AlertDialog from '$lib/components/ui/alert-dialog'
   import CreateTableDialog from './create-table-dialog.svelte'
+  import PrivilegesDialog from './privileges-dialog.svelte'
+  import { KeyRound } from 'lucide-svelte'
   import { getTree, treeKey } from '$lib/api/introspect'
   import { dropTable, truncateTable } from '$lib/api/mutations'
 
-  let { connId, onopen }: { connId: string; onopen: (schema: string, table: string) => void } =
-    $props()
+  let {
+    connId,
+    onopen,
+    readonly = false,
+  }: {
+    connId: string
+    onopen: (schema: string, table: string) => void
+    readonly?: boolean
+  } = $props()
 
   const qc = useQueryClient()
 
@@ -52,6 +61,16 @@
   let collapsed = $state<Record<string, boolean>>({})
   let confirm = $state<{ kind: 'drop' | 'truncate'; schema: string; table: string } | null>(null)
   let createState = $state<{ open: boolean; schema: string }>({ open: false, schema: 'public' })
+  let privState = $state<{
+    open: boolean
+    schema: string
+    name: string
+    kind: 'table' | 'schema'
+  }>({ open: false, schema: '', name: '', kind: 'table' })
+
+  function openPrivileges(schema: string, name: string, kind: 'table' | 'schema') {
+    privState = { open: true, schema, name, kind }
+  }
 
   function refreshTree() {
     // treeKey(connId) is a prefix of the search-scoped keys, so this invalidates
@@ -155,6 +174,11 @@
                   <DropdownMenu.Item onSelect={() => newTable(s.schema)}>
                     <Plus class="size-4" /> New table
                   </DropdownMenu.Item>
+                  <DropdownMenu.Item
+                    onSelect={() => afterMenuClose(() => openPrivileges(s.schema, '', 'schema'))}
+                  >
+                    <KeyRound class="size-4" /> Privileges…
+                  </DropdownMenu.Item>
                 </DropdownMenu.Content>
               </DropdownMenu.Root>
             </div>
@@ -191,6 +215,12 @@
                           <DropdownMenu.Item onSelect={() => onopen(s.schema, r.name)}
                             >Open</DropdownMenu.Item
                           >
+                          <DropdownMenu.Item
+                            onSelect={() =>
+                              afterMenuClose(() => openPrivileges(s.schema, r.name, 'table'))}
+                          >
+                            <KeyRound class="size-4" /> Privileges…
+                          </DropdownMenu.Item>
                           <DropdownMenu.Separator />
                           <DropdownMenu.Item
                             onSelect={() =>
@@ -252,3 +282,12 @@
 </AlertDialog.Root>
 
 <CreateTableDialog bind:open={createState.open} {connId} schema={createState.schema} />
+
+<PrivilegesDialog
+  bind:open={privState.open}
+  {connId}
+  schema={privState.schema}
+  name={privState.name}
+  kind={privState.kind}
+  {readonly}
+/>

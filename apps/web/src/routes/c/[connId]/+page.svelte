@@ -2,7 +2,7 @@
   import { page } from '$app/state'
   import { createQuery } from '@tanstack/svelte-query'
   import { toast } from 'svelte-sonner'
-  import { ArrowLeft, Database, SquareTerminal, X, Table2, KeyRound, Plus, PanelLeft } from 'lucide-svelte'
+  import { ArrowLeft, Database, SquareTerminal, X, Table2, KeyRound, Plus, PanelLeft, Users } from 'lucide-svelte'
   import * as Resizable from '$lib/components/ui/resizable'
   import { Button } from '$lib/components/ui/button'
   import { Badge } from '$lib/components/ui/badge'
@@ -10,6 +10,7 @@
   import TableView from '$lib/components/workspace/table-view.svelte'
   import SqlConsole from '$lib/components/workspace/sql-console.svelte'
   import DatabaseManager from '$lib/components/workspace/database-manager.svelte'
+  import RoleManager from '$lib/components/workspace/role-manager.svelte'
   import { Workspace } from '$lib/stores/workspace.svelte'
   import { connectionsKey, listConnections, getConnectionString } from '$lib/api/connections'
   import { copyText } from '$lib/clipboard'
@@ -33,6 +34,7 @@
     return () => window.removeEventListener('keydown', onKeydown)
   })
   let dbManagerOpen = $state(false)
+  let roleManagerOpen = $state(false)
   let sidebarOpen = $state(true)
 
   // Copy the full DSN (with password) for the currently selected database.
@@ -80,6 +82,9 @@
       <Button variant="ghost" size="sm" onclick={() => (dbManagerOpen = true)}>
         <Database class="size-4" /> Databases
       </Button>
+      <Button variant="ghost" size="sm" onclick={() => (roleManagerOpen = true)}>
+        <Users class="size-4" /> Roles
+      </Button>
       <Button variant="outline" size="sm" onclick={() => ws.openConsole()}>
         <SquareTerminal class="size-4" /> New SQL Console
       </Button>
@@ -93,6 +98,8 @@
     onSwitched={() => ws.reset()}
   />
 
+  <RoleManager bind:open={roleManagerOpen} {connId} readonly={conn?.readonly ?? false} />
+
   <Resizable.PaneGroup direction="horizontal" class="min-h-0 flex-1">
     {#if sidebarOpen}
       <Resizable.Pane order={1} defaultSize={20} minSize={12} maxSize={40} class="bg-sidebar flex flex-col">
@@ -101,7 +108,7 @@
           <span class="text-muted-foreground ml-auto font-mono text-xs">v{__APP_VERSION__}</span>
         </div>
         <div class="min-h-0 flex-1">
-          <SchemaTree {connId} onopen={(s, t) => ws.openTable(s, t)} />
+          <SchemaTree {connId} onopen={(s, t) => ws.openTable(s, t)} readonly={conn?.readonly ?? false} />
         </div>
       </Resizable.Pane>
       <Resizable.Handle withHandle />

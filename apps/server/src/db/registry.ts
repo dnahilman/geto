@@ -5,37 +5,63 @@
 import { getConnectionSecret } from '$src/store/connections'
 import type { DbDriver } from '$src/db/driver'
 import { PostgresDriver } from '$src/db/drivers/postgres/driver'
+import { openTunnel, type SshTunnel } from '$src/db/ssh/tunnel'
 
 type Secret = NonNullable<ReturnType<typeof getConnectionSecret>>
 
 interface Cached {
   driver: DbDriver
+  tunnel?: SshTunnel
   lastUsed: number
 }
 
 const drivers = new Map<string, Cached>()
+// In-flight creations, so concurrent getDriver calls share one async build.
+const pending = new Map<string, Promise<Cached>>()
 const MAX_IDLE_MS = 5 * 60_000
 
-function createDriver(secret: Secret): DbDriver {
-  switch (secret.provider) {
-    case 'postgresql':
-    default:
-      return new PostgresDriver(secret)
+async function createCached(secret: Secret): Promise<Cached> {
+  // SSH off (default): construct the driver against the original host/port —
+  // identical to a direct connection, no tunnel involved.
+  if (!secret.sshSecret) {
+    return { driver: new PostgresDriver(secret), lastUsed: Date.now() }
+  }
+  // SSH on: open the tunnel first, then point the driver at the local forwarder.
+  const tunnel = await openTunnel({
+    ...secret.sshSecret,
+    target: { host: secret.host, port: secret.port },
+  })
+  try {
+    const driver = new PostgresDriver({ ...secret, host: '127.0.0.1', port: tunnel.localPort })
+    return { driver, tunnel, lastUsed: Date.now() }
+  } catch (e) {
+    await tunnel.close().catch(() => {})
+    throw e
   }
 }
 
 /** Lazily open (or reuse) the driver for a saved connection, dispatched by provider. */
-export function getDriver(connectionId: string): DbDriver {
+export async function getDriver(connectionId: string): Promise<DbDriver> {
   const existing = drivers.get(connectionId)
   if (existing) {
     existing.lastUsed = Date.now()
     return existing.driver
   }
+  const inFlight = pending.get(connectionId)
+  if (inFlight) return (await inFlight).driver
+
   const secret = getConnectionSecret(connectionId)
   if (!secret) throw new Error('Connection not found')
-  const driver = createDriver(secret)
-  drivers.set(connectionId, { driver, lastUsed: Date.now() })
-  return driver
+
+  const build = createCached(secret)
+  pending.set(connectionId, build)
+  try {
+    const cached = await build
+    drivers.set(connectionId, cached)
+    return cached.driver
+  } finally {
+    pending.delete(connectionId)
+  }
 }
 
 /** Close and drop a driver (call on connection update/delete). */
@@ -44,6 +70,7 @@ export async function closeDriver(connectionId: string): Promise<void> {
   if (!c) return
   drivers.delete(connectionId)
   await c.driver.lifecycle.close().catch(() => {})
+  await c.tunnel?.close().catch(() => {})
 }
 
 /** Evict drivers idle longer than MAX_IDLE_MS. */
@@ -53,6 +80,7 @@ export function sweepIdleDrivers(): void {
     if (now - c.lastUsed > MAX_IDLE_MS) {
       drivers.delete(id)
       void c.driver.lifecycle.close().catch(() => {})
+      void c.tunnel?.close().catch(() => {})
     }
   }
 }

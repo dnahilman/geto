@@ -24,7 +24,22 @@ export type App = typeof app
 export default app
 
 // Shared domain types re-exported for the web client (type-only imports).
-export type { Connection, ConnectionInput, SslMode } from './store/connections'
+export type {
+  Connection,
+  ConnectionInput,
+  SslMode,
+  SshConfig,
+  SshInput,
+  SshAuthMethod,
+} from './store/connections'
+export type {
+  RoleInfo,
+  RoleInput,
+  RoleAttributes,
+  Grant,
+  ObjectKind,
+  PrivilegeChange,
+} from './db/drivers/postgres/roles'
 export type { ProviderId, ProviderMeta } from './providers'
 export type { HistoryEntry } from './store/history'
 export type {

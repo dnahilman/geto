@@ -26,6 +26,14 @@ import type {
   TableDataOptions,
 } from '$src/db/drivers/postgres/introspect'
 import type { ColumnSpec } from '$src/db/drivers/postgres/dml'
+import type {
+  RoleInfo,
+  RoleInput,
+  RoleAttributes,
+  Grant,
+  ObjectKind,
+  PrivilegeChange,
+} from '$src/db/drivers/postgres/roles'
 
 /** The verdict on whether a query result maps to one editable base table. */
 export interface EditableSource {
@@ -102,5 +110,18 @@ export interface DbDriver {
   readonly lifecycle: {
     /** Close the underlying pool/handle. */
     close(): Promise<void>
+  }
+
+  /** Cluster role administration + object privileges. Optional: a dialect without
+   *  this concept omits it, and routes return 501. Independent role vs privilege
+   *  operations so either can be used alone. */
+  readonly admin?: {
+    listRoles(): Promise<RoleInfo[]>
+    createRole(input: RoleInput): Promise<void>
+    alterRole(name: string, changes: RoleAttributes): Promise<void>
+    dropRole(name: string): Promise<void>
+    setMembership(parentRole: string, member: string, grant: boolean): Promise<void>
+    getObjectGrants(schema: string, name: string, kind: ObjectKind): Promise<Grant[]>
+    setObjectPrivilege(change: PrivilegeChange): Promise<void>
   }
 }

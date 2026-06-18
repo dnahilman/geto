@@ -62,3 +62,22 @@ try {
 } catch {
   /* column already present */
 }
+
+// Migration: optional SSH tunnel settings (all nullable / off by default, so a
+// connection without SSH is unchanged). Each column added independently.
+for (const ddl of [
+  'ALTER TABLE connections ADD COLUMN ssh_enabled INTEGER NOT NULL DEFAULT 0',
+  'ALTER TABLE connections ADD COLUMN ssh_host TEXT',
+  'ALTER TABLE connections ADD COLUMN ssh_port INTEGER NOT NULL DEFAULT 22',
+  'ALTER TABLE connections ADD COLUMN ssh_username TEXT',
+  "ALTER TABLE connections ADD COLUMN ssh_auth TEXT NOT NULL DEFAULT 'key'",
+  'ALTER TABLE connections ADD COLUMN ssh_password_enc TEXT',
+  'ALTER TABLE connections ADD COLUMN ssh_key_enc TEXT',
+  'ALTER TABLE connections ADD COLUMN ssh_passphrase_enc TEXT',
+]) {
+  try {
+    db.exec(ddl)
+  } catch {
+    /* column already present */
+  }
+}

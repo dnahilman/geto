@@ -17,6 +17,15 @@ import {
   getTableData,
 } from '$src/db/drivers/postgres/introspect'
 import { buildCreateTable, type ColumnSpec } from '$src/db/drivers/postgres/dml'
+import {
+  listRoles,
+  createRole,
+  alterRole,
+  dropRole,
+  setMembership,
+  getObjectGrants,
+  setObjectPrivilege,
+} from '$src/db/drivers/postgres/roles'
 import { quoteIdent } from '$src/db/shared/ident'
 import { analyzeSql, inspectSelect } from '$src/db/shared/safety'
 import type { ColumnMeta } from '$src/db/shared/marshal'
@@ -43,6 +52,7 @@ export class PostgresDriver implements DbDriver {
   readonly ddl: DbDriver['ddl']
   readonly safety: DbDriver['safety']
   readonly lifecycle: DbDriver['lifecycle']
+  readonly admin: NonNullable<DbDriver['admin']>
 
   constructor(opts: PgOptions) {
     const sql = makeSql(opts, 5)
@@ -107,6 +117,16 @@ export class PostgresDriver implements DbDriver {
     }
 
     this.safety = { analyze: analyzeSql, inspectSelect }
+
+    this.admin = {
+      listRoles: () => listRoles(sql),
+      createRole: (input) => createRole(sql, input),
+      alterRole: (name, changes) => alterRole(sql, name, changes),
+      dropRole: (name) => dropRole(sql, name),
+      setMembership: (parentRole, member, grant) => setMembership(sql, parentRole, member, grant),
+      getObjectGrants: (schema, name, kind) => getObjectGrants(sql, schema, name, kind),
+      setObjectPrivilege: (change) => setObjectPrivilege(sql, change),
+    }
 
     this.lifecycle = {
       close: () =>

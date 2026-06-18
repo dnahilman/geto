@@ -29,10 +29,10 @@ export interface StatementResult {
 
 export const queryRoutes = new Elysia({ prefix: '/connections' })
   .use(requireAuth)
-  .resolve(({ params, status }) => {
+  .resolve(async ({ params, status }) => {
     const id = (params as { id?: string }).id
     if (!id || !getConnection(id)) return status(404, { error: 'Connection not found' })
-    return { driver: getDriver(id), connId: id }
+    return { driver: await getDriver(id), connId: id }
   })
   .post(
     '/:id/query',

@@ -6,10 +6,10 @@ import { getDriver } from '$src/db/registry'
 export const metaRoutes = new Elysia({ prefix: '/connections' })
   .use(requireAuth)
   // Reject unknown connection ids early for every route in this group.
-  .resolve(({ params, status }) => {
+  .resolve(async ({ params, status }) => {
     const id = (params as { id?: string }).id
     if (!id || !getConnection(id)) return status(404, { error: 'Connection not found' })
-    return { driver: getDriver(id) }
+    return { driver: await getDriver(id) }
   })
   .get('/:id/databases', ({ driver }) => driver.introspect.listDatabases())
   .get('/:id/schemas', ({ driver }) => driver.introspect.listSchemas())
