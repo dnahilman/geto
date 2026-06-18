@@ -11,9 +11,10 @@ import {
   type ConnectionInput,
 } from '$src/store/connections'
 import { closeDriver } from '$src/db/registry'
-import { testConnection } from '$src/db/drivers/postgres/pool'
-import { buildConnectionString } from '$src/db/drivers/postgres/connection-string'
+import { getAdapter } from '$src/db/adapters'
 import { withTunnel } from '$src/db/ssh/tunnel'
+import type { ProviderId } from '$src/providers'
+import type { ConnectionTarget } from '$src/db/types'
 import type { SshSecret, SshInput } from '$src/store/connections'
 
 const sslMode = t.Union([
@@ -54,21 +55,19 @@ function toInput(b: typeof connectionBody.static): ConnectionInput {
   return { ...b, provider: b.provider ?? 'postgresql', ssh: (b.ssh ?? null) as SshInput | null }
 }
 
-/** Run a connection test, transparently routing through an SSH tunnel when the
- *  body asks for one. For an unsaved test, the SSH secrets arrive as plaintext. */
-async function testWithOptionalSsh(opts: {
-  host: string
-  port: number
-  database: string
-  username: string
-  password: string | null
-  sslMode: typeof sslMode.static
-  ssh: SshSecret | null
-}) {
-  if (!opts.ssh) return testConnection(opts)
+/** Run a connection test via the provider adapter, transparently routing through
+ *  an SSH tunnel when requested. For an unsaved test, SSH secrets arrive plaintext.
+ *  Dialect-agnostic: it never names PostgreSQL — the adapter does the engine work. */
+async function testWithOptionalSsh(
+  provider: ProviderId,
+  target: ConnectionTarget,
+  ssh: SshSecret | null,
+) {
+  const { testConnection } = getAdapter(provider)
+  if (!ssh) return testConnection(target)
   try {
-    return await withTunnel({ ...opts.ssh, target: { host: opts.host, port: opts.port } }, (lp) =>
-      testConnection({ ...opts, host: '127.0.0.1', port: lp }),
+    return await withTunnel({ ...ssh, target: { host: target.host, port: target.port } }, (lp) =>
+      testConnection({ ...target, host: '127.0.0.1', port: lp }),
     )
   } catch (e) {
     return { error: (e as Error).message }
@@ -95,15 +94,18 @@ export const connectionsRoutes = new Elysia({ prefix: '/connections' })
   .post(
     '/test',
     async ({ body }) =>
-      testWithOptionalSsh({
-        host: body.host,
-        port: body.port,
-        database: body.database,
-        username: body.username,
-        password: body.password ?? null,
-        sslMode: body.sslMode,
-        ssh: sshSecretFromBody(body.ssh),
-      }),
+      testWithOptionalSsh(
+        body.provider ?? 'postgresql',
+        {
+          host: body.host,
+          port: body.port,
+          database: body.database,
+          username: body.username,
+          password: body.password ?? null,
+          sslMode: body.sslMode,
+        },
+        sshSecretFromBody(body.ssh),
+      ),
     { body: connectionBody },
   )
   .get(
@@ -140,15 +142,18 @@ export const connectionsRoutes = new Elysia({ prefix: '/connections' })
   .post('/:id/test', async ({ params, status }) => {
     const secret = getConnectionSecret(params.id)
     if (!secret) return status(404, { error: 'Not found' })
-    return testWithOptionalSsh({
-      host: secret.host,
-      port: secret.port,
-      database: secret.database,
-      username: secret.username,
-      password: secret.password,
-      sslMode: secret.sslMode,
-      ssh: secret.sshSecret,
-    })
+    return testWithOptionalSsh(
+      secret.provider,
+      {
+        host: secret.host,
+        port: secret.port,
+        database: secret.database,
+        username: secret.username,
+        password: secret.password,
+        sslMode: secret.sslMode,
+      },
+      secret.sshSecret,
+    )
   })
   .get(
     '/:id/connection-string',
@@ -157,7 +162,9 @@ export const connectionsRoutes = new Elysia({ prefix: '/connections' })
       if (!secret) return status(404, { error: 'Not found' })
       const withPassword = query.withPassword === 'true'
       const password = withPassword ? secret.password : secret.password ? '****' : null
-      return { connectionString: buildConnectionString(secret, password) }
+      return {
+        connectionString: getAdapter(secret.provider).buildConnectionString(secret, password),
+      }
     },
     { query: t.Object({ withPassword: t.Optional(t.String()) }) },
   )

@@ -2,12 +2,18 @@ import type { Sql } from '$src/db/drivers/postgres/pool'
 import { executeSql } from '$src/db/drivers/postgres/exec'
 import type { QueryResult } from '$src/db/shared/marshal'
 import { quoteIdent } from '$src/db/shared/ident'
-
-export interface DatabaseInfo {
-  name: string
-  owner: string
-  size: string
-}
+import type {
+  DatabaseInfo,
+  RelationType,
+  SchemaTree,
+  ColumnInfo,
+  IndexInfo,
+  ConstraintInfo,
+  CompletionColumn,
+  CompletionFunction,
+  CompletionForeignKey,
+  TableDataOptions,
+} from '$src/db/types'
 
 export async function listDatabases(sql: Sql): Promise<DatabaseInfo[]> {
   const rows = await sql<{ name: string; owner: string; size: string }[]>`
@@ -26,13 +32,6 @@ export async function listSchemas(sql: Sql): Promise<string[]> {
     WHERE nspname NOT IN ('information_schema') AND nspname NOT LIKE 'pg_%'
     ORDER BY nspname`
   return rows.map((r) => r.nspname)
-}
-
-export type RelationType = 'table' | 'view' | 'matview'
-
-export interface SchemaTree {
-  schema: string
-  relations: { name: string; type: RelationType }[]
 }
 
 export async function getTree(sql: Sql, search?: string): Promise<SchemaTree[]> {
@@ -54,17 +53,6 @@ export async function getTree(sql: Sql, search?: string): Promise<SchemaTree[]> 
     map.get(r.schema)!.relations.push({ name: r.name, type })
   }
   return [...map.values()]
-}
-
-export interface ColumnInfo {
-  name: string
-  type: string
-  notNull: boolean
-  default: string | null
-  ordinal: number
-  isPrimaryKey: boolean
-  /** Allowed labels when the column is an enum type, else null. */
-  enumValues: string[] | null
 }
 
 export async function getColumns(sql: Sql, schema: string, table: string): Promise<ColumnInfo[]> {
@@ -113,13 +101,6 @@ export async function getColumns(sql: Sql, schema: string, table: string): Promi
   }))
 }
 
-export interface IndexInfo {
-  name: string
-  definition: string
-  isUnique: boolean
-  isPrimary: boolean
-}
-
 export async function getIndexes(sql: Sql, schema: string, table: string): Promise<IndexInfo[]> {
   const rows = await sql<
     { name: string; definition: string; is_unique: boolean; is_primary: boolean }[]
@@ -140,12 +121,6 @@ export async function getIndexes(sql: Sql, schema: string, table: string): Promi
     isUnique: r.is_unique,
     isPrimary: r.is_primary,
   }))
-}
-
-export interface ConstraintInfo {
-  name: string
-  type: string
-  definition: string
 }
 
 const CONSTRAINT_TYPE: Record<string, string> = {
@@ -231,13 +206,6 @@ export async function getPrimaryKey(sql: Sql, schema: string, table: string): Pr
   return rows.map((r) => r.attname)
 }
 
-export interface CompletionColumn {
-  schema: string
-  table: string
-  name: string
-  type: string
-}
-
 /** All columns across user relations — feeds the editor completion service. */
 export async function getAllColumns(sql: Sql): Promise<CompletionColumn[]> {
   const rows = await sql<{ schema: string; table: string; name: string; type: string }[]>`
@@ -251,14 +219,6 @@ export async function getAllColumns(sql: Sql): Promise<CompletionColumn[]> {
       AND a.attnum > 0 AND NOT a.attisdropped
     ORDER BY n.nspname, c.relname, a.attnum`
   return [...rows]
-}
-
-export interface CompletionFunction {
-  schema: string
-  name: string
-  args: string
-  returns: string
-  kind: 'function' | 'procedure' | 'aggregate' | 'window'
 }
 
 const FUNC_KIND: Record<string, CompletionFunction['kind']> = {
@@ -290,15 +250,6 @@ export async function getFunctions(sql: Sql): Promise<CompletionFunction[]> {
     returns: r.returns,
     kind: FUNC_KIND[r.kind] ?? 'function',
   }))
-}
-
-export interface CompletionForeignKey {
-  schema: string
-  table: string
-  columns: string[]
-  refSchema: string
-  refTable: string
-  refColumns: string[]
 }
 
 /** Foreign keys across user relations — powers FK-aware JOIN suggestions. */
@@ -343,17 +294,6 @@ export async function getForeignKeys(sql: Sql): Promise<CompletionForeignKey[]> 
     refTable: r.ref_table,
     refColumns: r.ref_columns,
   }))
-}
-
-export interface TableDataOptions {
-  limit: number
-  offset: number
-  orderBy?: string
-  orderDir?: 'ASC' | 'DESC'
-  /** Optional single-column equality filter; the value is bound as a parameter
-   *  and matched against the column's type by PostgreSQL (e.g. text '5' = int 5). */
-  filterColumn?: string
-  filterValue?: string
 }
 
 /** Read a page of rows from a table. Identifiers are quoted; paging is params. */

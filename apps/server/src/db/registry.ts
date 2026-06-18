@@ -4,7 +4,7 @@
 // which concrete driver a provider maps to.
 import { getConnectionSecret } from '$src/store/connections'
 import type { DbDriver } from '$src/db/driver'
-import { PostgresDriver } from '$src/db/drivers/postgres/driver'
+import { getAdapter } from '$src/db/adapters'
 import { openTunnel, type SshTunnel } from '$src/db/ssh/tunnel'
 
 type Secret = NonNullable<ReturnType<typeof getConnectionSecret>>
@@ -21,10 +21,11 @@ const pending = new Map<string, Promise<Cached>>()
 const MAX_IDLE_MS = 5 * 60_000
 
 async function createCached(secret: Secret): Promise<Cached> {
+  const adapter = getAdapter(secret.provider)
   // SSH off (default): construct the driver against the original host/port —
   // identical to a direct connection, no tunnel involved.
   if (!secret.sshSecret) {
-    return { driver: new PostgresDriver(secret), lastUsed: Date.now() }
+    return { driver: adapter.createDriver(secret), lastUsed: Date.now() }
   }
   // SSH on: open the tunnel first, then point the driver at the local forwarder.
   const tunnel = await openTunnel({
@@ -32,7 +33,7 @@ async function createCached(secret: Secret): Promise<Cached> {
     target: { host: secret.host, port: secret.port },
   })
   try {
-    const driver = new PostgresDriver({ ...secret, host: '127.0.0.1', port: tunnel.localPort })
+    const driver = adapter.createDriver({ ...secret, host: '127.0.0.1', port: tunnel.localPort })
     return { driver, tunnel, lastUsed: Date.now() }
   } catch (e) {
     await tunnel.close().catch(() => {})

@@ -16,7 +16,14 @@ import {
   getForeignKeys,
   getTableData,
 } from '$src/db/drivers/postgres/introspect'
-import { buildCreateTable, type ColumnSpec } from '$src/db/drivers/postgres/dml'
+import {
+  buildCreateTable,
+  buildInsert,
+  buildUpdate,
+  buildDelete,
+  inlineParams,
+} from '$src/db/drivers/postgres/dml'
+import type { ColumnSpec } from '$src/db/types'
 import {
   listRoles,
   createRole,
@@ -50,6 +57,7 @@ export class PostgresDriver implements DbDriver {
   readonly exec: DbDriver['exec']
   readonly introspect: DbDriver['introspect']
   readonly ddl: DbDriver['ddl']
+  readonly dml: DbDriver['dml']
   readonly safety: DbDriver['safety']
   readonly lifecycle: DbDriver['lifecycle']
   readonly admin: NonNullable<DbDriver['admin']>
@@ -114,6 +122,13 @@ export class PostgresDriver implements DbDriver {
       quoteIdent,
       buildCreateTable: (schema, table, columns: ColumnSpec[]) =>
         buildCreateTable(schema ?? '', table, columns),
+    }
+
+    this.dml = {
+      buildInsert: (schema, table, values) => buildInsert(schema ?? '', table, values),
+      buildUpdate: (schema, table, pk, values) => buildUpdate(schema ?? '', table, pk, values),
+      buildDelete: (schema, table, pk) => buildDelete(schema ?? '', table, pk),
+      inlineParams,
     }
 
     this.safety = { analyze: analyzeSql, inspectSelect }

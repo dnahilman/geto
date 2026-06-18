@@ -1,9 +1,5 @@
 import { quoteIdent } from '$src/db/shared/ident'
-
-export interface Built {
-  text: string
-  params: unknown[]
-}
+import type { BuiltStatement, ColumnSpec } from '$src/db/types'
 
 function rel(schema: string, table: string): string {
   return `${quoteIdent(schema)}.${quoteIdent(table)}`
@@ -20,7 +16,11 @@ export function inlineParams(text: string, params: unknown[]): string {
   return text.replace(/\$(\d+)/g, (_, n) => formatLiteral(params[Number(n) - 1]))
 }
 
-export function buildInsert(schema: string, table: string, values: Record<string, unknown>): Built {
+export function buildInsert(
+  schema: string,
+  table: string,
+  values: Record<string, unknown>,
+): BuiltStatement {
   const cols = Object.keys(values)
   if (cols.length === 0) {
     return { text: `INSERT INTO ${rel(schema, table)} DEFAULT VALUES RETURNING *`, params: [] }
@@ -36,7 +36,7 @@ export function buildUpdate(
   table: string,
   pk: Record<string, unknown>,
   values: Record<string, unknown>,
-): Built {
+): BuiltStatement {
   const setCols = Object.keys(values)
   const whereCols = Object.keys(pk)
   if (setCols.length === 0) throw new Error('No columns to update')
@@ -61,7 +61,11 @@ export function buildUpdate(
   }
 }
 
-export function buildDelete(schema: string, table: string, pk: Record<string, unknown>): Built {
+export function buildDelete(
+  schema: string,
+  table: string,
+  pk: Record<string, unknown>,
+): BuiltStatement {
   const whereCols = Object.keys(pk)
   if (whereCols.length === 0) throw new Error('Refusing to delete without a primary key')
   const params: unknown[] = []
@@ -72,14 +76,6 @@ export function buildDelete(schema: string, table: string, pk: Record<string, un
     })
     .join(' AND ')
   return { text: `DELETE FROM ${rel(schema, table)} WHERE ${whereClause} RETURNING *`, params }
-}
-
-export interface ColumnSpec {
-  name: string
-  type: string
-  notNull?: boolean
-  default?: string | null
-  primaryKey?: boolean
 }
 
 /** Build a CREATE TABLE from column specs. Types are validated against an allow-list. */

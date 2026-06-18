@@ -6,8 +6,16 @@ export interface TabFilter {
 }
 
 export type Tab =
-  | { kind: 'table'; schema: string; table: string; id: string; title: string; filter?: TabFilter }
-  | { kind: 'console'; id: string; title: string; n: number; sql: string }
+  | {
+      kind: 'table'
+      schema: string
+      table: string
+      id: string
+      title: string
+      filter?: TabFilter
+      pinned?: boolean
+    }
+  | { kind: 'console'; id: string; title: string; n: number; sql: string; pinned?: boolean }
 
 type PersistedSession = {
   tabs: Tab[]
@@ -99,6 +107,33 @@ export class Workspace {
       // After splice, tabs[idx] is the right neighbor; tabs[idx-1] is the left.
       this.activeId = this.tabs[idx]?.id ?? this.tabs[idx - 1]?.id ?? null
     }
+  }
+
+  /** Close every tab except `id` and any pinned tabs (VS Code "Close Others"). */
+  closeOthers(id: string) {
+    this.tabs = this.tabs.filter((t) => t.id === id || t.pinned)
+    if (!this.tabs.some((t) => t.id === this.activeId)) {
+      this.activeId = this.tabs.find((t) => t.id === id)?.id ?? this.tabs[0]?.id ?? null
+    }
+  }
+
+  /** Close all tabs except pinned ones (pinning protects a tab from Close All). */
+  closeAll() {
+    this.tabs = this.tabs.filter((t) => t.pinned)
+    if (!this.tabs.some((t) => t.id === this.activeId)) {
+      this.activeId = this.tabs[0]?.id ?? null
+    }
+  }
+
+  /** Pin/unpin a tab. Pinned tabs sort to the front (stable) like VS Code. */
+  togglePin(id: string) {
+    const tab = this.tabs.find((t) => t.id === id)
+    if (!tab) return
+    tab.pinned = !tab.pinned
+    // Stable partition: pinned keep their relative order, then unpinned.
+    const pinned = this.tabs.filter((t) => t.pinned)
+    const rest = this.tabs.filter((t) => !t.pinned)
+    this.tabs = [...pinned, ...rest]
   }
 
   get active(): Tab | null {

@@ -4,7 +4,6 @@ import { getConnection } from '$src/store/connections'
 import { getDriver } from '$src/db/registry'
 import type { DbDriver } from '$src/db/driver'
 import type { QueryResult } from '$src/db/shared/marshal'
-import { buildDelete, buildInsert, buildUpdate, inlineParams } from '$src/db/drivers/postgres/dml'
 import { recordHistory } from '$src/store/history'
 import { pgErrorMessage } from '$src/db/shared/error'
 
@@ -112,24 +111,29 @@ export const tablesRoutes = new Elysia({ prefix: '/connections' })
   .post(
     '/:id/tables/:schema/:table/rows',
     ({ driver, connId, params, body }) => {
-      const { text, params: p } = buildInsert(params.schema, params.table, body.values)
-      return logged(connId, inlineParams(text, p), () => driver.exec.query(text, p))
+      const { text, params: p } = driver.dml.buildInsert(params.schema, params.table, body.values)
+      return logged(connId, driver.dml.inlineParams(text, p), () => driver.exec.query(text, p))
     },
     { params: tableParams, body: t.Object({ values: rowValues }) },
   )
   .patch(
     '/:id/tables/:schema/:table/rows',
     ({ driver, connId, params, body }) => {
-      const { text, params: p } = buildUpdate(params.schema, params.table, body.pk, body.values)
-      return logged(connId, inlineParams(text, p), () => driver.exec.query(text, p))
+      const { text, params: p } = driver.dml.buildUpdate(
+        params.schema,
+        params.table,
+        body.pk,
+        body.values,
+      )
+      return logged(connId, driver.dml.inlineParams(text, p), () => driver.exec.query(text, p))
     },
     { params: tableParams, body: t.Object({ pk: rowValues, values: rowValues }) },
   )
   .delete(
     '/:id/tables/:schema/:table/rows',
     ({ driver, connId, params, body }) => {
-      const { text, params: p } = buildDelete(params.schema, params.table, body.pk)
-      return logged(connId, inlineParams(text, p), () => driver.exec.query(text, p))
+      const { text, params: p } = driver.dml.buildDelete(params.schema, params.table, body.pk)
+      return logged(connId, driver.dml.inlineParams(text, p), () => driver.exec.query(text, p))
     },
     { params: tableParams, body: t.Object({ pk: rowValues }) },
   )

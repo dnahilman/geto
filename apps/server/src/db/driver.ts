@@ -1,16 +1,15 @@
 // The dialect-agnostic database driver contract. One `DbDriver` per provider
-// bundles execution, live-catalog introspection, DDL/quoting, safety analysis and
-// lifecycle behind a single rich interface — a "narrow waist" the routes program
-// against without ever branching on the dialect.
+// bundles execution, live-catalog introspection, DDL/DML building, safety analysis
+// and lifecycle behind a single rich interface — a "narrow waist" the routes
+// program against without ever branching on the dialect. `ProviderAdapter` is the
+// connection-level sibling (create/test/connection-string), used before a driver
+// instance exists (e.g. testing an unsaved connection).
 //
-// Only PostgreSQL is implemented today (see drivers/postgres/driver.ts). The shape
-// is deliberately ready for SQLite/MySQL: `schema` accepts null (engines without a
+// Only PostgreSQL is implemented today (see drivers/postgres/). The shape is
+// deliberately ready for SQLite/MySQL: `schema` accepts null (engines without a
 // schema concept), introspection methods are capability-gated, and capabilities is
-// plain serializable data the frontend can read.
-//
-// NOTE (Phase 1): the shared domain types still physically live in the postgres
-// driver dir + db/shared (minimal-churn relocation). When a second dialect lands,
-// these move to a neutral db/types.ts.
+// plain serializable data the frontend can read. All domain types live in the
+// neutral $src/db/types — this file imports no engine code.
 import type { ProviderId } from '$src/providers'
 import type { ColumnMeta, QueryResult } from '$src/db/shared/marshal'
 import type { SafetyReport } from '$src/db/shared/safety'
@@ -24,16 +23,18 @@ import type {
   CompletionFunction,
   CompletionForeignKey,
   TableDataOptions,
-} from '$src/db/drivers/postgres/introspect'
-import type { ColumnSpec } from '$src/db/drivers/postgres/dml'
-import type {
+  ColumnSpec,
+  BuiltStatement,
   RoleInfo,
   RoleInput,
   RoleAttributes,
   Grant,
   ObjectKind,
   PrivilegeChange,
-} from '$src/db/drivers/postgres/roles'
+  ConnectionTarget,
+  ConnectionStringParts,
+  TestResult,
+} from '$src/db/types'
 
 /** The verdict on whether a query result maps to one editable base table. */
 export interface EditableSource {
@@ -102,6 +103,24 @@ export interface DbDriver {
     buildCreateTable(schema: string | null, table: string, columns: ColumnSpec[]): string
   }
 
+  readonly dml: {
+    /** Build a parameterized row write. The route logs + runs it via `exec`. */
+    buildInsert(
+      schema: string | null,
+      table: string,
+      values: Record<string, unknown>,
+    ): BuiltStatement
+    buildUpdate(
+      schema: string | null,
+      table: string,
+      pk: Record<string, unknown>,
+      values: Record<string, unknown>,
+    ): BuiltStatement
+    buildDelete(schema: string | null, table: string, pk: Record<string, unknown>): BuiltStatement
+    /** Inline `$N` params into SQL text for human-readable history display only. */
+    inlineParams(text: string, params: unknown[]): string
+  }
+
   readonly safety: {
     analyze(sql: string): Promise<SafetyReport>
     inspectSelect(sql: string): Promise<{ singleSelect: boolean; hasLimit: boolean }>
@@ -124,4 +143,18 @@ export interface DbDriver {
     getObjectGrants(schema: string, name: string, kind: ObjectKind): Promise<Grant[]>
     setObjectPrivilege(change: PrivilegeChange): Promise<void>
   }
+}
+
+/**
+ * Connection-level provider operations that exist *before* a driver instance —
+ * opening one, testing an unsaved connection, and rendering its connection string.
+ * One `ProviderAdapter` per engine; the registry maps `ProviderId → adapter`, so
+ * adding an engine = implement this + a `DbDriver` and register it, nothing else.
+ * Takes the neutral `ConnectionTarget` (a saved connection's secret satisfies it),
+ * so this contract names no store/engine specifics.
+ */
+export interface ProviderAdapter {
+  createDriver(target: ConnectionTarget): DbDriver
+  testConnection(target: ConnectionTarget): Promise<TestResult>
+  buildConnectionString(parts: ConnectionStringParts, password: string | null): string
 }

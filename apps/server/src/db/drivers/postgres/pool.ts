@@ -1,19 +1,12 @@
 import postgres from 'postgres'
 import type { SslMode } from '$src/store/connections'
+import type { ConnectionTarget, TestResult } from '$src/db/types'
 import { pgErrorMessage } from '$src/db/shared/error'
 
 export type Sql = postgres.Sql<{}>
 
-export interface PgOptions {
-  host: string
-  port: number
-  database: string
-  username: string
-  password: string | null
-  sslMode: SslMode
-  /** When true, the whole pool runs read-only at the PG level (safe mode). */
-  readonly?: boolean
-}
+/** Postgres connects against the neutral ConnectionTarget shape. */
+export type PgOptions = ConnectionTarget
 
 /** Map our ssl mode to porsager/postgres' `ssl` option. */
 function sslOption(mode: SslMode): postgres.Options<{}>['ssl'] {
@@ -50,12 +43,6 @@ export function makeSql(opts: PgOptions, max: number): Sql {
     connection: opts.readonly ? { default_transaction_read_only: true } : {},
     onnotice: () => {},
   })
-}
-
-export interface TestResult {
-  version?: string
-  latencyMs?: number
-  error?: string
 }
 
 /** One-shot connectivity test for a (possibly unsaved) connection. */

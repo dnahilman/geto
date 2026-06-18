@@ -1,19 +1,13 @@
-import type { SslMode } from '$src/store/connections'
-
-interface Parts {
-  host: string
-  port: number
-  database: string
-  username: string
-  password?: string | null
-  sslMode: SslMode
-}
+import type { ConnectionStringParts } from '$src/db/types'
 
 /**
  * Build a `postgresql://` URL. When `password` is provided it is included
  * (URL-encoded); when masked the caller passes `'****'`.
  */
-export function buildConnectionString(parts: Parts, password: string | null | undefined): string {
+export function buildConnectionString(
+  parts: ConnectionStringParts,
+  password: string | null | undefined,
+): string {
   const user = encodeURIComponent(parts.username)
   const auth = password ? `${user}:${encodeURIComponent(password)}` : user
   const host = parts.host.includes(':') ? `[${parts.host}]` : parts.host // ipv6

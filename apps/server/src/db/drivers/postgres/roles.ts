@@ -5,57 +5,14 @@
 // tokens are fixed whitelisted constants, never user free-text. Integer values
 // (connection limit) are validated and inlined.
 import type { Sql } from '$src/db/drivers/postgres/pool'
-
-export interface RoleInfo {
-  name: string
-  isSuperuser: boolean
-  canLogin: boolean
-  canCreateDb: boolean
-  canCreateRole: boolean
-  isReplication: boolean
-  bypassRls: boolean
-  connectionLimit: number
-  validUntil: string | null
-  memberOf: string[]
-}
-
-/** Boolean attributes (undefined = leave unchanged on ALTER). */
-export interface RoleAttributes {
-  canLogin?: boolean
-  isSuperuser?: boolean
-  canCreateDb?: boolean
-  canCreateRole?: boolean
-  isReplication?: boolean
-  bypassRls?: boolean
-  connectionLimit?: number | null
-  validUntil?: string | null
-  /** undefined = keep; null = remove password; string = set password. */
-  password?: string | null
-}
-
-export interface RoleInput extends RoleAttributes {
-  name: string
-}
-
-export type ObjectKind = 'table' | 'schema'
-
-export interface Grant {
-  grantee: string
-  privilege: string
-  grantable: boolean
-}
-
-export interface PrivilegeChange {
-  kind: ObjectKind
-  schema: string
-  /** Table name for kind='table'; ignored for kind='schema' (uses `schema`). */
-  name: string
-  role: string
-  privileges: string[]
-  /** true = GRANT, false = REVOKE. */
-  grant: boolean
-  withGrantOption?: boolean
-}
+import type {
+  RoleInfo,
+  RoleInput,
+  RoleAttributes,
+  Grant,
+  ObjectKind,
+  PrivilegeChange,
+} from '$src/db/types'
 
 const TABLE_PRIVS = new Set([
   'SELECT',

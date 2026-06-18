@@ -32,14 +32,6 @@ export type {
   SshInput,
   SshAuthMethod,
 } from './store/connections'
-export type {
-  RoleInfo,
-  RoleInput,
-  RoleAttributes,
-  Grant,
-  ObjectKind,
-  PrivilegeChange,
-} from './db/drivers/postgres/roles'
 export type { ProviderId, ProviderMeta } from './providers'
 export type { HistoryEntry } from './store/history'
 export type {
@@ -49,6 +41,12 @@ export type {
   ColumnInfo,
   IndexInfo,
   ConstraintInfo,
-} from './db/drivers/postgres/introspect'
+  RoleInfo,
+  RoleInput,
+  RoleAttributes,
+  Grant,
+  ObjectKind,
+  PrivilegeChange,
+} from './db/types'
 export type { ColumnMeta, QueryResult } from './db/shared/marshal'
 export type { SafetyReport, StatementRisk } from './db/shared/safety'
