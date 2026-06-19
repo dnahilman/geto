@@ -4,7 +4,7 @@
   import { Button } from '$lib/components/ui/button'
   import { Skeleton } from '$lib/components/ui/skeleton'
   import ConnectionForm from '$lib/components/connection-form.svelte'
-  import ConnectionCard from '$lib/components/connection-card.svelte'
+  import ConnectionTable from '$lib/components/connection-table.svelte'
   import { auth } from '$lib/stores/auth.svelte'
   import { connectionsKey, listConnections, type Connection } from '$lib/api/connections'
 
@@ -49,11 +49,7 @@
   {:else if connections.isError}
     <p class="text-destructive">Failed to load connections: {connections.error.message}</p>
   {:else if connections.data && connections.data.length > 0}
-    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {#each connections.data as c (c.id)}
-        <ConnectionCard connection={c} onedit={edit} />
-      {/each}
-    </div>
+    <ConnectionTable connections={connections.data} onedit={edit} />
   {:else}
     <div
       class="border-border flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed py-20 text-center"

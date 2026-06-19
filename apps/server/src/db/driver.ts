@@ -10,7 +10,7 @@
 // schema concept), introspection methods are capability-gated, and capabilities is
 // plain serializable data the frontend can read. All domain types live in the
 // neutral $src/db/types — this file imports no engine code.
-import type { ProviderId } from '$src/providers'
+import type { ProviderId, ProviderKind } from '$src/providers'
 import type { ColumnMeta, QueryResult } from '$src/db/shared/marshal'
 import type { SafetyReport } from '$src/db/shared/safety'
 import type {
@@ -34,6 +34,10 @@ import type {
   ConnectionTarget,
   ConnectionStringParts,
   TestResult,
+  ScanOptions,
+  ScanResult,
+  KeyValue,
+  CommandResult,
 } from '$src/db/types'
 
 /** The verdict on whether a query result maps to one editable base table. */
@@ -48,6 +52,8 @@ export interface EditableSource {
 /** Static, serializable description of what a dialect supports. Drives both the
  *  route layer (skip unsupported endpoints) and the frontend (form + tree gating). */
 export interface Capabilities {
+  /** Data model — relational (SQL) vs key-value. Drives which workspace renders. */
+  kind: ProviderKind
   hasDatabases: boolean
   hasSchemas: boolean
   hasFunctions: boolean
@@ -142,6 +148,16 @@ export interface DbDriver {
     setMembership(parentRole: string, member: string, grant: boolean): Promise<void>
     getObjectGrants(schema: string, name: string, kind: ObjectKind): Promise<Grant[]>
     setObjectPrivilege(change: PrivilegeChange): Promise<void>
+  }
+
+  /** Key-value browsing (Redis-style). Present only when capabilities.kind is
+   *  'keyvalue'; relational drivers omit it (and key-value drivers omit the SQL
+   *  namespaces). The keys route 501s when this is absent. */
+  readonly keyv?: {
+    scan(opts: ScanOptions): Promise<ScanResult>
+    get(key: string): Promise<KeyValue>
+    delete(key: string): Promise<void>
+    command(argv: string[]): Promise<CommandResult>
   }
 }
 

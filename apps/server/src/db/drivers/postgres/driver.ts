@@ -38,6 +38,7 @@ import { analyzeSql, inspectSelect } from '$src/db/shared/safety'
 import type { ColumnMeta } from '$src/db/shared/marshal'
 
 const PG_CAPABILITIES: Capabilities = {
+  kind: 'relational',
   hasDatabases: true,
   hasSchemas: true,
   hasFunctions: true,

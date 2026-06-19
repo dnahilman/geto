@@ -8,6 +8,7 @@ import { tablesRoutes } from '$src/routes/tables'
 import { queryRoutes } from '$src/routes/query'
 import { databasesRoutes } from '$src/routes/databases'
 import { rolesRoutes } from '$src/routes/roles'
+import { keysRoutes } from '$src/routes/keys'
 
 /**
  * The API surface. Grouped under `/api`. Each feature area is added as its own
@@ -53,5 +54,6 @@ export const api = new Elysia({ prefix: '/api' })
   .use(queryRoutes)
   .use(databasesRoutes)
   .use(rolesRoutes)
+  .use(keysRoutes)
 
 export type Api = typeof api

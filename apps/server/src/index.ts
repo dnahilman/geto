@@ -32,7 +32,7 @@ export type {
   SshInput,
   SshAuthMethod,
 } from './store/connections'
-export type { ProviderId, ProviderMeta } from './providers'
+export type { ProviderId, ProviderKind, ProviderMeta } from './providers'
 export type { HistoryEntry } from './store/history'
 export type {
   DatabaseInfo,
@@ -47,6 +47,10 @@ export type {
   Grant,
   ObjectKind,
   PrivilegeChange,
+  KeyEntry,
+  KeyValue,
+  ScanResult,
+  CommandResult,
 } from './db/types'
 export type { ColumnMeta, QueryResult } from './db/shared/marshal'
 export type { SafetyReport, StatementRisk } from './db/shared/safety'

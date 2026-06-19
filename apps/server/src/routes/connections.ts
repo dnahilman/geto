@@ -39,11 +39,12 @@ const sshBody = t.Object({
 
 const connectionBody = t.Object({
   name: t.String({ minLength: 1 }),
-  provider: t.Optional(t.Literal('postgresql')),
+  provider: t.Optional(t.Union([t.Literal('postgresql'), t.Literal('redis')])),
   host: t.String({ minLength: 1 }),
   port: t.Integer({ minimum: 1, maximum: 65535 }),
   database: t.String({ minLength: 1 }),
-  username: t.String({ minLength: 1 }),
+  // Redis ACL username is optional (the default user has none), so allow empty.
+  username: t.String(),
   password: t.Optional(t.Nullable(t.String())),
   sslMode,
   color: t.Optional(t.Nullable(t.String())),

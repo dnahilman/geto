@@ -175,3 +175,38 @@ export interface TestResult {
   latencyMs?: number
   error?: string
 }
+
+// ── Key-value (Redis-style) ──
+/** One key surfaced by a SCAN: its name, value type, and TTL in seconds (-1 = none). */
+export interface KeyEntry {
+  key: string
+  type: string
+  ttl: number
+}
+
+/** A fetched key's value. `value` shape depends on `type`:
+ *  string→string, list/set→string[], hash→[field,value][], zset→[member,score][]. */
+export interface KeyValue {
+  key: string
+  type: string
+  ttl: number
+  value: unknown
+}
+
+export interface ScanOptions {
+  match?: string
+  cursor?: string
+  count?: number
+}
+
+export interface ScanResult {
+  /** Opaque cursor to pass back for the next page; '0' means iteration complete. */
+  cursor: string
+  keys: KeyEntry[]
+}
+
+/** Result of a raw key-value command. Exactly one of result/error is meaningful. */
+export interface CommandResult {
+  result?: unknown
+  error?: string
+}

@@ -5,8 +5,9 @@ import { join } from 'node:path'
 // Enforces the modular-monolith boundary: the dialect-agnostic core and the HTTP
 // routes must never reach into a concrete engine implementation
 // (`db/drivers/<engine>/*`). They speak only through `DbDriver` / `ProviderAdapter`.
-// The single sanctioned seam is `db/adapters.ts`, which may import the postgres
-// *adapter barrel* (and nothing deeper). If this test fails, a dialect leaked.
+// The single sanctioned seam is `db/adapters.ts`, which may import each engine's
+// *adapter barrel* (`drivers/<engine>/adapter`) and nothing deeper. If this test
+// fails, a dialect leaked.
 const SRC = join(import.meta.dir, '../src')
 
 /** All static + dynamic import specifiers in a file (ignores comments/strings). */
@@ -20,7 +21,8 @@ function importSpecifiers(relPath: string): string[] {
   return specs
 }
 
-const touchesEngine = (spec: string) => spec.includes('drivers/postgres')
+const touchesEngine = (spec: string) => /\/db\/drivers\/[^/]+\//.test(spec)
+const isAdapterBarrel = (spec: string) => /\/db\/drivers\/[^/]+\/adapter$/.test(spec)
 
 describe('architecture: dialect-agnostic core boundary', () => {
   const routeFiles = readdirSync(join(SRC, 'routes'))
@@ -34,10 +36,10 @@ describe('architecture: dialect-agnostic core boundary', () => {
     })
   }
 
-  test('db/adapters.ts only imports the engine adapter barrel, never internals', () => {
+  test('db/adapters.ts only imports engine adapter barrels, never internals', () => {
     const leaks = importSpecifiers('db/adapters.ts')
       .filter(touchesEngine)
-      .filter((s) => !s.endsWith('drivers/postgres/adapter'))
+      .filter((s) => !isAdapterBarrel(s))
     expect(leaks).toEqual([])
   })
 })

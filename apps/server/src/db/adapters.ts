@@ -4,9 +4,11 @@
 import type { ProviderId } from '$src/providers'
 import type { ProviderAdapter } from '$src/db/driver'
 import { postgresAdapter } from '$src/db/drivers/postgres/adapter'
+import { redisAdapter } from '$src/db/drivers/redis/adapter'
 
 const ADAPTERS: Record<ProviderId, ProviderAdapter> = {
   postgresql: postgresAdapter,
+  redis: redisAdapter,
 }
 
 export function getAdapter(provider: ProviderId): ProviderAdapter {
