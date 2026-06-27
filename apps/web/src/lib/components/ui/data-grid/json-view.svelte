@@ -6,6 +6,7 @@
   import { ArrowUpRight, Rows3 } from 'lucide-svelte'
   import * as DropdownMenu from '$lib/components/ui/dropdown-menu'
   import RelationPanel from './relation-panel.svelte'
+  import { valueHtml } from '$lib/json'
   import type { ExpandedRelation, RelationsConfig } from './data-grid-context'
   import type { RelationDescriptor, RelationTarget } from '$lib/relations'
 
@@ -32,35 +33,6 @@
     rows
     expanded = {}
   })
-
-  function escapeHtml(s: string): string {
-    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-  }
-
-  // Wrap JSON tokens in Tailwind-colored spans. Input must be HTML-escaped first
-  // so values can never inject markup (only our own <span> tags are added).
-  function highlight(json: string): string {
-    return json.replace(
-      /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+-]?\d+)?)/g,
-      (m) => {
-        let cls = 'text-amber-600 dark:text-amber-400' // number
-        if (/^"/.test(m)) {
-          cls = /:$/.test(m.trimEnd())
-            ? 'text-sky-700 dark:text-sky-300' // key
-            : 'text-emerald-700 dark:text-emerald-400' // string
-        } else if (/true|false/.test(m)) {
-          cls = 'text-purple-600 dark:text-purple-400' // boolean
-        } else if (/null/.test(m)) {
-          cls = 'text-muted-foreground' // null
-        }
-        return `<span class="${cls}">${m}</span>`
-      },
-    )
-  }
-
-  function valueHtml(v: unknown): string {
-    return highlight(escapeHtml(JSON.stringify(v ?? null)))
-  }
 
   function relFor(ci: number): RelationDescriptor | null {
     return relations ? (relationMap?.[ci] ?? null) : null

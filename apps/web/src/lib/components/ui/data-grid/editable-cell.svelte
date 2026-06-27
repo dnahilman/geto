@@ -2,6 +2,8 @@
   import { toast } from 'svelte-sonner'
   import { Maximize2 } from 'lucide-svelte'
   import { formatCell } from '$lib/components/ui/data-table'
+  import { asJsonObject } from '$lib/json'
+  import JsonDetailDialog from './json-detail-dialog.svelte'
   import { Checkbox } from '$lib/components/ui/checkbox'
   import { Textarea } from '$lib/components/ui/textarea'
   import { Input } from '$lib/components/ui/input'
@@ -67,6 +69,10 @@
   )
 
   const display = $derived(formatCell(value))
+  // JSON-ish cells (objects/arrays, or strings that parse to them) stay inline but
+  // open a read-only detail modal on click — the table layout never changes.
+  const jsonObj = $derived(asJsonObject(value))
+  let jsonOpen = $state(false)
 
   function commitText() {
     onsave(draft)
@@ -89,7 +95,30 @@
 </script>
 
 {#if !editing}
-  <span class={display.muted ? 'text-muted-foreground italic' : ''}>{display.text}</span>
+  {#if jsonObj}
+    <span class="group/json flex items-center gap-1">
+      <button
+        type="button"
+        class="hover:text-foreground min-w-0 truncate text-left"
+        title="View JSON detail"
+        onclick={() => (jsonOpen = true)}
+      >
+        {display.text}
+      </button>
+      <button
+        type="button"
+        class="text-muted-foreground hover:text-foreground shrink-0 opacity-0 group-hover/json:opacity-100"
+        title="View JSON detail"
+        aria-label="View JSON detail"
+        onclick={() => (jsonOpen = true)}
+      >
+        <Maximize2 class="size-3" />
+      </button>
+    </span>
+    <JsonDetailDialog bind:open={jsonOpen} value={jsonObj} />
+  {:else}
+    <span class={display.muted ? 'text-muted-foreground italic' : ''}>{display.text}</span>
+  {/if}
 {:else if variant === 'boolean'}
   <Checkbox checked={toBool(value)} onCheckedChange={(c) => onsave(c ? 'true' : 'false')} />
 {:else if variant === 'enum'}

@@ -17,7 +17,13 @@
     bracketMatching,
     syntaxHighlighting,
   } from '@codemirror/language'
-  import { closeBrackets, closeBracketsKeymap, completionKeymap } from '@codemirror/autocomplete'
+  import {
+    autocompletion,
+    closeBrackets,
+    closeBracketsKeymap,
+    completionKeymap,
+    type CompletionSource,
+  } from '@codemirror/autocomplete'
   import { sqlExtensions, uppercaseKeywords, PostgreSQL, type SQLDialect } from './completion'
   import { setCompletionEntities, type CompletionEntities } from './entities'
   import { vscodeDark, vscodeHighlight } from './theme'
@@ -32,6 +38,8 @@
     onstatementschange,
     completion,
     dialect = PostgreSQL,
+    language = 'sql',
+    completionSource,
   }: {
     value?: string
     uppercase?: boolean
@@ -44,7 +52,16 @@
     completion?: CompletionEntities
     /** SQL dialect — swap for MySQL/etc. as more providers land. */
     dialect?: SQLDialect
+    /** 'sql' = full SQL language; 'plain' = no SQL syntax/uppercase/gutter (e.g.
+     *  Redis commands). The editor still looks/runs identically (Ctrl-Enter run). */
+    language?: 'sql' | 'plain'
+    /** Optional autocomplete source used in 'plain' mode (e.g. Redis commands/keys). */
+    completionSource?: CompletionSource
   } = $props()
+
+  const isSql = language === 'sql'
+  // Language extension for 'plain' mode: just optional autocomplete, no syntax.
+  const plainLang = () => (completionSource ? autocompletion({ override: [completionSource] }) : [])
 
   let container: HTMLDivElement
   let view: EditorView | undefined
@@ -104,24 +121,24 @@
           ...completionKeymap,
           indentWithTab,
         ]),
-        langComp.of(sqlExtensions(dialect)),
-        upperComp.of(uppercase ? [uppercaseKeywords] : []),
+        langComp.of(isSql ? sqlExtensions(dialect) : plainLang()),
+        upperComp.of(isSql && uppercase ? [uppercaseKeywords] : []),
         vscodeDark,
         syntaxHighlighting(vscodeHighlight),
-        // Run-statement gutter (▶ markers, revealed on hover).
-        ...runGutter,
+        // Run-statement gutter (▶ markers) — SQL only.
+        ...(isSql ? runGutter : []),
         EditorView.updateListener.of((u) => {
           if (u.docChanged) {
             value = u.state.doc.toString()
-            // Emit statement count whenever the doc changes.
-            const count = u.state.field(runGutterState).byLine.size || 1
+            // Emit statement count whenever the doc changes (SQL gutter only).
+            const count = isSql ? u.state.field(runGutterState).byLine.size || 1 : 1
             onstatementschange?.(count)
           }
         }),
       ],
     })
     // Emit initial count.
-    onstatementschange?.(statementRanges(view.state).length || 1)
+    onstatementschange?.(isSql ? statementRanges(view.state).length || 1 : 1)
     ready = true
   })
 
@@ -136,15 +153,15 @@
   $effect(() => {
     const data = completion
     const d = dialect
-    if (!view) return
+    if (!view || !isSql) return
     if (data != null) setCompletionEntities(data)
     view.dispatch({ effects: langComp.reconfigure(sqlExtensions(d)) })
   })
 
-  // Toggle auto-uppercase.
+  // Toggle auto-uppercase (SQL only).
   $effect(() => {
     const on = uppercase
-    if (!view) return
+    if (!view || !isSql) return
     view.dispatch({ effects: upperComp.reconfigure(on ? [uppercaseKeywords] : []) })
   })
 

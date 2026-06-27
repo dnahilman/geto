@@ -4,17 +4,12 @@
     ArrowLeft,
     Database,
     SquareTerminal,
-    X,
     Table2,
     KeyRound,
-    Plus,
     PanelLeft,
     Users,
-    Pin,
-    PinOff,
   } from 'lucide-svelte'
   import * as Resizable from '$lib/components/ui/resizable'
-  import * as ContextMenu from '$lib/components/ui/context-menu'
   import { Button } from '$lib/components/ui/button'
   import { Badge } from '$lib/components/ui/badge'
   import SchemaTree from '$lib/components/workspace/schema-tree.svelte'
@@ -22,13 +17,14 @@
   import SqlConsole from '$lib/components/workspace/sql-console.svelte'
   import DatabaseManager from '$lib/components/workspace/database-manager.svelte'
   import RoleManager from '$lib/components/workspace/role-manager.svelte'
+  import WorkspaceTabbar from '$lib/components/workspace/workspace-tabbar.svelte'
   import { Workspace } from '$lib/stores/workspace.svelte'
   import { getConnectionString, type Connection } from '$lib/api/connections'
   import { copyText } from '$lib/clipboard'
 
   let { connId, conn }: { connId: string; conn: Connection | undefined } = $props()
 
-  const ws = new Workspace(connId)
+  const ws = new Workspace(connId, 'relational')
 
   $effect(() => {
     function onKeydown(e: KeyboardEvent) {
@@ -137,79 +133,7 @@
           <p class="text-sm">Select a table from the sidebar, or open the SQL console.</p>
         </div>
       {:else}
-        <!-- tab bar -->
-        <div class="flex items-center gap-1 overflow-x-auto border-b px-1">
-          {#each ws.tabs as tab (tab.id)}
-            <ContextMenu.Root>
-              <ContextMenu.Trigger>
-                {#snippet child({ props })}
-                  <div
-                    {...props}
-                    class="group flex items-center gap-1 border-b-2 px-2 py-1.5 text-xs
-                      {ws.activeId === tab.id
-                      ? 'border-primary'
-                      : 'hover:bg-accent border-transparent'}"
-                    ondblclick={() => ws.togglePin(tab.id)}
-                  >
-                    <button
-                      class="flex items-center gap-1.5"
-                      onclick={() => (ws.activeId = tab.id)}
-                    >
-                      {#if tab.kind === 'console'}
-                        <SquareTerminal class="size-3.5 shrink-0" />
-                      {:else}
-                        <Table2 class="size-3.5 shrink-0" />
-                      {/if}
-                      <span class={tab.pinned ? 'italic' : ''}>{tab.title}</span>
-                    </button>
-                    {#if tab.pinned}
-                      <button
-                        class="hover:bg-muted rounded p-0.5"
-                        title="Unpin"
-                        onclick={() => ws.togglePin(tab.id)}
-                      >
-                        <Pin class="size-3 fill-current" />
-                      </button>
-                    {:else}
-                      <button
-                        class="hover:bg-muted rounded p-0.5 opacity-50 group-hover:opacity-100"
-                        title="Close"
-                        onclick={() => ws.close(tab.id)}
-                      >
-                        <X class="size-3" />
-                      </button>
-                    {/if}
-                  </div>
-                {/snippet}
-              </ContextMenu.Trigger>
-              <ContextMenu.Content class="w-44">
-                <ContextMenu.Item onSelect={() => ws.close(tab.id)}>
-                  <X class="size-4" /> Close
-                </ContextMenu.Item>
-                <ContextMenu.Item onSelect={() => ws.closeOthers(tab.id)}>
-                  Close Others
-                </ContextMenu.Item>
-                <ContextMenu.Item onSelect={() => ws.closeAll()}>Close All</ContextMenu.Item>
-                <ContextMenu.Separator />
-                <ContextMenu.Item onSelect={() => ws.togglePin(tab.id)}>
-                  {#if tab.pinned}
-                    <PinOff class="size-4" /> Unpin
-                  {:else}
-                    <Pin class="size-4" /> Pin
-                  {/if}
-                </ContextMenu.Item>
-              </ContextMenu.Content>
-            </ContextMenu.Root>
-          {/each}
-          <button
-            type="button"
-            class="hover:bg-accent text-muted-foreground rounded p-1"
-            title="New SQL console (Ctrl+T)"
-            onclick={() => ws.openConsole()}
-          >
-            <Plus class="size-3.5" />
-          </button>
-        </div>
+        <WorkspaceTabbar {ws} onNew={() => ws.openConsole()} newTitle="New SQL console (Ctrl+T)" />
 
         <!-- active content (keep tables mounted to preserve grid state) -->
         <div class="min-h-0 flex-1">

@@ -16,6 +16,13 @@ export type Tab =
       pinned?: boolean
     }
   | { kind: 'console'; id: string; title: string; n: number; sql: string; pinned?: boolean }
+  // Redis (key-value) tabs — same store, never mixed with SQL tabs (a connection
+  // is a single provider).
+  | { kind: 'rconsole'; id: string; title: string; n: number; cmd: string; pinned?: boolean }
+  | { kind: 'rkey'; id: string; title: string; key: string; pinned?: boolean }
+
+/** Which seed console a fresh/empty workspace opens. */
+export type WorkspaceKind = 'relational' | 'keyvalue'
 
 type PersistedSession = {
   tabs: Tab[]
@@ -33,9 +40,11 @@ export class Workspace {
   // $state so the sessionStorage $effect in the constructor tracks counter changes.
   nextN = $state(1)
   private readonly storageKey: string
+  private readonly kind: WorkspaceKind
 
-  constructor(connId: string) {
+  constructor(connId: string, kind: WorkspaceKind = 'relational') {
     this.storageKey = `geto:session:${connId}`
+    this.kind = kind
     this.restore()
     $effect(() => {
       const session: PersistedSession = {
@@ -47,11 +56,17 @@ export class Workspace {
     })
   }
 
+  /** Seed a fresh console appropriate to the provider. */
+  private seedConsole() {
+    if (this.kind === 'keyvalue') this.openRedisConsole()
+    else this.openConsole()
+  }
+
   private restore() {
     try {
       const raw = sessionStorage.getItem(this.storageKey)
       if (!raw) {
-        this.openConsole()
+        this.seedConsole()
         return
       }
       const data = JSON.parse(raw) as Partial<PersistedSession>
@@ -62,10 +77,10 @@ export class Workspace {
           : (data.tabs[0]?.id ?? null)
         this.nextN = typeof data.nextN === 'number' ? data.nextN : 1
       } else {
-        this.openConsole()
+        this.seedConsole()
       }
     } catch {
-      this.openConsole()
+      this.seedConsole()
     }
   }
 
@@ -97,6 +112,28 @@ export class Workspace {
   updateSql(tabId: string, sql: string) {
     const tab = this.tabs.find((t) => t.id === tabId)
     if (tab?.kind === 'console') tab.sql = sql
+  }
+
+  // ── Redis (key-value) ──
+  openRedisConsole() {
+    const n = this.nextN++
+    const id = crypto.randomUUID()
+    this.tabs.push({ kind: 'rconsole', id, title: `Redis #${n}`, n, cmd: '' })
+    this.activeId = id
+  }
+
+  /** Open (or focus) a tab showing a Redis key's value. */
+  openKey(key: string) {
+    const id = `k:${key}`
+    if (!this.tabs.some((t) => t.id === id)) {
+      this.tabs.push({ kind: 'rkey', id, title: key, key })
+    }
+    this.activeId = id
+  }
+
+  updateCmd(tabId: string, cmd: string) {
+    const tab = this.tabs.find((t) => t.id === tabId)
+    if (tab?.kind === 'rconsole') tab.cmd = cmd
   }
 
   close(id: string) {
@@ -145,6 +182,6 @@ export class Workspace {
     this.tabs = []
     this.activeId = null
     this.nextN = 1
-    this.openConsole()
+    this.seedConsole()
   }
 }
