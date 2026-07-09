@@ -20,6 +20,8 @@
     toEditText,
     serializeDate,
     serializeDateTime,
+    NULL_WIRE,
+    EMPTY_WIRE,
   } from './cell-variant'
 
   let {
@@ -42,6 +44,10 @@
 
   const withTz = $derived(/tz|with time zone/i.test(typeName))
 
+  // A pending edit may be a NULL / EMPTY sentinel — resolve it for display + seeding
+  // so the cell shows "NULL" / "" rather than the raw sentinel string.
+  const realValue = $derived(value === NULL_WIRE ? null : value === EMPTY_WIRE ? '' : value)
+
   // Local editor state, seeded once when edit mode opens.
   let draft = $state('') // text / number / json
   let dtDate = $state<CalendarDate | undefined>(undefined) // datetime
@@ -52,11 +58,11 @@
     if (editing && !prevEditing) {
       expanded = false
       if (variant === 'datetime') {
-        const p = toDateTimeParts(value)
+        const p = toDateTimeParts(realValue)
         dtDate = p.date
         dtTime = p.time
       } else {
-        draft = toEditText(value, variant)
+        draft = toEditText(realValue, variant)
       }
     }
     prevEditing = editing
@@ -68,11 +74,15 @@
     variant === 'text' && (expanded || draft.includes('\n') || draft.length > 60),
   )
 
-  const display = $derived(formatCell(value))
+  const display = $derived(formatCell(realValue))
   // JSON-ish cells (objects/arrays, or strings that parse to them) stay inline but
   // open a read-only detail modal on click — the table layout never changes.
-  const jsonObj = $derived(asJsonObject(value))
+  const jsonObj = $derived(asJsonObject(realValue))
   let jsonOpen = $state(false)
+
+  // Explicit NULL / empty-string — you can't type these unambiguously.
+  const setNull = () => onsave(NULL_WIRE)
+  const setEmpty = () => onsave(EMPTY_WIRE)
 
   function commitText() {
     onsave(draft)
@@ -93,6 +103,29 @@
     onsave(serializeDateTime(dtDate, dtTime, withTz))
   }
 </script>
+
+{#snippet quick(showEmpty: boolean)}
+  <button
+    type="button"
+    class="text-muted-foreground hover:text-foreground hover:bg-accent shrink-0 rounded border px-1.5 text-[10px] leading-5"
+    title="Set NULL"
+    onmousedown={(e) => e.preventDefault()}
+    onclick={setNull}
+  >
+    NULL
+  </button>
+  {#if showEmpty}
+    <button
+      type="button"
+      class="text-muted-foreground hover:text-foreground hover:bg-accent shrink-0 rounded border px-1.5 text-[10px] leading-5"
+      title="Set empty string ('')"
+      onmousedown={(e) => e.preventDefault()}
+      onclick={setEmpty}
+    >
+      ''
+    </button>
+  {/if}
+{/snippet}
 
 {#if !editing}
   {#if jsonObj}
@@ -120,24 +153,30 @@
     <span class={display.muted ? 'text-muted-foreground italic' : ''}>{display.text}</span>
   {/if}
 {:else if variant === 'boolean'}
-  <Checkbox checked={toBool(value)} onCheckedChange={(c) => onsave(c ? 'true' : 'false')} />
+  <div class="flex items-center gap-1.5">
+    <Checkbox checked={toBool(realValue)} onCheckedChange={(c) => onsave(c ? 'true' : 'false')} />
+    {@render quick(false)}
+  </div>
 {:else if variant === 'enum'}
-  <Select.Root
-    type="single"
-    value={value == null ? undefined : String(value)}
-    open={editing}
-    onValueChange={(v) => onsave(v)}
-    onOpenChange={(o) => {
-      if (!o) oncancel()
-    }}
-  >
-    <Select.Trigger size="sm" class="h-6 w-full font-mono">{display.text}</Select.Trigger>
-    <Select.Content>
-      {#each options as opt (opt)}
-        <Select.Item value={opt}>{opt}</Select.Item>
-      {/each}
-    </Select.Content>
-  </Select.Root>
+  <div class="flex items-center gap-1">
+    <Select.Root
+      type="single"
+      value={realValue == null ? undefined : String(realValue)}
+      open={editing}
+      onValueChange={(v) => onsave(v)}
+      onOpenChange={(o) => {
+        if (!o) oncancel()
+      }}
+    >
+      <Select.Trigger size="sm" class="h-6 w-full font-mono">{display.text}</Select.Trigger>
+      <Select.Content>
+        {#each options as opt (opt)}
+          <Select.Item value={opt}>{opt}</Select.Item>
+        {/each}
+      </Select.Content>
+    </Select.Root>
+    {@render quick(false)}
+  </div>
 {:else if variant === 'date'}
   <Popover.Root
     open={editing}
@@ -146,14 +185,15 @@
     }}
   >
     <Popover.Trigger class="w-full text-left font-mono">{display.text}</Popover.Trigger>
-    <Popover.Content class="w-auto p-0" align="start">
+    <Popover.Content class="w-auto p-2" align="start">
       <Calendar
         type="single"
-        value={toCalendarDate(value)}
+        value={toCalendarDate(realValue)}
         onValueChange={(v: DateValue | undefined) => {
           if (v) onsave(serializeDate(v as CalendarDate))
         }}
       />
+      <div class="mt-2 flex justify-end gap-1">{@render quick(false)}</div>
     </Popover.Content>
   </Popover.Root>
 {:else if variant === 'datetime'}
@@ -169,7 +209,10 @@
       <div class="mt-2 flex items-center gap-2">
         <Input type="time" bind:value={dtTime} class="h-8 w-32 font-mono" step="60" />
         <span class="text-muted-foreground text-[10px]">{withTz ? 'UTC' : ''}</span>
-        <Button size="xs" class="ml-auto" onclick={commitDateTime}>Set</Button>
+        <span class="ml-auto flex items-center gap-1">
+          {@render quick(false)}
+          <Button size="xs" onclick={commitDateTime}>Set</Button>
+        </span>
       </div>
     </Popover.Content>
   </Popover.Root>
@@ -190,8 +233,9 @@
           else if (e.key === 'Escape') oncancel()
         }}
       />
-      <div class="mt-2 flex justify-end gap-1">
-        <Button size="xs" variant="ghost" onclick={oncancel}>Cancel</Button>
+      <div class="mt-2 flex items-center gap-1">
+        {@render quick(true)}
+        <Button size="xs" variant="ghost" class="ml-auto" onclick={oncancel}>Cancel</Button>
         <Button size="xs" onclick={commitJson}>Save</Button>
       </div>
     </Popover.Content>
@@ -214,8 +258,9 @@
           else if (e.key === 'Escape') oncancel()
         }}
       />
-      <div class="mt-2 flex justify-end gap-1">
-        <Button size="xs" variant="ghost" onclick={oncancel}>Cancel</Button>
+      <div class="mt-2 flex items-center gap-1">
+        {@render quick(true)}
+        <Button size="xs" variant="ghost" class="ml-auto" onclick={oncancel}>Cancel</Button>
         <Button size="xs" onclick={commitText}>Save</Button>
       </div>
     </Popover.Content>
@@ -235,6 +280,7 @@
       }}
       onblur={commitText}
     />
+    {@render quick(true)}
     {#if variant === 'text'}
       <button
         type="button"

@@ -20,6 +20,7 @@ import {
   type ExpandedRelation,
   type GridColumn,
 } from './data-grid-context'
+import { NULL_WIRE, EMPTY_WIRE } from './cell-variant'
 
 export interface CreateDataGridOptions<RowT> {
   getData: () => RowT[]
@@ -30,10 +31,11 @@ export interface CreateDataGridOptions<RowT> {
   onSortingChange?: OnChangeFn<SortingState>
   getPagination?: () => PaginationState
   onPaginationChange?: OnChangeFn<PaginationState>
-  /** Persist all pending edits of one existing row (rowIndex is page-local). */
-  onUpdateRow?: (rowIndex: number, values: Record<string, string>) => Promise<void>
+  /** Persist all pending edits of one existing row (rowIndex is page-local).
+   *  A `null` value means SQL NULL; '' means an explicit empty string. */
+  onUpdateRow?: (rowIndex: number, values: Record<string, string | null>) => Promise<void>
   /** Insert one staged draft row. */
-  onInsertRow?: (values: Record<string, string>) => Promise<void>
+  onInsertRow?: (values: Record<string, string | null>) => Promise<void>
   /** Delete one existing row (page-local index). */
   onDeleteRow?: (rowIndex: number) => Promise<void>
   /** Called after apply settles: `ok` is false if any change failed. Refetch here. */
@@ -230,11 +232,15 @@ export function createDataGrid<RowT = unknown[]>(
   }
 
   // ---- apply / cancel ----
-  function namedValues(cells: Record<number, string>): Record<string, string> {
+  // A bare '' edit means "no change" (skip); the NULL/EMPTY sentinels are the
+  // explicit ways to write SQL NULL or an empty string.
+  function namedValues(cells: Record<number, string>): Record<string, string | null> {
     const cols = opts.getColumns()
-    const out: Record<string, string> = {}
+    const out: Record<string, string | null> = {}
     for (const [c, v] of Object.entries(cells)) {
-      if (v !== '') out[cols[+c].name] = v
+      if (v === NULL_WIRE) out[cols[+c].name] = null
+      else if (v === EMPTY_WIRE) out[cols[+c].name] = ''
+      else if (v !== '') out[cols[+c].name] = v
     }
     return out
   }

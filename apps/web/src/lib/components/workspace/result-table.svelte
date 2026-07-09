@@ -98,12 +98,16 @@
   }
 
   const update = createMutation(() => ({
-    mutationFn: (v: { schema: string; table: string; pk: Row; values: Record<string, string> }) =>
-      updateRow(connId, v.schema, v.table, v.pk, v.values),
+    mutationFn: (v: {
+      schema: string
+      table: string
+      pk: Row
+      values: Record<string, string | null>
+    }) => updateRow(connId, v.schema, v.table, v.pk, v.values),
     onError: (e: Error) => toast.error(e.message),
   }))
   const insert = createMutation(() => ({
-    mutationFn: (v: { schema: string; table: string; values: Record<string, string> }) =>
+    mutationFn: (v: { schema: string; table: string; values: Record<string, string | null> }) =>
       insertRow(connId, v.schema, v.table, v.values),
     onError: (e: Error) => toast.error(e.message),
   }))
@@ -162,7 +166,12 @@
         {#if grid.dirty}
           <span class="text-muted-foreground text-xs">unsaved changes — Apply or Cancel</span>
         {/if}
-        <ExportMenu api={grid} baseName={`${source.schema}.${source.table}`} {view} {onViewChange} />
+        <ExportMenu
+          api={grid}
+          baseName={`${source.schema}.${source.table}`}
+          {view}
+          {onViewChange}
+        />
       </div>
     </DataGridToolbar>
   {:else}
@@ -193,7 +202,13 @@
         </table>
       </div>
     {:else if view === 'json'}
-      <JsonView {columns} {rows} offset={startIndex} {relations} relationMap={relationMap ?? undefined} />
+      <JsonView
+        {columns}
+        {rows}
+        offset={startIndex}
+        {relations}
+        relationMap={relationMap ?? undefined}
+      />
     {:else}
       <DataGrid api={grid} offset={startIndex} emptyText="No rows returned" {relations} />
     {/if}

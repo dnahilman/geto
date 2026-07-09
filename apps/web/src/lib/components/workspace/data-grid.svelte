@@ -163,7 +163,7 @@
   }
 
   const update = createMutation(() => ({
-    mutationFn: ({ row, values }: { row: RowT; values: Record<string, string> }) =>
+    mutationFn: ({ row, values }: { row: RowT; values: Record<string, string | null> }) =>
       updateRow(connId, schema, table, buildPk(row), values),
     onError: (e: Error) => toast.error(e.message),
   }))
@@ -172,7 +172,7 @@
     onError: (e: Error) => toast.error(e.message),
   }))
   const insert = createMutation(() => ({
-    mutationFn: (values: Record<string, string>) => insertRow(connId, schema, table, values),
+    mutationFn: (values: Record<string, string | null>) => insertRow(connId, schema, table, values),
     onError: (e: Error) => toast.error(e.message),
   }))
 
@@ -269,7 +269,9 @@
             </section>
 
             <section>
-              <h3 class="text-muted-foreground mb-2 text-xs font-semibold uppercase">Constraints</h3>
+              <h3 class="text-muted-foreground mb-2 text-xs font-semibold uppercase">
+                Constraints
+              </h3>
               {#if detail.data.constraints.length}
                 <ul class="space-y-1 font-mono text-xs">
                   {#each detail.data.constraints as c (c.name)}
