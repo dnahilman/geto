@@ -1,20 +1,3 @@
-# syntax=docker/dockerfile:1
-#
-# geto single image — multi-stage, Alpine base for every stage.
-#
-#   stage 1 (build)       compile the SvelteKit SPA with the full toolchain
-#   stage 2 (server-deps) install ONLY the server's production deps (no dev deps)
-#   stage 3 (runtime)     copy just the SPA build + server prod deps + server src
-#                         + tsconfig files (so bun resolves the server's `$src/*`
-#                         path aliases at runtime) — no test files, no dev
-#                         sqlite: minimal surface
-#
-#   docker build -t geto .
-#   docker compose up --build
-#
-# ⚠️ diosone note: its Docker bridge has no IPv6 egress, which can hang
-# `bun install`. Build elsewhere or force IPv4 DNS there.
-
 FROM oven/bun:alpine AS base
 WORKDIR /app
 
@@ -46,6 +29,9 @@ COPY apps/server/src ./apps/server/src
 COPY tsconfig.base.json ./tsconfig.base.json
 COPY apps/server/tsconfig.json ./apps/server/tsconfig.json
 COPY --from=build /app/apps/web/build ./apps/web/build
+
+# Log app directory sizes during build
+RUN echo "=== App Size Breakdown ===" && du -sh ./apps/server/node_modules ./apps/web/build .
 
 VOLUME ["/data"]
 EXPOSE 7020

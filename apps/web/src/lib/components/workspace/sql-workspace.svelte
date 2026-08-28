@@ -17,7 +17,9 @@
   import SqlConsole from '$lib/components/workspace/sql-console.svelte'
   import DatabaseManager from '$lib/components/workspace/database-manager.svelte'
   import RoleManager from '$lib/components/workspace/role-manager.svelte'
+  import { setContext } from 'svelte'
   import WorkspaceTabbar from '$lib/components/workspace/workspace-tabbar.svelte'
+  import { WorkspaceToolbarState } from '$lib/components/workspace/workspace-toolbar.svelte.js'
   import { Workspace } from '$lib/stores/workspace.svelte'
   import { getConnectionString, type Connection } from '$lib/api/connections'
   import { copyText } from '$lib/clipboard'
@@ -25,6 +27,8 @@
   let { connId, conn }: { connId: string; conn: Connection | undefined } = $props()
 
   const ws = new Workspace(connId, 'relational')
+  const toolbarState = new WorkspaceToolbarState()
+  setContext('workspace-toolbar', toolbarState)
 
   $effect(() => {
     function onKeydown(e: KeyboardEvent) {
@@ -133,7 +137,12 @@
           <p class="text-sm">Select a table from the sidebar, or open the SQL console.</p>
         </div>
       {:else}
-        <WorkspaceTabbar {ws} onNew={() => ws.openConsole()} newTitle="New SQL console (Ctrl+T)" />
+        <WorkspaceTabbar
+          {ws}
+          onNew={() => ws.openConsole()}
+          newTitle="New SQL console (Ctrl+T)"
+          actions={toolbarState.activeToolbar ?? undefined}
+        />
 
         <!-- active content (keep tables mounted to preserve grid state) -->
         <div class="min-h-0 flex-1">
@@ -145,6 +154,7 @@
                   schema={tab.schema}
                   table={tab.table}
                   filter={tab.filter}
+                  isActive={ws.activeId === tab.id}
                   onOpenTable={(s, t, f) => ws.openTable(s, t, f)}
                 />
               {:else if tab.kind === 'console'}

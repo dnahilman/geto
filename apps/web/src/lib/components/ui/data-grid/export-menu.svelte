@@ -48,52 +48,55 @@
 </script>
 
 {#if onViewChange}
-  <div class="flex rounded border">
-    <button
-      type="button"
-      class="flex items-center gap-1 rounded-l px-2 py-0.5 text-xs transition-colors {(view ??
-        'table') === 'table'
-        ? 'bg-background text-foreground shadow-sm'
-        : 'text-muted-foreground hover:text-foreground'}"
-      onclick={() => onViewChange('table')}
-      aria-pressed={(view ?? 'table') === 'table'}
-    >
-      <Table2 class="size-3.5" /> Table
-    </button>
-    <button
-      type="button"
-      class="flex items-center gap-1 border-l px-2 py-0.5 text-xs transition-colors {(view ??
-        'table') === 'json'
-        ? 'bg-background text-foreground shadow-sm'
-        : 'text-muted-foreground hover:text-foreground'}"
-      onclick={() => onViewChange('json')}
-      aria-pressed={(view ?? 'table') === 'json'}
-    >
-      <Braces class="size-3.5" /> JSON
-    </button>
-    <button
-      type="button"
-      class="flex items-center gap-1 rounded-r border-l px-2 py-0.5 text-xs transition-colors {(view ??
-        'table') === 'structure'
-        ? 'bg-background text-foreground shadow-sm'
-        : 'text-muted-foreground hover:text-foreground'}"
-      onclick={() => onViewChange('structure')}
-      aria-pressed={(view ?? 'table') === 'structure'}
-    >
-      <List class="size-3.5" /> Structure
-    </button>
-  </div>
+  <DropdownMenu.Root>
+    <DropdownMenu.Trigger>
+      {#snippet child({ props })}
+        <Button
+          {...props}
+          variant="ghost"
+          size="icon"
+          class="size-7 text-muted-foreground hover:text-foreground"
+          title="Switch view ({(view ?? 'table').toUpperCase()})"
+        >
+          {#if (view ?? 'table') === 'table'}
+            <Table2 class="size-4" />
+          {:else if (view ?? 'table') === 'json'}
+            <Braces class="size-4" />
+          {:else}
+            <List class="size-4" />
+          {/if}
+        </Button>
+      {/snippet}
+    </DropdownMenu.Trigger>
+    <DropdownMenu.Content align="end" class="w-36 text-xs">
+      <DropdownMenu.Item onSelect={() => onViewChange('table')} class="flex items-center gap-2">
+        <Table2 class="size-3.5" /> Table View
+      </DropdownMenu.Item>
+      <DropdownMenu.Item onSelect={() => onViewChange('json')} class="flex items-center gap-2">
+        <Braces class="size-3.5" /> JSON View
+      </DropdownMenu.Item>
+      <DropdownMenu.Item onSelect={() => onViewChange('structure')} class="flex items-center gap-2">
+        <List class="size-3.5" /> Structure View
+      </DropdownMenu.Item>
+    </DropdownMenu.Content>
+  </DropdownMenu.Root>
 {/if}
 
 <DropdownMenu.Root>
   <DropdownMenu.Trigger>
     {#snippet child({ props })}
-      <Button {...props} variant="outline" size="sm" class={cn('h-7', className)}>
-        <Download class="size-4" /> Export
+      <Button
+        {...props}
+        variant="ghost"
+        size="icon"
+        class={cn('size-7 text-muted-foreground hover:text-foreground', className)}
+        title="Export data"
+      >
+        <Download class="size-4" />
       </Button>
     {/snippet}
   </DropdownMenu.Trigger>
-  <DropdownMenu.Content align="end" class="w-auto">
+  <DropdownMenu.Content align="end" class="w-auto text-xs">
     <DropdownMenu.Item onSelect={() => exportAs('csv')}>CSV · {scopeLabel}</DropdownMenu.Item>
     <DropdownMenu.Item onSelect={() => exportAs('json')}>JSON · {scopeLabel}</DropdownMenu.Item>
     <DropdownMenu.Item onSelect={() => exportAs('md')}>Markdown · {scopeLabel}</DropdownMenu.Item>

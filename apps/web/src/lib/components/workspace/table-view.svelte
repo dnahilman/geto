@@ -7,12 +7,14 @@
     schema,
     table,
     filter = undefined,
+    isActive = false,
     onOpenTable,
   }: {
     connId: string
     schema: string
     table: string
     filter?: TabFilter
+    isActive?: boolean
     onOpenTable?: (schema: string, table: string, filter?: TabFilter) => void
   } = $props()
 
@@ -24,6 +26,7 @@
   {schema}
   {table}
   {filter}
+  {isActive}
   {onOpenTable}
   view={dataView}
   onViewChange={(v) => (dataView = v)}

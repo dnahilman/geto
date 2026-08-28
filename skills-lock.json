@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "routeup": {
+      "source": "mukul-mehta/routeup",
+      "sourceType": "github",
+      "skillPath": "skills/routeup/SKILL.md",
+      "computedHash": "ac6a0400ba0c7cbaa3afd0195ad74db2e68733beac9359786b173e0c2c3a1a08"
+    }
+  }
+}

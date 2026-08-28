@@ -12,9 +12,10 @@ export default defineConfig({
   define: { __APP_VERSION__: JSON.stringify(version) },
   plugins: [tailwindcss(), sveltekit()],
   server: {
+    host: true,
     port: 5174,
+    strictPort: true,
     proxy: {
-      // dev: proxy API calls to the Elysia server so the SPA stays same-origin
       '/api': {
         target: process.env.PUBLIC_API_URL || 'http://localhost:7020',
         changeOrigin: true,

@@ -7,7 +7,9 @@
   import RedisKeyTree from '$lib/components/workspace/redis-key-tree.svelte'
   import RedisConsole from '$lib/components/workspace/redis-console.svelte'
   import RedisKeyView from '$lib/components/workspace/redis-key-view.svelte'
+  import { setContext } from 'svelte'
   import WorkspaceTabbar from '$lib/components/workspace/workspace-tabbar.svelte'
+  import { WorkspaceToolbarState } from '$lib/components/workspace/workspace-toolbar.svelte.js'
   import { Workspace } from '$lib/stores/workspace.svelte'
   import { getConnectionString, type Connection } from '$lib/api/connections'
   import { copyText } from '$lib/clipboard'
@@ -15,6 +17,8 @@
   let { connId, conn }: { connId: string; conn: Connection | undefined } = $props()
 
   const ws = new Workspace(connId, 'keyvalue')
+  const toolbarState = new WorkspaceToolbarState()
+  setContext('workspace-toolbar', toolbarState)
   const readonly = $derived(conn?.readonly ?? false)
 
   $effect(() => {
@@ -96,7 +100,12 @@
           <p class="text-sm">Select a key from the sidebar, or open a console.</p>
         </div>
       {:else}
-        <WorkspaceTabbar {ws} onNew={() => ws.openRedisConsole()} newTitle="New console (Ctrl+T)" />
+        <WorkspaceTabbar
+          {ws}
+          onNew={() => ws.openRedisConsole()}
+          newTitle="New console (Ctrl+T)"
+          actions={toolbarState.activeToolbar ?? undefined}
+        />
 
         <div class="min-h-0 flex-1">
           {#each ws.tabs as tab (tab.id)}

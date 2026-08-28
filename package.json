@@ -10,6 +10,11 @@
     "dev:web": "bun run --filter @geto/web dev",
     "build": "bun run --filter @geto/web build",
     "start": "bun run --filter @geto/server start",
+    "routeup": "routeup",
+    "docker:build": "podman build -t geto:latest . && podman images geto:latest --format '📦 Image: {{.Repository}}:{{.Tag}} | Size: {{.Size}}'",
+    "docker:size": "podman images geto:latest --format 'table {{.Repository}}\t{{.Tag}}\t{{.Size}}\t{{.Created}}'",
+    "docker:history": "podman history geto:latest --format 'table {{.Size}}\t{{.CreatedBy}}'",
+    "compose:dev": "podman-compose -f docker-compose.dev.yml up --build",
     "format": "prettier --write \"apps/**/*.{ts,svelte,js,json,css}\""
   },
   "devDependencies": {

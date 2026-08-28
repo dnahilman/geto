@@ -32,14 +32,23 @@
   --sidebar-accent-foreground: oklch(0.21 0.006 285.885);
   --sidebar-border: oklch(0.92 0.004 286.32);
   --sidebar-ring: oklch(0.705 0.015 286.067);
+
+  /* Data Grid Dirty State (#FDEB99 and #F5A623 in OKLCH) */
+  --grid-dirty-bg: oklch(93.2% 0.091 93.4);
+  --grid-dirty-indicator: oklch(76.8% 0.168 70.8);
+
+  /* TanStack Cell Selection Reference Colors in OKLCH (#dbeafe, #bfdbfe, #2563eb) */
+  --cell-selected-bg: oklch(93.2% 0.032 255.6);
+  --cell-focused-bg: oklch(88.2% 0.059 254.1);
+  --cell-edge-color: oklch(54.6% 0.245 262.9);
 }
 
 .dark {
   --background: oklch(0.141 0.005 285.823);
   --foreground: oklch(0.985 0 0);
-  --card: oklch(0.21 0.006 285.885);
+  --card: oklch(0.141 0.005 285.823);
   --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.21 0.006 285.885);
+  --popover: oklch(0.141 0.005 285.823);
   --popover-foreground: oklch(0.985 0 0);
   --primary: oklch(0.92 0.004 286.32);
   --primary-foreground: oklch(0.21 0.006 285.885);
@@ -54,7 +63,7 @@
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.552 0.016 285.938);
-  --sidebar: oklch(0.21 0.006 285.885);
+  --sidebar: oklch(0.141 0.005 285.823);
   --sidebar-foreground: oklch(0.985 0 0);
   --sidebar-primary: oklch(0.488 0.243 264.376);
   --sidebar-primary-foreground: oklch(0.985 0 0);
@@ -62,6 +71,15 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.552 0.016 285.938);
+
+  /* Data Grid Dirty State Theme (Dark Mode) */
+  --grid-dirty-bg: oklch(38% 0.07 93.4);
+  --grid-dirty-indicator: oklch(76.8% 0.168 70.8);
+
+  /* TanStack Cell Selection Reference Colors in OKLCH (Dark Mode) */
+  --cell-selected-bg: oklch(30% 0.05 255.6);
+  --cell-focused-bg: oklch(38% 0.08 254.1);
+  --cell-edge-color: oklch(62% 0.22 262.9);
 }
 
 @theme inline {
@@ -96,6 +114,8 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-grid-dirty-bg: var(--grid-dirty-bg);
+  --color-grid-dirty-indicator: var(--grid-dirty-indicator);
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
@@ -106,6 +126,98 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+  }
+}
+
+@layer utilities {
+  /* Transparent input that avoids creating inner borders or covering cell selection */
+  .cell-input-base {
+    @apply h-full w-full rounded-none border-0 bg-transparent px-2.5 py-1 text-xs text-foreground shadow-none ring-0 transition-none outline-none focus:ring-0 focus:outline-none;
+    cursor: auto;
+  }
+
+  .cell-dirty-bg {
+    background-color: var(--grid-dirty-bg);
+  }
+
+  .cell-error-bg {
+    @apply bg-destructive/10 text-destructive;
+  }
+
+  /* TanStack Cell Selection Reference CSS (Cursor auto) */
+  .cell-selectable {
+    user-select: none;
+    cursor: auto;
+    --cell-edge-top: 0 0 0 0 transparent;
+    --cell-edge-right: 0 0 0 0 transparent;
+    --cell-edge-bottom: 0 0 0 0 transparent;
+    --cell-edge-left: 0 0 0 0 transparent;
+    box-shadow:
+      inset var(--cell-edge-top),
+      inset var(--cell-edge-right),
+      inset var(--cell-edge-bottom),
+      inset var(--cell-edge-left);
+  }
+
+  .cell-selected {
+    background-color: var(--cell-selected-bg);
+  }
+
+  .cell-focused {
+    background-color: var(--cell-focused-bg);
+  }
+
+  .cell-edge-top {
+    --cell-edge-top: 0 2px 0 0 var(--cell-edge-color);
+  }
+
+  .cell-edge-right {
+    --cell-edge-right: -2px 0 0 0 var(--cell-edge-color);
+  }
+
+  .cell-edge-bottom {
+    --cell-edge-bottom: 0 -2px 0 0 var(--cell-edge-color);
+  }
+
+  .cell-edge-left {
+    --cell-edge-left: 2px 0 0 0 var(--cell-edge-color);
+  }
+
+  /* Column Resizer UI Styles */
+  .column-resizer {
+    position: absolute;
+    top: 0;
+    right: 0;
+    height: 100%;
+    width: 12px;
+    transform: translateX(50%);
+    cursor: col-resize;
+    user-select: none;
+    touch-action: none;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .column-resizer .resizer-line {
+    width: 2px;
+    height: 100%;
+    background-color: transparent;
+    transition:
+      background-color 0.15s ease,
+      width 0.15s ease;
+    border-radius: 9999px;
+  }
+
+  th:hover .column-resizer .resizer-line,
+  .column-resizer:hover .resizer-line {
+    background-color: oklch(54.6% 0.245 262.9 / 60%);
+  }
+
+  .column-resizer.isResizing .resizer-line {
+    background-color: oklch(54.6% 0.245 262.9);
+    width: 3px;
   }
 }
 

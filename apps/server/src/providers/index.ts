@@ -1,7 +1,3 @@
-// Database provider registry. Only PostgreSQL is implemented today, but the
-// connection model, API, and UI are all driven by this registry so adding a new
-// engine later is mostly: add an entry here + a driver, and the UI picks it up.
-
 export type ProviderId = 'postgresql' | 'redis'
 
 /** How a provider's data is shaped — drives which workspace the frontend renders. */
@@ -12,7 +8,6 @@ export interface ProviderMeta {
   label: string
   kind: ProviderKind
   defaultPort: number
-  /** URL schemes recognized when pasting a connection string. */
   urlSchemes: string[]
 }
 

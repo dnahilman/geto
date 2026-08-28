@@ -1,0 +1,6 @@
+{
+  "$schema": "https://raw.githubusercontent.com/mukul-mehta/routeup/main/routeup.schema.json",
+  "name": "geto",
+  "port": 5174,
+  "command": "bun dev"
+}
