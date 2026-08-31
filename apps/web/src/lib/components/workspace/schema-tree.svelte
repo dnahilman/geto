@@ -21,15 +21,13 @@
   import { getTree, treeKey } from '$lib/api/introspect'
   import { dropTable, truncateTable } from '$lib/api/mutations'
 
-  let {
-    connId,
-    onopen,
-    readonly = false,
-  }: {
+  interface Props {
     connId: string
     onopen: (schema: string, table: string) => void
     readonly?: boolean
-  } = $props()
+  }
+
+  let { connId, onopen, readonly = false }: Props = $props()
 
   const qc = useQueryClient()
 

@@ -10,11 +10,13 @@
   import WorkspaceSkeletons from './workspace-skeletons.svelte'
   import { scanKeys, deleteKey, type KeyEntry } from '$lib/api/keys'
 
-  let {
-    connId,
-    onopen,
-    readonly = false,
-  }: { connId: string; onopen: (key: string) => void; readonly?: boolean } = $props()
+  interface Props {
+    connId: string
+    onopen: (key: string) => void
+    readonly?: boolean
+  }
+
+  let { connId, onopen, readonly = false }: Props = $props()
 
   const qc = useQueryClient()
   let match = $state('')

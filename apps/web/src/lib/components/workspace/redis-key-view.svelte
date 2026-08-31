@@ -8,17 +8,14 @@
   import { getKeyValue, keyValueKey, deleteKey } from '$lib/api/keys'
   import { keyValueToResult } from '$lib/redis-result'
 
-  let {
-    connId,
-    redisKey,
-    readonly = false,
-    onDeleted,
-  }: {
+  interface Props {
     connId: string
     redisKey: string
     readonly?: boolean
     onDeleted?: (key: string) => void
-  } = $props()
+  }
+
+  let { connId, redisKey, readonly = false, onDeleted }: Props = $props()
 
   const qc = useQueryClient()
   let view = $state<'table' | 'json' | 'structure'>('table')

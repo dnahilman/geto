@@ -1,8 +1,8 @@
 ---
 name: orchestrator-workflow
 description: >-
-  Use this skill when the user asks to use a "workflow", "orchestrator", 
-  or when given a medium-to-large scale task that requires careful planning and a team of sub-agents.
+  Use this skill ONLY when the user explicitly requests to use "orchestrator", "orchestrator workflow", or "workflow".
+  Do NOT activate or use this skill by default for general tasks, quick questions, or simple edits unless explicitly commanded by the user.
 ---
 
 # Orchestrator Workflow

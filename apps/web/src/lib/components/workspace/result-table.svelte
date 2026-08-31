@@ -12,10 +12,22 @@
     variantFor,
     type GridColumn,
     type RelationsConfig,
-  } from '$lib/components/ui/data-grid'
+  } from '$lib/components/data-grid'
   import { buildRelationMap, type RelationTarget } from '$lib/relations'
   import { insertRow, updateRow, deleteRow, type Row } from '$lib/api/mutations'
   import type { TabFilter } from '$lib/stores/workspace.svelte'
+
+  interface Props {
+    connId: string
+    columns: ColumnMeta[]
+    rows: unknown[][]
+    startIndex?: number
+    source?: ResultSource | null
+    view?: 'table' | 'json' | 'structure'
+    onViewChange?: (v: 'table' | 'json' | 'structure') => void
+    onApplied?: () => void
+    onOpenTable?: (schema: string, table: string, filter?: TabFilter) => void
+  }
 
   let {
     connId,
@@ -27,17 +39,7 @@
     onViewChange,
     onApplied,
     onOpenTable,
-  }: {
-    connId: string
-    columns: ColumnMeta[]
-    rows: unknown[][]
-    startIndex?: number
-    source?: ResultSource | null
-    view?: 'table' | 'json' | 'structure'
-    onViewChange?: (v: 'table' | 'json' | 'structure') => void
-    onApplied?: () => void
-    onOpenTable?: (schema: string, table: string, filter?: TabFilter) => void
-  } = $props()
+  }: Props = $props()
 
   // FK/relation metadata (cached per connection); only used when the result maps
   // to a known base table (source != null).

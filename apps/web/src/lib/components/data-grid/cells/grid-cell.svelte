@@ -1,9 +1,13 @@
 <script lang="ts">
-  import type { GridForm, GridFieldApi } from '../types.js'
-  import { useGridTableCellContext } from '../hooks/use-data-grid.js'
-  import { getContext } from 'svelte'
+  import { formType } from '$lib/components/workspace/data-grid.svelte'
+  import { useGridTableCellContext } from '$lib/components/data-grid'
+  import type { GridFieldApi } from '../types.js'
 
-  const form = getContext('gridForm') as GridForm
+  interface Props {
+    form: typeof formType
+  }
+
+  let { form }: Props = $props()
   const cell = useGridTableCellContext()
 
   const rowIndex = $derived(cell.row.index)

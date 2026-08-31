@@ -2,7 +2,7 @@
 // `collectRows` reads the live grid api (selection + loaded page + pending edits);
 // the serializers and `downloadFile` are side-effect-free except for the actual
 // browser download. Shared with the grid's TSV copy via `collectRows`.
-import type { DataGridApi } from '$lib/components/ui/data-grid/data-grid-context'
+import type { DataGridApi } from '$lib/components/data-grid'
 
 /**
  * Resolve the rows to export/copy: the selected rows (ascending) if any are

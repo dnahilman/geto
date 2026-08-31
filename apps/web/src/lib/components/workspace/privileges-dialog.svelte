@@ -11,6 +11,15 @@
     type ObjectKind,
   } from '$lib/api/roles'
 
+  interface Props {
+    open?: boolean
+    connId: string
+    schema: string
+    name: string
+    kind: ObjectKind
+    readonly?: boolean
+  }
+
   let {
     open = $bindable(false),
     connId,
@@ -18,14 +27,7 @@
     name,
     kind,
     readonly = false,
-  }: {
-    open?: boolean
-    connId: string
-    schema: string
-    name: string
-    kind: ObjectKind
-    readonly?: boolean
-  } = $props()
+  }: Props = $props()
 
   const TABLE_PRIVS = ['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'TRUNCATE', 'REFERENCES', 'TRIGGER']
   const SCHEMA_PRIVS = ['USAGE', 'CREATE']

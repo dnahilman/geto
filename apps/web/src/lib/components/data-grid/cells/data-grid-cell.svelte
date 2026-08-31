@@ -3,15 +3,22 @@
   import { ArrowUpRight, Rows3 } from 'lucide-svelte'
   import EditableCell from './editable-cell.svelte'
   import * as DropdownMenu from '$lib/components/ui/dropdown-menu'
-  import { DATA_GRID_KEY, isDraftRow, type DataGridContext } from './data-grid-context'
+  import { DATA_GRID_KEY, isDraftRow, type DataGridContext } from '../data-grid-context'
   import type { ReverseTarget } from '$lib/relations'
+
+  interface Props {
+    rowIndex: number
+    colIndex: number
+    value?: unknown
+    relationsEnabled?: boolean
+  }
 
   let {
     rowIndex,
     colIndex,
     value = undefined,
     relationsEnabled = false,
-  }: { rowIndex: number; colIndex: number; value?: unknown; relationsEnabled?: boolean } = $props()
+  }: Props = $props()
 
   const ctx = getContext<DataGridContext>(DATA_GRID_KEY)
   const col = $derived(ctx.columns[colIndex])

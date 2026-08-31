@@ -1,3 +1,16 @@
+<script module lang="ts">
+  import { formOptions } from '@tanstack/svelte-form'
+  import type { DynamicRow } from '$lib/components/data-grid'
+  import { getGridFormType } from '$lib/components/data-grid'
+  export const gridFormOpts = formOptions({
+    defaultValues: {
+      data: [] as DynamicRow[],
+    },
+  })
+  export const formType = getGridFormType(gridFormOpts)
+</script>
+
+
 <script lang="ts">
   import type { Snippet } from 'svelte'
   import {
@@ -8,7 +21,6 @@
     mapDbToDataType,
     copyGridToClipboard,
     getCellClassName,
-    type DynamicRow,
   } from '$lib/components/data-grid'
   import * as Table from '$lib/components/ui/table/index.js'
   import { Button } from '$lib/components/ui/button'
@@ -32,14 +44,13 @@
   } from '@tanstack/svelte-table'
   import { setContext, untrack } from 'svelte'
   import {
-    PageSizeSelect,
     JsonView,
     ExportMenu,
     variantFor,
     type RelationsConfig,
     type GridColumn,
     type DataGridApi,
-  } from '$lib/components/ui/data-grid'
+  } from '$lib/components/data-grid'
   import { getTableRows, getTableDetail, tableDetailKey } from '$lib/api/introspect'
   import { updateRow, type Row } from '$lib/api/mutations'
   import { historyKey, getCompletion, completionKey } from '$lib/api/query'
@@ -416,7 +427,9 @@
   })
 </script>
 
+
 <svelte:window onkeydown={handleKeyDown} />
+<table.AppTable>
 
 {#snippet toolbarSnippet()}
   <div class="flex items-center gap-1">
@@ -558,7 +571,6 @@
       </div>
     {:else}
       <!-- TanStack Table v9 Data Grid -->
-      <table.AppTable>
         <Table.Root
           containerClass="h-full w-full overflow-auto"
           class="table-fixed border-collapse border-r border-l border-border text-xs"
@@ -626,7 +638,6 @@
             {/if}
           </Table.Body>
         </Table.Root>
-      </table.AppTable>
     {/if}
   </div>
 
@@ -665,33 +676,8 @@
     </div>
 
     <!-- Right: [←] page-size [→] -->
-    <div class="flex items-center gap-1">
-      <Button
-        variant="ghost"
-        size="icon"
-        class="size-7"
-        disabled={page === 0 || form.state.isDirty || view === 'structure'}
-        onclick={() => table.previousPage()}
-      >
-        <ChevronLeft class="size-4" />
-      </Button>
-      <PageSizeSelect
-        value={pageSize}
-        onChange={(v) => {
-          table.resetCellSelection(true)
-          pageSize = v
-          page = 0
-        }}
-      />
-      <Button
-        variant="ghost"
-        size="icon"
-        class="size-7"
-        disabled={atEnd || form.state.isDirty || view === 'structure'}
-        onclick={() => table.nextPage()}
-      >
-        <ChevronRight class="size-4" />
-      </Button>
-    </div>
+    <table.PaginationControls>
+
   </div>
 </div>
+</table.AppTable>

@@ -11,7 +11,6 @@
     ChevronRight,
     Trash2,
   } from 'lucide-svelte'
-  import { PageSizeSelect } from '$lib/components/ui/data-grid'
   import * as Resizable from '$lib/components/ui/resizable'
   import * as AlertDialog from '$lib/components/ui/alert-dialog'
   import { Button } from '$lib/components/ui/button'
@@ -32,17 +31,14 @@
     type SafetyReport,
   } from '$lib/api/query'
 
-  let {
-    connId,
-    initialSql,
-    onSqlChange,
-    onOpenTable,
-  }: {
+  interface Props {
     connId: string
     initialSql: string
     onSqlChange: (sql: string) => void
     onOpenTable?: (schema: string, table: string, filter?: TabFilter) => void
-  } = $props()
+  }
+
+  let { connId, initialSql, onSqlChange, onOpenTable }: Props = $props()
 
   const qc = useQueryClient()
   let sql = $state(initialSql)
@@ -327,7 +323,7 @@
             <ChevronLeft class="size-4" />
           </Button>
         {/if}
-        <PageSizeSelect value={pageSize} onChange={setPageSize} />
+        <!-- <PageSizeSelect value={pageSize} onChange={setPageSize} /> -->
         {#if typeof active === 'number' && activeResult && !activeResult.error && activeResult.columns.length > 0}
           <Button
             variant="ghost"

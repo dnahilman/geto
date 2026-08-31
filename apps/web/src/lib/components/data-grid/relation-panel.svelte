@@ -12,11 +12,19 @@
   } from 'lucide-svelte'
   import { Button } from '$lib/components/ui/button'
   import { getRelatedRows } from '$lib/api/introspect'
-  import DataGrid from './data-grid.svelte'
+  import ResultGrid from './result-grid.svelte'
   import JsonView from './json-view.svelte'
-  import { createDataGrid } from './create-data-grid.svelte.js'
-  import { variantFor } from './cell-variant'
+  import { createDataGrid } from './hooks/create-data-grid.svelte.js'
+  import { variantFor } from './utils/cell-variant'
   import type { GridColumn, ExpandedRelation } from './data-grid-context'
+
+  interface Props {
+    connId: string
+    expansion: ExpandedRelation
+    onOpenInTab: () => void
+    onCollapse: () => void
+    initialView?: 'table' | 'json'
+  }
 
   let {
     connId,
@@ -24,13 +32,7 @@
     onOpenInTab,
     onCollapse,
     initialView = 'table',
-  }: {
-    connId: string
-    expansion: ExpandedRelation
-    onOpenInTab: () => void
-    onCollapse: () => void
-    initialView?: 'table' | 'json'
-  } = $props()
+  }: Props = $props()
 
   const target = $derived(expansion.target)
   const valueStr = $derived(String(expansion.value))
@@ -137,7 +139,7 @@
     {:else if view === 'json'}
       <JsonView columns={cols} rows={data} offset={page * PAGE} />
     {:else}
-      <DataGrid api={grid} offset={page * PAGE} loading={q.isLoading} emptyText="No related rows" />
+      <ResultGrid api={grid} offset={page * PAGE} loading={q.isLoading} emptyText="No related rows" />
     {/if}
   </div>
 

@@ -12,7 +12,12 @@
   import { getConnectionString, type Connection } from '$lib/api/connections'
   import { copyText } from '$lib/clipboard'
 
-  let { connId, conn }: { connId: string; conn: Connection | undefined } = $props()
+  interface Props {
+    connId: string
+    conn: Connection | undefined
+  }
+
+  let { connId, conn }: Props = $props()
 
   const ws = new Workspace(connId, 'keyvalue')
   const readonly = $derived(conn?.readonly ?? false)

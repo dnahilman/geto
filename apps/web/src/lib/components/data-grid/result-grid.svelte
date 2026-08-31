@@ -4,7 +4,7 @@
   import { FlexRender, DataTablePagination, formatCell } from '$lib/components/ui/data-table'
   import { copyText } from '$lib/clipboard'
   import { collectRows } from '$lib/export'
-  import DataGridCell from './data-grid-cell.svelte'
+  import DataGridCell from './cells/data-grid-cell.svelte'
   import RelationPanel from './relation-panel.svelte'
   import {
     DATA_GRID_KEY,
@@ -12,6 +12,17 @@
     type DataGridApi,
     type RelationsConfig,
   } from './data-grid-context'
+
+  interface Props {
+    api: DataGridApi<RowT>
+    offset?: number
+    loading?: boolean
+    showPagination?: boolean
+    canPrevious?: boolean
+    canNext?: boolean
+    emptyText?: string
+    relations?: RelationsConfig
+  }
 
   let {
     api,
@@ -22,16 +33,7 @@
     canNext = undefined,
     emptyText = 'No rows',
     relations = undefined,
-  }: {
-    api: DataGridApi<RowT>
-    offset?: number
-    loading?: boolean
-    showPagination?: boolean
-    canPrevious?: boolean
-    canNext?: boolean
-    emptyText?: string
-    relations?: RelationsConfig
-  } = $props()
+  }: Props = $props()
 
   // api is a stable, single-instance object; ctx exposes live state via getters.
   // svelte-ignore state_referenced_locally

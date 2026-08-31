@@ -2,10 +2,10 @@ import { createTableHook } from '@tanstack/svelte-table'
 import ColumnHeader from '../headers/column-header.svelte'
 import ColumnResizer from '../headers/column-resizer.svelte'
 import RowSelectHeader from '../headers/row-select-header.svelte'
-import PaginationControls from '../pagination/pagination-controls.svelte'
 import GridCell from '../cells/grid-cell.svelte'
 import RowSelectCell from '../cells/row-select-cell.svelte'
 import { dataGridFeatures } from '../utils/table-features.js'
+import PaginationControls from '../pagination/pagination-controls.svelte'
 
 export const {
   appFeatures: gridFeatures,
@@ -19,6 +19,8 @@ export const {
   enableColumnResizing: true,
   columnResizeMode: 'onChange',
   columnResizeDirection: 'ltr',
+  manualPagination: true,
+  manualSorting: true,
   tableComponents: {
     PaginationControls,
   },

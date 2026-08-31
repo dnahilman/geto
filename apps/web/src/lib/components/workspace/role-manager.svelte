@@ -21,11 +21,13 @@
   } from '$lib/api/roles'
   import WorkspaceSkeletons from './workspace-skeletons.svelte'
 
-  let {
-    open = $bindable(false),
-    connId,
-    readonly = false,
-  }: { open?: boolean; connId: string; readonly?: boolean } = $props()
+  interface Props {
+    open?: boolean
+    connId: string
+    readonly?: boolean
+  }
+
+  let { open = $bindable(false), connId, readonly = false }: Props = $props()
 
   const qc = useQueryClient()
   const roles = createQuery(() => ({

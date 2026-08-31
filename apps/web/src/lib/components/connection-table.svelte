@@ -37,8 +37,12 @@
     type Connection,
   } from '$lib/api/connections'
 
-  let { connections, onedit }: { connections: Connection[]; onedit: (c: Connection) => void } =
-    $props()
+  interface Props {
+    connections: Connection[]
+    onedit: (c: Connection) => void
+  }
+
+  let { connections, onedit }: Props = $props()
 
   const qc = useQueryClient()
   const providers = createQuery(() => ({ queryKey: providersKey, queryFn: getProviders }))

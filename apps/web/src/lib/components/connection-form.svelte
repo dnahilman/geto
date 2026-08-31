@@ -23,10 +23,12 @@
   } from '$lib/api/connections'
   import { parseConnectionUrl } from '$lib/api/connection-url'
 
-  let {
-    open = $bindable(false),
-    connection = null,
-  }: { open?: boolean; connection?: Connection | null } = $props()
+  interface Props {
+    open?: boolean
+    connection?: Connection | null
+  }
+
+  let { open = $bindable(false), connection = null }: Props = $props()
 
   const sslModes: SslMode[] = ['disable', 'allow', 'prefer', 'require', 'verify-ca', 'verify-full']
   const qc = useQueryClient()

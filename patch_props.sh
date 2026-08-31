@@ -1,0 +1,2 @@
+sed -i 's/  }: {/    isActive = false,\n    toolbar = $bindable(null),\n  }: {/g' apps/web/src/lib/components/workspace/data-grid.svelte
+sed -i 's/    onViewChange?: (v: '\''table'\'' | '\''json'\'' | '\''structure'\'') => void/    onViewChange?: (v: '\''table'\'' | '\''json'\'' | '\''structure'\'') => void\n    isActive?: boolean\n    toolbar?: import('\''svelte'\'').Snippet | null/g' apps/web/src/lib/components/workspace/data-grid.svelte

@@ -19,8 +19,8 @@ import {
   type DataGridContext,
   type ExpandedRelation,
   type GridColumn,
-} from './data-grid-context'
-import { NULL_WIRE, EMPTY_WIRE } from './cell-variant'
+} from '../data-grid-context'
+import { NULL_WIRE, EMPTY_WIRE } from '../utils/cell-variant'
 
 export interface CreateDataGridOptions<RowT> {
   getData: () => RowT[]

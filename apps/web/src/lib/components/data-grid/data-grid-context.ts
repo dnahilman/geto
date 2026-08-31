@@ -1,5 +1,5 @@
 import type { Table } from '@tanstack/table-core'
-import type { CellVariant } from './cell-variant'
+import type { CellVariant } from './utils/cell-variant'
 import type { RelationDescriptor, RelationTarget } from '$lib/relations'
 
 /** Enables the relation viewer in `<DataGrid>`: which connection to query related

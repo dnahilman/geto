@@ -2,13 +2,15 @@
   import type { Snippet } from 'svelte'
   import { Plus, Check, X, Trash2 } from 'lucide-svelte'
   import { Button } from '$lib/components/ui/button'
-  import type { DataGridApi } from './data-grid-context'
+  import type { DataGridApi } from '../data-grid-context'
 
-  let {
-    api,
-    editable,
-    children,
-  }: { api: DataGridApi<RowT>; editable: boolean; children?: Snippet } = $props()
+  interface Props {
+    api: DataGridApi<RowT>
+    editable: boolean
+    children?: Snippet
+  }
+
+  let { api, editable, children }: Props = $props()
 </script>
 
 <div class="flex items-center gap-2 border-b px-2 py-1" data-datagrid-toolbar>

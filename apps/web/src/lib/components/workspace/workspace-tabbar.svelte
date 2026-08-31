@@ -4,13 +4,12 @@
   import * as ContextMenu from '$lib/components/ui/context-menu'
   import type { Workspace, Tab } from '$lib/stores/workspace.svelte'
 
-  let {
-    ws,
-    actions,
-  }: {
+  interface Props {
     ws: Workspace
     actions?: Snippet
-  } = $props()
+  }
+
+  let { ws, actions }: Props = $props()
 
   function icon(kind: Tab['kind']) {
     if (kind === 'table') return Table2

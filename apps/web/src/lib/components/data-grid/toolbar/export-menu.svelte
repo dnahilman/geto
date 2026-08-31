@@ -4,8 +4,16 @@
   import * as DropdownMenu from '$lib/components/ui/dropdown-menu'
   import { Button } from '$lib/components/ui/button'
   import { cn } from '$lib/utils'
-  import type { DataGridApi } from './data-grid-context'
+  import type { DataGridApi } from '../data-grid-context'
   import { collectRows, toCSV, toJSON, toMarkdown, downloadFile, timestamp } from '$lib/export'
+
+  interface Props {
+    api: DataGridApi
+    baseName: string
+    class?: string
+    view?: 'table' | 'json' | 'structure'
+    onViewChange?: (v: 'table' | 'json' | 'structure') => void
+  }
 
   let {
     api,
@@ -13,13 +21,7 @@
     class: className = '',
     view,
     onViewChange,
-  }: {
-    api: DataGridApi
-    baseName: string
-    class?: string
-    view?: 'table' | 'json' | 'structure'
-    onViewChange?: (v: 'table' | 'json' | 'structure') => void
-  } = $props()
+  }: Props = $props()
 
   // Scope hint shown on each menu item so users know it's page-local, not the whole result set.
   const selectedCount = $derived(Object.keys(api.ctx.selectedRows).length)

@@ -22,7 +22,17 @@
     serializeDateTime,
     NULL_WIRE,
     EMPTY_WIRE,
-  } from './cell-variant'
+  } from '../utils/cell-variant'
+
+  interface Props {
+    value: unknown
+    variant: CellVariant
+    options?: string[]
+    typeName?: string
+    editing: boolean
+    onsave: (wire: string) => void
+    oncancel: () => void
+  }
 
   let {
     value,
@@ -32,15 +42,7 @@
     editing,
     onsave,
     oncancel,
-  }: {
-    value: unknown
-    variant: CellVariant
-    options?: string[]
-    typeName?: string
-    editing: boolean
-    onsave: (wire: string) => void
-    oncancel: () => void
-  } = $props()
+  }: Props = $props()
 
   const withTz = $derived(/tz|with time zone/i.test(typeName))
 

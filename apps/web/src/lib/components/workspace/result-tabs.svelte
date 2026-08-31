@@ -2,15 +2,13 @@
   import { CircleX, History } from 'lucide-svelte'
   import type { StatementResult } from '$lib/api/query'
 
-  let {
-    results,
-    active,
-    onSelect,
-  }: {
+  interface Props {
     results: StatementResult[]
     active: 'history' | number
     onSelect: (tab: 'history' | number) => void
-  } = $props()
+  }
+
+  let { results, active, onSelect }: Props = $props()
 </script>
 
 <div

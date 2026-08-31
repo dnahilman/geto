@@ -10,11 +10,13 @@
   import { createTable, type ColumnSpec } from '$lib/api/mutations'
   import { treeKey } from '$lib/api/introspect'
 
-  let {
-    open = $bindable(false),
-    connId,
-    schema,
-  }: { open?: boolean; connId: string; schema: string } = $props()
+  interface Props {
+    open?: boolean
+    connId: string
+    schema: string
+  }
+
+  let { open = $bindable(false), connId, schema }: Props = $props()
 
   const qc = useQueryClient()
   const COMMON_TYPES = [

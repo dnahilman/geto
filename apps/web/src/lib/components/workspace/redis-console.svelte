@@ -11,11 +11,13 @@
   import { commandToResult, tokenize } from '$lib/redis-result'
   import type { StatementResult } from '$lib/api/query'
 
-  let {
-    connId,
-    initialCmd,
-    onCmdChange,
-  }: { connId: string; initialCmd: string; onCmdChange: (c: string) => void } = $props()
+  interface Props {
+    connId: string
+    initialCmd: string
+    onCmdChange: (c: string) => void
+  }
+
+  let { connId, initialCmd, onCmdChange }: Props = $props()
 
   let cmd = $state(initialCmd)
   $effect(() => onCmdChange(cmd))

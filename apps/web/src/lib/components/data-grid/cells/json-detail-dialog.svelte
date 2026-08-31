@@ -7,11 +7,13 @@
   import { prettyHtml } from '$lib/json'
 
   // Read-only pretty-printed JSON viewer. `value` is the already-parsed object/array.
-  let {
-    open = $bindable(false),
-    value,
-    title = 'JSON',
-  }: { open?: boolean; value: unknown; title?: string } = $props()
+  interface Props {
+    open?: boolean
+    value: unknown
+    title?: string
+  }
+
+  let { open = $bindable(false), value, title = 'JSON' }: Props = $props()
 
   async function copy() {
     try {

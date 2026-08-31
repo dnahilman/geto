@@ -1,17 +1,14 @@
 <script lang="ts">
   import Skeleton from '$lib/components/ui/skeleton/skeleton.svelte'
 
-  let {
-    type,
-    cols = 6,
-    rows = 10,
-    count = 8,
-  }: {
+  interface Props {
     type: 'table' | 'tree' | 'console' | 'dialog-list' | 'structure'
     cols?: number
     rows?: number
     count?: number
-  } = $props()
+  }
+
+  let { type, cols = 6, rows = 10, count = 8 }: Props = $props()
 </script>
 
 {#snippet tableSkeleton()}

@@ -12,17 +12,19 @@
   import { switchDatabase } from '$lib/api/connections'
   import WorkspaceSkeletons from './workspace-skeletons.svelte'
 
+  interface Props {
+    open?: boolean
+    connId: string
+    currentDatabase?: string
+    onSwitched?: () => void
+  }
+
   let {
     open = $bindable(false),
     connId,
     currentDatabase,
     onSwitched,
-  }: {
-    open?: boolean
-    connId: string
-    currentDatabase?: string
-    onSwitched?: () => void
-  } = $props()
+  }: Props = $props()
 
   const qc = useQueryClient()
   const dbs = createQuery(() => ({

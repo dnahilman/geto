@@ -9,7 +9,7 @@ import JsonGridField from '../cells/json-grid-field.svelte'
 import SubmitButton from '../toolbar/submit-button.svelte'
 import DiscardButton from '../toolbar/discard-button.svelte'
 
-export const { createAppForm: createGridForm } = createFormCreator({
+export const { createAppForm: createGridForm, getFormType: getGridFormType } = createFormCreator({
   fieldComponents: {
     TextGridField,
     NumberGridField,

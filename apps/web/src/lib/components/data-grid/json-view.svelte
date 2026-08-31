@@ -10,19 +10,21 @@
   import type { ExpandedRelation, RelationsConfig } from './data-grid-context'
   import type { RelationDescriptor, RelationTarget } from '$lib/relations'
 
+  interface Props {
+    columns: { name: string }[]
+    rows: unknown[][]
+    offset?: number
+    relations?: RelationsConfig
+    relationMap?: (RelationDescriptor | null)[]
+  }
+
   let {
     columns,
     rows,
     offset = 0,
     relations = undefined,
     relationMap = undefined,
-  }: {
-    columns: { name: string }[]
-    rows: unknown[][]
-    offset?: number
-    relations?: RelationsConfig
-    relationMap?: (RelationDescriptor | null)[]
-  } = $props()
+  }: Props = $props()
 
   // One open relation per document (keyed by row index within this page).
   let expanded = $state<Record<number, { col: number; exp: ExpandedRelation } | null>>({})

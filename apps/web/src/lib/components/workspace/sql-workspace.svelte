@@ -23,7 +23,12 @@
   import { getConnectionString, type Connection } from '$lib/api/connections'
   import { copyText } from '$lib/clipboard'
 
-  let { connId, conn }: { connId: string; conn: Connection | undefined } = $props()
+  interface Props {
+    connId: string
+    conn: Connection | undefined
+  }
+
+  let { connId, conn }: Props = $props()
 
   const ws = new Workspace(connId, 'relational')
 
@@ -143,7 +148,6 @@
     </div>
   {:else}
     {@render tabbar()}
-
     <!-- active content (keep tables mounted to preserve grid state) -->
     <div class="min-h-0 flex-1">
       {#each ws.tabs as tab (tab.id)}

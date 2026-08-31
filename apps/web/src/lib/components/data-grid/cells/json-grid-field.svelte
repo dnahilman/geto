@@ -3,7 +3,7 @@
   import CellContainer from './cell-container.svelte'
   import * as Popover from '$lib/components/ui/popover/index.js'
   import { Button } from '$lib/components/ui/button/index.js'
-  import JsonDetailDialog from '$lib/components/ui/data-grid/json-detail-dialog.svelte'
+  import JsonDetailDialog from './json-detail-dialog.svelte'
   import Maximize2 from '@lucide/svelte/icons/maximize-2'
   import { toast } from 'svelte-sonner'
   import { asJsonObject } from '$lib/json.js'
