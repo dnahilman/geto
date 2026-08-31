@@ -1,5 +1,4 @@
 <script lang="ts">
-  import type { Snippet } from 'svelte'
   import { toast } from 'svelte-sonner'
   import {
     ArrowLeft,
@@ -32,7 +31,6 @@
 
   const ws = new Workspace(connId, 'relational')
 
-  let activeToolbar = $state<Snippet | null>(null)
 
   $effect(() => {
     function onKeydown(e: KeyboardEvent) {
@@ -137,7 +135,7 @@
 {/snippet}
 
 {#snippet tabbar()}
-  <WorkspaceTabbar {ws} actions={activeToolbar ?? undefined} />
+  <WorkspaceTabbar {ws} />
 {/snippet}
 
 {#snippet tableSqlSpace()}
@@ -160,7 +158,6 @@
               filter={tab.filter}
               isActive={ws.activeId === tab.id}
               onOpenTable={(s, t, f) => ws.openTable(s, t, f)}
-              bind:toolbar={activeToolbar}
             />
           {:else if tab.kind === 'console'}
             <SqlConsole

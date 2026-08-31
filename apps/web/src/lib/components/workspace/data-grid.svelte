@@ -1,18 +1,4 @@
-<script module lang="ts">
-  import { formOptions } from '@tanstack/svelte-form'
-  import type { DynamicRow } from '$lib/components/data-grid'
-  import { getGridFormType } from '$lib/components/data-grid'
-  export const gridFormOpts = formOptions({
-    defaultValues: {
-      data: [] as DynamicRow[],
-    },
-  })
-  export const formType = getGridFormType(gridFormOpts)
-</script>
-
-
 <script lang="ts">
-  import type { Snippet } from 'svelte'
   import {
     createGridForm,
     createAppGridColumnHelper,
@@ -21,11 +7,12 @@
     mapDbToDataType,
     copyGridToClipboard,
     getCellClassName,
+    type DynamicRow,
   } from '$lib/components/data-grid'
   import * as Table from '$lib/components/ui/table/index.js'
   import { Button } from '$lib/components/ui/button'
   import { toast } from 'svelte-sonner'
-  import { ChevronLeft, ChevronRight, X, RefreshCw, RotateCcw, Check, Loader2 } from 'lucide-svelte'
+  import { X, RefreshCw, RotateCcw, Check } from 'lucide-svelte'
   import {
     createQuery,
     createMutation,
@@ -42,7 +29,7 @@
     type Updater,
     type OnChangeFn,
   } from '@tanstack/svelte-table'
-  import { setContext, untrack } from 'svelte'
+  import {  untrack } from 'svelte'
   import {
     JsonView,
     ExportMenu,
@@ -67,7 +54,6 @@
     onOpenTable,
     view = 'table',
     onViewChange,
-    toolbar = $bindable(null),
   }: {
     connId: string
     schema: string
@@ -77,7 +63,6 @@
     onOpenTable?: (schema: string, table: string, filter?: TabFilter) => void
     view?: 'table' | 'json' | 'structure'
     onViewChange?: (v: 'table' | 'json' | 'structure') => void
-    toolbar?: Snippet | null
   } = $props()
 
   // 1. Pagination & Query States
@@ -202,8 +187,6 @@
     },
   }))
 
-  setContext('gridForm', form)
-
   let prevRowsRef: unknown = null
 
   $effect(() => {
@@ -250,7 +233,7 @@
           editable: colEditable,
           isPrimaryKey: pk.includes(col.name) || (info?.isPrimaryKey ?? false),
         },
-        cell: ({ cell }) => renderComponent(cell.GridCell),
+        cell: ({ cell }) => renderComponent(cell.GridCell, { form }),
       })
     })
 
@@ -298,8 +281,6 @@
     get columns() {
       return columns
     },
-    manualPagination: true,
-    manualSorting: true,
     get rowCount() {
       return est
     },
@@ -377,200 +358,100 @@
     }
   }
 
-  // Export Adapter
-  const exportGridColumns = $derived<GridColumn[]>(
-    cols.map((c) => ({
-      name: c.name,
-      typeName: c.typeName,
-      variant: variantFor({ type: c.typeName, enumValues: null }),
-      options: colInfo.get(c.name)?.enumValues ?? [],
-      sortable: true,
-      editable: isEditable && !pk.includes(c.name),
-      relation: null,
-    })),
-  )
-
-  const exportApi = $derived<DataGridApi>({
-    table: {
-      getRowModel: () => {
-        const rows = (form.state.values as { data?: DynamicRow[] })?.data ?? tableData
-        return {
-          rows: rows.map((r, idx) => ({
-            index: idx,
-            original: cols.map((c) => r[c.name]),
-          })),
-        }
-      },
-    } as any,
-    ctx: {
-      columns: exportGridColumns,
-      selectedRows: Object.keys(rowSelection()).reduce<Record<number, true>>((acc, key) => {
-        acc[Number(key)] = true
-        return acc
-      }, {}),
-      cellPending: () => undefined,
-    } as any,
-    dirty: form.state.isDirty,
-    addRow: () => {},
-    applyChanges: async () => {},
-    cancelChanges: () => {},
-    clearExpanded: () => {},
-  })
-
-  $effect(() => {
-    if (isActive) {
-      toolbar = toolbarSnippet
-      return () => {
-        toolbar = null
-      }
-    }
-  })
 </script>
 
-
 <svelte:window onkeydown={handleKeyDown} />
+
 <table.AppTable>
-
-{#snippet toolbarSnippet()}
-  <div class="flex items-center gap-1">
-    <Button
-      size="icon"
-      variant="ghost"
-      class="size-7 text-muted-foreground hover:text-foreground"
-      title="Refresh table"
-      disabled={form.state.isDirty}
-      onclick={refresh}
-    >
-      <RefreshCw class="size-3.5" />
-    </Button>
-
-    <form.Subscribe
-      selector={(state) => ({ isDirty: state.isDirty, isSubmitting: state.isSubmitting })}
-    >
-      {#snippet children({ isDirty, isSubmitting })}
-        {#if isDirty}
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            class="size-7 text-muted-foreground hover:text-destructive"
-            title="Discard changes"
-            disabled={isSubmitting}
-            onclick={() => form.reset()}
-          >
-            <RotateCcw class="size-3.5" />
-          </Button>
-          <Button
-            type="button"
-            size="icon"
-            class="size-7 bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs"
-            title="Save changes"
-            disabled={isSubmitting}
-            onclick={() => form.handleSubmit()}
-          >
-            {#if isSubmitting}
-              <Loader2 class="size-3.5 animate-spin" />
-            {:else}
-              <Check class="size-3.5" />
-            {/if}
-          </Button>
-        {/if}
-      {/snippet}
-    </form.Subscribe>
-
-    <ExportMenu api={exportApi} baseName={`${schema}.${tableName}`} {view} {onViewChange} />
-  </div>
-{/snippet}
-
-<div class="flex h-full flex-col">
-  <!-- Main View Area -->
-  <div class="min-h-0 flex-1 overflow-hidden">
-    {#if rows.isError}
-      <p class="text-destructive p-4 text-sm">{rows.error.message}</p>
-    {:else if view === 'structure'}
-      <div class="h-full w-full overflow-auto">
-        <div class="space-y-6 p-4 text-sm">
-          {#if detail.data}
-            <section>
-              <h3 class="text-muted-foreground mb-2 text-xs font-semibold uppercase">Columns</h3>
-              <table class="w-full text-left text-xs">
-                <thead class="text-muted-foreground">
-                  <tr>
-                    <th class="py-1 pr-4">Name</th>
-                    <th class="py-1 pr-4">Type</th>
-                    <th class="py-1 pr-4">Nullable</th>
-                    <th class="py-1 pr-4">Default</th>
-                    <th class="py-1">Key</th>
-                  </tr>
-                </thead>
-                <tbody class="font-mono">
-                  {#each detail.data.columns as c (c.name)}
-                    <tr class="border-t">
-                      <td class="py-1 pr-4">{c.name}</td>
-                      <td class="py-1 pr-4">{c.type}</td>
-                      <td class="py-1 pr-4">{c.notNull ? 'NOT NULL' : 'null'}</td>
-                      <td class="text-muted-foreground py-1 pr-4">{c.default ?? ''}</td>
-                      <td class="py-1">{c.isPrimaryKey ? 'PK' : ''}</td>
+  <div class="flex h-full flex-col">
+    <!-- Main View Area -->
+    <div class="min-h-0 flex-1 overflow-hidden">
+      {#if rows.isError}
+        <p class="text-destructive p-4 text-sm">{rows.error.message}</p>
+      {:else if view === 'structure'}
+        <div class="h-full w-full overflow-auto">
+          <div class="space-y-6 p-4 text-sm">
+            {#if detail.data}
+              <section>
+                <h3 class="text-muted-foreground mb-2 text-xs font-semibold uppercase">Columns</h3>
+                <table class="w-full text-left text-xs">
+                  <thead class="text-muted-foreground">
+                    <tr>
+                      <th class="py-1 pr-4">Name</th>
+                      <th class="py-1 pr-4">Type</th>
+                      <th class="py-1 pr-4">Nullable</th>
+                      <th class="py-1 pr-4">Default</th>
+                      <th class="py-1">Key</th>
                     </tr>
-                  {/each}
-                </tbody>
-              </table>
-            </section>
+                  </thead>
+                  <tbody class="font-mono">
+                    {#each detail.data.columns as c (c.name)}
+                      <tr class="border-t">
+                        <td class="py-1 pr-4">{c.name}</td>
+                        <td class="py-1 pr-4">{c.type}</td>
+                        <td class="py-1 pr-4">{c.notNull ? 'NOT NULL' : 'null'}</td>
+                        <td class="text-muted-foreground py-1 pr-4">{c.default ?? ''}</td>
+                        <td class="py-1">{c.isPrimaryKey ? 'PK' : ''}</td>
+                      </tr>
+                    {/each}
+                  </tbody>
+                </table>
+              </section>
 
-            <section>
-              <h3 class="text-muted-foreground mb-2 text-xs font-semibold uppercase">Indexes</h3>
-              {#if detail.data.indexes.length}
-                <ul class="space-y-1 font-mono text-xs">
-                  {#each detail.data.indexes as idx (idx.name)}
-                    <li>
-                      <span class="font-medium">{idx.name}</span>
-                      <span class="text-muted-foreground"> — {idx.definition}</span>
-                    </li>
-                  {/each}
-                </ul>
-              {:else}
-                <p class="text-muted-foreground text-xs">none</p>
-              {/if}
-            </section>
+              <section>
+                <h3 class="text-muted-foreground mb-2 text-xs font-semibold uppercase">Indexes</h3>
+                {#if detail.data.indexes.length}
+                  <ul class="space-y-1 font-mono text-xs">
+                    {#each detail.data.indexes as idx (idx.name)}
+                      <li>
+                        <span class="font-medium">{idx.name}</span>
+                        <span class="text-muted-foreground"> — {idx.definition}</span>
+                      </li>
+                    {/each}
+                  </ul>
+                {:else}
+                  <p class="text-muted-foreground text-xs">none</p>
+                {/if}
+              </section>
 
-            <section>
-              <h3 class="text-muted-foreground mb-2 text-xs font-semibold uppercase">
-                Constraints
-              </h3>
-              {#if detail.data.constraints.length}
-                <ul class="space-y-1 font-mono text-xs">
-                  {#each detail.data.constraints as c (c.name)}
-                    <li>
-                      <span class="font-medium">{c.name}</span>
-                      <span class="text-muted-foreground"> ({c.type}) — {c.definition}</span>
-                    </li>
-                  {/each}
-                </ul>
-              {:else}
-                <p class="text-muted-foreground text-xs">none</p>
-              {/if}
-            </section>
-          {:else}
-            <WorkspaceSkeletons type="structure" />
-          {/if}
+              <section>
+                <h3 class="text-muted-foreground mb-2 text-xs font-semibold uppercase">
+                  Constraints
+                </h3>
+                {#if detail.data.constraints.length}
+                  <ul class="space-y-1 font-mono text-xs">
+                    {#each detail.data.constraints as c (c.name)}
+                      <li>
+                        <span class="font-medium">{c.name}</span>
+                        <span class="text-muted-foreground"> ({c.type}) — {c.definition}</span>
+                      </li>
+                    {/each}
+                  </ul>
+                {:else}
+                  <p class="text-muted-foreground text-xs">none</p>
+                {/if}
+              </section>
+            {:else}
+              <WorkspaceSkeletons type="structure" />
+            {/if}
+          </div>
         </div>
-      </div>
-    {:else if view === 'json'}
-      <div class="h-full w-full overflow-auto">
-        <JsonView
-          columns={cols}
-          rows={data}
-          offset={page * pageSize}
-          {relations}
-          relationMap={relationMap ?? undefined}
-        />
-      </div>
-    {:else if rows.isLoading}
-      <div class="h-full w-full overflow-hidden">
-        <WorkspaceSkeletons type="table" cols={6} rows={14} />
-      </div>
-    {:else}
-      <!-- TanStack Table v9 Data Grid -->
+      {:else if view === 'json'}
+        <div class="h-full w-full overflow-auto">
+          <JsonView
+            columns={cols}
+            rows={data}
+            offset={page * pageSize}
+            {relations}
+            relationMap={relationMap ?? undefined}
+          />
+        </div>
+      {:else if rows.isLoading}
+        <div class="h-full w-full overflow-hidden">
+          <WorkspaceSkeletons type="table" cols={6} rows={14} />
+        </div>
+      {:else}
+        <!-- TanStack Table v9 Data Grid -->
         <Table.Root
           containerClass="h-full w-full overflow-auto"
           class="table-fixed border-collapse border-r border-l border-border text-xs"
@@ -638,46 +519,45 @@
             {/if}
           </Table.Body>
         </Table.Root>
-    {/if}
-  </div>
-
-  <!-- Bottom Bar: Status Info & Server Pagination -->
-  <div
-    class="flex shrink-0 items-center justify-between border-t bg-background px-3 py-1 text-xs w-full"
-  >
-    <!-- Left: Filter chip + estimated row count + duration -->
-    <div class="flex items-center gap-2">
-      {#if view !== 'structure'}
-        {#if filter}
-          <span
-            class="bg-accent text-foreground flex items-center gap-1 rounded px-1.5 py-0.5 font-mono"
-            title="Filtered view"
-          >
-            {filter.label}
-            <button
-              type="button"
-              class="hover:text-destructive"
-              title="Remove filter"
-              aria-label="Remove filter"
-              onclick={() => onOpenTable?.(schema, tableName)}
-            >
-              <X class="size-3" />
-            </button>
-          </span>
-        {/if}
-        <span class={rows.isSuccess ? 'text-emerald-500' : 'text-muted-foreground'}>
-          {#if rows.isLoading}
-            Loading…
-          {:else}
-            {filter ? '' : '~'}{est.toLocaleString()} rows · {rows.data?.durationMs ?? 0}ms
-          {/if}
-        </span>
       {/if}
     </div>
 
-    <!-- Right: [←] page-size [→] -->
-    <table.PaginationControls>
+    <!-- Bottom Bar: Status Info & Server Pagination -->
+    <div
+      class="flex shrink-0 items-center justify-between border-t bg-background px-3 py-1 text-xs w-full"
+    >
+      <!-- Left: Filter chip + estimated row count + duration -->
+      <div class="flex items-center gap-2">
+        {#if view !== 'structure'}
+          {#if filter}
+            <span
+              class="bg-accent text-foreground flex items-center gap-1 rounded px-1.5 py-0.5 font-mono"
+              title="Filtered view"
+            >
+              {filter.label}
+              <button
+                type="button"
+                class="hover:text-destructive"
+                title="Remove filter"
+                aria-label="Remove filter"
+                onclick={() => onOpenTable?.(schema, tableName)}
+              >
+                <X class="size-3" />
+              </button>
+            </span>
+          {/if}
+          <span class={rows.isSuccess ? 'text-emerald-500' : 'text-muted-foreground'}>
+            {#if rows.isLoading}
+              Loading…
+            {:else}
+              {filter ? '' : '~'}{est.toLocaleString()} rows · {rows.data?.durationMs ?? 0}ms
+            {/if}
+          </span>
+        {/if}
+      </div>
 
+      <!-- Right: [←] page-size [→] -->
+      <table.PaginationControls />
+    </div>
   </div>
-</div>
 </table.AppTable>

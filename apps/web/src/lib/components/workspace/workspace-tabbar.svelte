@@ -1,16 +1,18 @@
 <script lang="ts">
-  import type { Snippet } from 'svelte'
-  import { Table2, KeyRound, SquareTerminal, X, Pin, PinOff } from 'lucide-svelte'
+  import { Table2, KeyRound, SquareTerminal, X, Pin, PinOff, RefreshCw, RotateCcw, Loader, Check } from 'lucide-svelte'
   import * as ContextMenu from '$lib/components/ui/context-menu'
   import type { Workspace, Tab } from '$lib/stores/workspace.svelte'
+    import { useFormContext } from '../data-grid'
+    import { Button } from '../ui/button'
 
   interface Props {
     ws: Workspace
-    actions?: Snippet
   }
 
-  let { ws, actions }: Props = $props()
+  let { ws }: Props = $props()
 
+  const form = useFormContext()
+  
   function icon(kind: Tab['kind']) {
     if (kind === 'table') return Table2
     if (kind === 'rkey') return KeyRound
@@ -76,11 +78,54 @@
   </div>
 
   <!-- Sticky Toolbar at the end -->
-  {#if actions}
     <div
       class="sticky right-0 z-10 flex shrink-0 items-center gap-2 border-l bg-background px-3 py-1 text-xs"
     >
-      {@render actions()}
+        <div class="flex items-center gap-1">
+          <Button
+            size="icon"
+            variant="ghost"
+            class="size-7 text-muted-foreground hover:text-foreground"
+            title="Refresh table"
+            disabled={form.state.isDirty}
+            <!-- onclick={refresh} -->
+          >
+            <RefreshCw class="size-3.5" />
+          </Button>
+      
+          <form.Subscribe
+            selector={(state) => ({ isDirty: state.isDirty, isSubmitting: state.isSubmitting })}
+          >
+            {#snippet children({ isDirty, isSubmitting })}
+              {#if isDirty}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  class="size-7 text-muted-foreground hover:text-destructive"
+                  title="Discard changes"
+                  disabled={isSubmitting}
+                  onclick={() => form.reset()}
+                >
+                  <RotateCcw class="size-3.5" />
+                </Button>
+                <Button
+                  type="button"
+                  size="icon"
+                  class="size-7 bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs"
+                  title="Save changes"
+                  disabled={isSubmitting}
+                  onclick={() => form.handleSubmit()}
+                >
+                  {#if isSubmitting}
+                    <Loader class="size-3.5 animate-spin" />
+                  {:else}
+                    <Check class="size-3.5" />
+                  {/if}
+                </Button>
+              {/if}
+            {/snippet}
+          </form.Subscribe>
+        </div>
     </div>
-  {/if}
 </div>

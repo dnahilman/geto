@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { formType } from '$lib/components/workspace/data-grid.svelte'
-  import { useGridTableCellContext } from '$lib/components/data-grid'
+  import { formType } from '../hooks/create-grid-form.js'
+  import { useGridTableCellContext } from '../hooks/use-data-grid.js'
   import type { GridFieldApi } from '../types.js'
 
   interface Props {
