@@ -19,6 +19,7 @@
     type RoleInfo,
     type RoleAttributes,
   } from '$lib/api/roles'
+  import WorkspaceSkeletons from './workspace-skeletons.svelte'
 
   let {
     open = $bindable(false),
@@ -287,7 +288,7 @@
       {:else if roles.isError}
         <p class="text-destructive p-3 text-sm">{roles.error.message}</p>
       {:else}
-        <p class="text-muted-foreground p-3 text-sm">loading…</p>
+        <WorkspaceSkeletons type="dialog-list" count={3} />
       {/if}
     </div>
   </Dialog.Content>

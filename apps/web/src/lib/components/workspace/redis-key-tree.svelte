@@ -7,6 +7,7 @@
   import { Badge } from '$lib/components/ui/badge'
   import { ScrollArea } from '$lib/components/ui/scroll-area'
   import * as ContextMenu from '$lib/components/ui/context-menu'
+  import WorkspaceSkeletons from './workspace-skeletons.svelte'
   import { scanKeys, deleteKey, type KeyEntry } from '$lib/api/keys'
 
   let {
@@ -154,7 +155,11 @@
       {/each}
 
       {#if keys.length === 0}
-        <p class="text-muted-foreground p-2">{scanning ? 'Scanning…' : 'No keys.'}</p>
+        {#if scanning}
+          <WorkspaceSkeletons type="tree" />
+        {:else}
+          <p class="text-muted-foreground p-2">No keys.</p>
+        {/if}
       {/if}
 
       {#if !done}

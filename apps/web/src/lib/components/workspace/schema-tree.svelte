@@ -16,6 +16,7 @@
   import * as AlertDialog from '$lib/components/ui/alert-dialog'
   import CreateTableDialog from './create-table-dialog.svelte'
   import PrivilegesDialog from './privileges-dialog.svelte'
+  import WorkspaceSkeletons from './workspace-skeletons.svelte'
   import { KeyRound } from 'lucide-svelte'
   import { getTree, treeKey } from '$lib/api/introspect'
   import { dropTable, truncateTable } from '$lib/api/mutations'
@@ -91,7 +92,7 @@
   <ScrollArea class="min-h-0 flex-1">
     <div class="px-2 pb-4 text-sm">
       {#if tree.isLoading}
-        <p class="text-muted-foreground p-2 text-xs">loading schema…</p>
+        <WorkspaceSkeletons type="tree" />
       {:else if tree.isError}
         <p class="text-destructive p-2 text-xs">{tree.error.message}</p>
       {:else if tree.data && tree.data.length === 0}

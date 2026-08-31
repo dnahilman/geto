@@ -44,6 +44,7 @@
   import { updateRow, type Row } from '$lib/api/mutations'
   import { historyKey, getCompletion, completionKey } from '$lib/api/query'
   import { buildRelationMap, type RelationTarget } from '$lib/relations'
+  import WorkspaceSkeletons from './workspace-skeletons.svelte'
   import type { TabFilter } from '$lib/stores/workspace.svelte'
 
   let {
@@ -537,7 +538,7 @@
               {/if}
             </section>
           {:else}
-            <p class="text-muted-foreground text-xs">Loading…</p>
+            <WorkspaceSkeletons type="structure" />
           {/if}
         </div>
       </div>
@@ -550,6 +551,10 @@
           {relations}
           relationMap={relationMap ?? undefined}
         />
+      </div>
+    {:else if rows.isLoading}
+      <div class="h-full w-full overflow-hidden">
+        <WorkspaceSkeletons type="table" cols={6} rows={14} />
       </div>
     {:else}
       <!-- TanStack Table v9 Data Grid -->
@@ -582,13 +587,7 @@
             {/each}
           </Table.Header>
           <Table.Body class="bg-background">
-            {#if rows.isLoading}
-              <Table.Row>
-                <Table.Cell colspan={columns.length} class="h-24 text-center text-muted-foreground">
-                  Loading data…
-                </Table.Cell>
-              </Table.Row>
-            {:else if tableRows.length === 0}
+            {#if tableRows.length === 0}
               <Table.Row>
                 <Table.Cell colspan={columns.length} class="h-24 text-center text-muted-foreground">
                   No results found

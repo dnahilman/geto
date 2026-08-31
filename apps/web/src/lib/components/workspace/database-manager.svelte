@@ -10,6 +10,7 @@
   import { getDatabases, databasesKey } from '$lib/api/introspect'
   import { createDatabase, dropDatabase } from '$lib/api/mutations'
   import { switchDatabase } from '$lib/api/connections'
+  import WorkspaceSkeletons from './workspace-skeletons.svelte'
 
   let {
     open = $bindable(false),
@@ -125,7 +126,7 @@
           </div>
         {/each}
       {:else}
-        <p class="text-muted-foreground p-3 text-sm">loading…</p>
+        <WorkspaceSkeletons type="dialog-list" count={3} />
       {/if}
     </div>
   </Dialog.Content>

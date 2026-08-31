@@ -18,6 +18,7 @@
   import SqlEditor from '$lib/editor/sql-editor.svelte'
   import ResultTable from './result-table.svelte'
   import ResultTabs from './result-tabs.svelte'
+  import WorkspaceSkeletons from './workspace-skeletons.svelte'
   import { formatSql } from '$lib/editor/format'
   import type { TabFilter } from '$lib/stores/workspace.svelte'
   import {
@@ -257,7 +258,7 @@
       {:else if typeof active === 'number'}
         <!-- ── Result ── -->
         {#if run.isPending}
-          <p class="text-muted-foreground p-3 text-sm">Running…</p>
+          <WorkspaceSkeletons type="console" />
         {:else if error && results.length === 0}
           <pre
             class="text-destructive overflow-auto p-3 font-mono text-xs whitespace-pre-wrap">{error}</pre>

@@ -41,31 +41,36 @@
 </script>
 
 <div class="flex h-screen flex-col">
-  <header class="flex items-center gap-2 border-b px-3 py-2">
-    <Button variant="ghost" size="icon" class="size-8" href="/" title="Connections">
-      <ArrowLeft class="size-4" />
+  <header class="flex h-9 shrink-0 items-center gap-1 border-b bg-background px-2.5">
+    <Button variant="ghost" size="icon" class="size-7 shrink-0" href="/" title="Connections">
+      <ArrowLeft class="size-3.5" />
     </Button>
     <Button
       variant="ghost"
       size="icon"
-      class="size-8"
+      class="size-7 shrink-0"
       title="Toggle sidebar"
       onclick={() => (sidebarOpen = !sidebarOpen)}
     >
-      <PanelLeft class="size-4" />
+      <PanelLeft class="size-3.5" />
     </Button>
-    <div class="flex items-center gap-2">
-      <KeyRound class="size-4" />
-      <span class="text-sm font-medium">{conn?.name ?? connId}</span>
-      <Badge variant="secondary" class="text-xs">Redis</Badge>
-      {#if readonly}<Badge variant="outline" class="text-xs">read-only</Badge>{/if}
+    <div class="flex items-center gap-1.5 ml-1">
+      <KeyRound class="size-3.5 text-muted-foreground" />
+      <span class="text-xs font-semibold tracking-tight">{conn?.name ?? connId}</span>
+      <Badge variant="secondary" class="h-4.5 px-1.5 text-[10px] font-semibold">Redis</Badge>
+      {#if readonly}<Badge variant="secondary" class="h-4.5 px-1.5 text-[10px] uppercase font-semibold tracking-wider">read-only</Badge>{/if}
     </div>
-    <div class="ml-auto flex items-center gap-2">
-      <Button variant="ghost" size="sm" onclick={copyConnString}>
-        <KeyRound class="size-4" /> Copy connection string
+    <div class="ml-auto flex items-center gap-1">
+      <Button
+        variant="ghost"
+        class="h-7 px-2 text-xs gap-1.5 text-muted-foreground hover:text-foreground"
+        onclick={copyConnString}
+        title="Copy connection string (with password)"
+      >
+        <KeyRound class="size-3.5" /> <span class="hidden sm:inline">Copy connection string</span>
       </Button>
-      <Button variant="outline" size="sm" onclick={() => ws.openRedisConsole()}>
-        <SquareTerminal class="size-4" /> New console
+      <Button variant="outline" class="h-7 px-2.5 text-xs gap-1.5 font-medium ml-1 shadow-2xs" onclick={() => ws.openRedisConsole()}>
+        <SquareTerminal class="size-3.5" /> New console
       </Button>
     </div>
   </header>
