@@ -1,7 +1,7 @@
 export interface FormattedCell {
-	text: string;
-	isNull: boolean;
-	isEmpty: boolean;
+  text: string
+  isNull: boolean
+  isEmpty: boolean
 }
 
 /**
@@ -12,14 +12,14 @@ export interface FormattedCell {
  * - otherwise -> String(val)
  */
 export function formatCellValue(val: unknown): FormattedCell {
-	if (val === null || val === undefined) {
-		return { text: 'NULL', isNull: true, isEmpty: false };
-	}
-	if (val === '') {
-		return { text: 'EMPTY_STRING', isNull: false, isEmpty: true };
-	}
-	if (typeof val === 'object') {
-		return { text: JSON.stringify(val), isNull: false, isEmpty: false };
-	}
-	return { text: String(val), isNull: false, isEmpty: false };
+  if (val === null || val === undefined) {
+    return { text: 'NULL', isNull: true, isEmpty: false }
+  }
+  if (val === '') {
+    return { text: 'EMPTY_STRING', isNull: false, isEmpty: true }
+  }
+  if (typeof val === 'object') {
+    return { text: JSON.stringify(val), isNull: false, isEmpty: false }
+  }
+  return { text: String(val), isNull: false, isEmpty: false }
 }

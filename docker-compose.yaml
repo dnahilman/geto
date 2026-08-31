@@ -1,5 +1,8 @@
 services:
   geto:
+    build:
+      context: .
+      target: runtime
     image: ghcr.io/dnahilman/geto:latest
     ports:
       - '${PORT:-7020}:7020'

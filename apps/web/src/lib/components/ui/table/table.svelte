@@ -21,4 +21,3 @@
     {@render children?.()}
   </table>
 </div>
-

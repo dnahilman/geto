@@ -1,27 +1,21 @@
 <script lang="ts">
   import type { Snippet } from 'svelte'
-  import { SquareTerminal, Table2, KeyRound, X, Plus, Pin, PinOff } from 'lucide-svelte'
+  import { Table2, KeyRound, SquareTerminal, X, Pin, PinOff } from 'lucide-svelte'
   import * as ContextMenu from '$lib/components/ui/context-menu'
   import type { Workspace, Tab } from '$lib/stores/workspace.svelte'
 
-  // Shared VS Code-style tab strip used by both the SQL and Redis workspaces:
-  // active underline, close/pin, right-click Close/Close Others/Close All/Pin.
   let {
     ws,
-    onNew,
-    newTitle = 'New tab',
     actions,
   }: {
     ws: Workspace
-    onNew: () => void
-    newTitle?: string
     actions?: Snippet
   } = $props()
 
   function icon(kind: Tab['kind']) {
     if (kind === 'table') return Table2
     if (kind === 'rkey') return KeyRound
-    return SquareTerminal // console / rconsole
+    return SquareTerminal
   }
 </script>
 
@@ -80,19 +74,13 @@
         </ContextMenu.Content>
       </ContextMenu.Root>
     {/each}
-    <button
-      type="button"
-      class="hover:bg-accent text-muted-foreground rounded p-1 shrink-0"
-      title={newTitle}
-      onclick={onNew}
-    >
-      <Plus class="size-3.5" />
-    </button>
   </div>
 
   <!-- Sticky Toolbar at the end -->
   {#if actions}
-    <div class="sticky right-0 z-10 flex shrink-0 items-center gap-2 border-l bg-background px-3 py-1 text-xs">
+    <div
+      class="sticky right-0 z-10 flex shrink-0 items-center gap-2 border-l bg-background px-3 py-1 text-xs"
+    >
       {@render actions()}
     </div>
   {/if}

@@ -30,7 +30,7 @@
   // Reset open panels when the underlying rows change (page / sort / refresh),
   // mirroring the table grid's clearExpanded — keeps indices from going stale.
   $effect(() => {
-    rows
+    void rows
     expanded = {}
   })
 
@@ -127,7 +127,7 @@
             </div>
           {/if}
         {/each}
-        <div class="text-muted-foreground">{'}'}</div>
+        <div class="text-muted-foreground">}</div>
       </div>
     </div>
   {/each}

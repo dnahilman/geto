@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { Snippet } from 'svelte'
   import {
     createGridForm,
     createAppGridColumnHelper,
@@ -12,7 +13,7 @@
   import * as Table from '$lib/components/ui/table/index.js'
   import { Button } from '$lib/components/ui/button'
   import { toast } from 'svelte-sonner'
-  import { RefreshCw, ChevronLeft, ChevronRight, X, RotateCcw, Check, Loader2 } from 'lucide-svelte'
+  import { ChevronLeft, ChevronRight, X, RefreshCw, RotateCcw, Check, Loader2 } from 'lucide-svelte'
   import {
     createQuery,
     createMutation,
@@ -29,16 +30,16 @@
     type Updater,
     type OnChangeFn,
   } from '@tanstack/svelte-table'
-  import { setContext, getContext, untrack } from 'svelte'
+  import { setContext, untrack } from 'svelte'
   import {
-    ExportMenu,
     PageSizeSelect,
     JsonView,
+    ExportMenu,
+    variantFor,
     type RelationsConfig,
-    type DataGridApi,
     type GridColumn,
+    type DataGridApi,
   } from '$lib/components/ui/data-grid'
-  import { WorkspaceToolbarState } from './workspace-toolbar.svelte.js'
   import { getTableRows, getTableDetail, tableDetailKey } from '$lib/api/introspect'
   import { updateRow, type Row } from '$lib/api/mutations'
   import { historyKey, getCompletion, completionKey } from '$lib/api/query'
@@ -54,6 +55,7 @@
     onOpenTable,
     view = 'table',
     onViewChange,
+    toolbar = $bindable(null),
   }: {
     connId: string
     schema: string
@@ -63,20 +65,8 @@
     onOpenTable?: (schema: string, table: string, filter?: TabFilter) => void
     view?: 'table' | 'json' | 'structure'
     onViewChange?: (v: 'table' | 'json' | 'structure') => void
+    toolbar?: Snippet | null
   } = $props()
-
-  const toolbarState = getContext<WorkspaceToolbarState | undefined>('workspace-toolbar')
-
-  $effect(() => {
-    if (isActive && toolbarState) {
-      toolbarState.activeToolbar = toolbarSnippet
-      return () => {
-        if (toolbarState.activeToolbar === toolbarSnippet) {
-          toolbarState.activeToolbar = null
-        }
-      }
-    }
-  })
 
   // 1. Pagination & Query States
   let pageSize = $state(500)
@@ -327,62 +317,6 @@
   const headerGroups = $derived(table.getHeaderGroups())
   const tableRows = $derived(table.getRowModel().rows)
 
-  // 6. Export Menu Adapter
-  const exportGridColumns = $derived<GridColumn[]>(
-    cols.map((c) => ({
-      name: c.name,
-      typeName: c.typeName,
-      variant: 'text' as const,
-      options: [],
-      sortable: true,
-      editable: false,
-    })),
-  )
-
-  const exportApi = $derived<DataGridApi<RowT>>({
-    table: table as any,
-    ctx: {
-      focusedCell: null,
-      editingCell: null,
-      editable: isEditable,
-      columns: exportGridColumns,
-      newRows: [],
-      edits: {},
-      deletes: {},
-      selectedRows: Object.fromEntries(
-        table.getSelectedRowModel().rows.map((r) => [r.index, true as const]),
-      ),
-      selectRow: () => {},
-      isRowSelected: () => false,
-      clearSelection: () => table.resetRowSelection(),
-      focusCell: () => {},
-      startEdit: () => {},
-      cancelEdit: () => {},
-      unfocus: () => {},
-      saveCell: () => {},
-      toggleDelete: () => {},
-      isDeleted: () => false,
-      cellPending: (r, c) => {
-        const currentData = (form.state.values as { data?: DynamicRow[] })?.data ?? tableData
-        const row = currentData[r]
-        const col = cols[c]
-        if (!row || !col) return undefined
-        const val = row[col.name]
-        return val === null || val === undefined ? '' : String(val)
-      },
-      expandedFor: () => null,
-      expandRelation: () => {},
-      collapseRelation: () => {},
-    },
-    dirty: form.state.isDirty,
-    addRow: () => {},
-    applyChanges: async () => {},
-    cancelChanges: () => form.reset(),
-    clearExpanded: () => {},
-  })
-
-
-
   // 8. Keyboard Navigation & Cell Selection
   async function handleKeyDown(e: KeyboardEvent) {
     if (view !== 'table') return
@@ -430,7 +364,58 @@
       }
     }
   }
+
+  // Export Adapter
+  const exportGridColumns = $derived<GridColumn[]>(
+    cols.map((c) => ({
+      name: c.name,
+      typeName: c.typeName,
+      variant: variantFor({ type: c.typeName, enumValues: null }),
+      options: colInfo.get(c.name)?.enumValues ?? [],
+      sortable: true,
+      editable: isEditable && !pk.includes(c.name),
+      relation: null,
+    })),
+  )
+
+  const exportApi = $derived<DataGridApi>({
+    table: {
+      getRowModel: () => {
+        const rows = (form.state.values as { data?: DynamicRow[] })?.data ?? tableData
+        return {
+          rows: rows.map((r, idx) => ({
+            index: idx,
+            original: cols.map((c) => r[c.name]),
+          })),
+        }
+      },
+    } as any,
+    ctx: {
+      columns: exportGridColumns,
+      selectedRows: Object.keys(rowSelection()).reduce<Record<number, true>>((acc, key) => {
+        acc[Number(key)] = true
+        return acc
+      }, {}),
+      cellPending: () => undefined,
+    } as any,
+    dirty: form.state.isDirty,
+    addRow: () => {},
+    applyChanges: async () => {},
+    cancelChanges: () => {},
+    clearExpanded: () => {},
+  })
+
+  $effect(() => {
+    if (isActive) {
+      toolbar = toolbarSnippet
+      return () => {
+        toolbar = null
+      }
+    }
+  })
 </script>
+
+<svelte:window onkeydown={handleKeyDown} />
 
 {#snippet toolbarSnippet()}
   <div class="flex items-center gap-1">
@@ -483,10 +468,7 @@
   </div>
 {/snippet}
 
-<svelte:window onkeydown={handleKeyDown} />
-
 <div class="flex h-full flex-col">
-
   <!-- Main View Area -->
   <div class="min-h-0 flex-1 overflow-hidden">
     {#if rows.isError}
@@ -650,7 +632,9 @@
   </div>
 
   <!-- Bottom Bar: Status Info & Server Pagination -->
-  <div class="flex shrink-0 items-center justify-between border-t bg-background px-3 py-1 text-xs w-full">
+  <div
+    class="flex shrink-0 items-center justify-between border-t bg-background px-3 py-1 text-xs w-full"
+  >
     <!-- Left: Filter chip + estimated row count + duration -->
     <div class="flex items-center gap-2">
       {#if view !== 'structure'}

@@ -3,13 +3,13 @@ import type { SslMode } from '$src/store/connections'
 import type { ConnectionTarget, TestResult } from '$src/db/types'
 import { pgErrorMessage } from '$src/db/shared/error'
 
-export type Sql = postgres.Sql<{}>
+export type Sql = postgres.Sql<Record<string, never>>
 
 /** Postgres connects against the neutral ConnectionTarget shape. */
 export type PgOptions = ConnectionTarget
 
 /** Map our ssl mode to porsager/postgres' `ssl` option. */
-function sslOption(mode: SslMode): postgres.Options<{}>['ssl'] {
+function sslOption(mode: SslMode): postgres.Options<Record<string, never>>['ssl'] {
   switch (mode) {
     case 'disable':
       return false

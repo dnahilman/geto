@@ -244,7 +244,9 @@ export function updateConnection(id: string, input: ConnectionInput): Connection
     ssh?.username ?? null,
     ssh?.authMethod ?? 'key',
     // When ssh omitted entirely, keep existing secrets; otherwise apply keep/clear/replace.
-    ssh === undefined ? existing.ssh_password_enc : secretCol(ssh?.password, existing.ssh_password_enc),
+    ssh === undefined
+      ? existing.ssh_password_enc
+      : secretCol(ssh?.password, existing.ssh_password_enc),
     ssh === undefined ? existing.ssh_key_enc : secretCol(ssh?.privateKey, existing.ssh_key_enc),
     ssh === undefined
       ? existing.ssh_passphrase_enc

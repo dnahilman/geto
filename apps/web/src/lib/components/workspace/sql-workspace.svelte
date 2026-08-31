@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { Snippet } from 'svelte'
   import { toast } from 'svelte-sonner'
   import {
     ArrowLeft,
@@ -17,9 +18,7 @@
   import SqlConsole from '$lib/components/workspace/sql-console.svelte'
   import DatabaseManager from '$lib/components/workspace/database-manager.svelte'
   import RoleManager from '$lib/components/workspace/role-manager.svelte'
-  import { setContext } from 'svelte'
   import WorkspaceTabbar from '$lib/components/workspace/workspace-tabbar.svelte'
-  import { WorkspaceToolbarState } from '$lib/components/workspace/workspace-toolbar.svelte.js'
   import { Workspace } from '$lib/stores/workspace.svelte'
   import { getConnectionString, type Connection } from '$lib/api/connections'
   import { copyText } from '$lib/clipboard'
@@ -27,8 +26,8 @@
   let { connId, conn }: { connId: string; conn: Connection | undefined } = $props()
 
   const ws = new Workspace(connId, 'relational')
-  const toolbarState = new WorkspaceToolbarState()
-  setContext('workspace-toolbar', toolbarState)
+
+  let activeToolbar = $state<Snippet | null>(null)
 
   $effect(() => {
     function onKeydown(e: KeyboardEvent) {
@@ -55,7 +54,7 @@
   }
 </script>
 
-<div class="flex h-screen flex-col">
+{#snippet navbar()}
   <header class="flex items-center gap-2 border-b px-3 py-2">
     <Button variant="ghost" size="icon" class="size-8" href="/" title="Connections">
       <ArrowLeft class="size-4" />
@@ -97,7 +96,9 @@
       </Button>
     </div>
   </header>
+{/snippet}
 
+{#snippet dialogs()}
   <DatabaseManager
     bind:open={dbManagerOpen}
     {connId}
@@ -106,69 +107,82 @@
   />
 
   <RoleManager bind:open={roleManagerOpen} {connId} readonly={conn?.readonly ?? false} />
+{/snippet}
+
+{#snippet sidebar()}
+  <Resizable.Pane
+    order={1}
+    defaultSize={20}
+    minSize={12}
+    maxSize={40}
+    class="bg-sidebar flex flex-col"
+  >
+    <div class="min-h-0 flex-1">
+      <SchemaTree
+        {connId}
+        onopen={(s, t) => ws.openTable(s, t)}
+        readonly={conn?.readonly ?? false}
+      />
+    </div>
+    <div class="flex shrink-0 items-center gap-2 border-t px-3 py-2">
+      <img src="/logo.svg" alt="geto" class="h-5 w-auto invert" />
+      <span class="text-muted-foreground ml-auto font-mono text-xs">v{__APP_VERSION__}</span>
+    </div>
+  </Resizable.Pane>
+{/snippet}
+
+{#snippet tabbar()}
+  <WorkspaceTabbar {ws} actions={activeToolbar ?? undefined} />
+{/snippet}
+
+{#snippet tableSqlSpace()}
+  {#if ws.tabs.length === 0}
+    <div class="text-muted-foreground flex h-full flex-col items-center justify-center gap-2">
+      <Table2 class="size-8" />
+      <p class="text-sm">Select a table from the sidebar, or open the SQL console.</p>
+    </div>
+  {:else}
+    {@render tabbar()}
+
+    <!-- active content (keep tables mounted to preserve grid state) -->
+    <div class="min-h-0 flex-1">
+      {#each ws.tabs as tab (tab.id)}
+        <div class="h-full {ws.activeId === tab.id ? '' : 'hidden'}">
+          {#if tab.kind === 'table'}
+            <TableView
+              {connId}
+              schema={tab.schema}
+              table={tab.table}
+              filter={tab.filter}
+              isActive={ws.activeId === tab.id}
+              onOpenTable={(s, t, f) => ws.openTable(s, t, f)}
+              bind:toolbar={activeToolbar}
+            />
+          {:else if tab.kind === 'console'}
+            <SqlConsole
+              {connId}
+              initialSql={tab.sql}
+              onSqlChange={(s) => ws.updateSql(tab.id, s)}
+              onOpenTable={(s, t, f) => ws.openTable(s, t, f)}
+            />
+          {/if}
+        </div>
+      {/each}
+    </div>
+  {/if}
+{/snippet}
+
+<div class="flex h-screen flex-col">
+  {@render navbar()}
+  {@render dialogs()}
 
   <Resizable.PaneGroup direction="horizontal" class="min-h-0 flex-1">
     {#if sidebarOpen}
-      <Resizable.Pane
-        order={1}
-        defaultSize={20}
-        minSize={12}
-        maxSize={40}
-        class="bg-sidebar flex flex-col"
-      >
-        <div class="flex shrink-0 items-center gap-2 border-b px-3 py-2">
-          <img src="/logo.svg" alt="geto" class="h-5 w-auto invert" />
-          <span class="text-muted-foreground ml-auto font-mono text-xs">v{__APP_VERSION__}</span>
-        </div>
-        <div class="min-h-0 flex-1">
-          <SchemaTree
-            {connId}
-            onopen={(s, t) => ws.openTable(s, t)}
-            readonly={conn?.readonly ?? false}
-          />
-        </div>
-      </Resizable.Pane>
+      {@render sidebar()}
       <Resizable.Handle withHandle />
     {/if}
     <Resizable.Pane order={2} defaultSize={80} class="flex min-w-0 flex-col">
-      {#if ws.tabs.length === 0}
-        <div class="text-muted-foreground flex h-full flex-col items-center justify-center gap-2">
-          <Table2 class="size-8" />
-          <p class="text-sm">Select a table from the sidebar, or open the SQL console.</p>
-        </div>
-      {:else}
-        <WorkspaceTabbar
-          {ws}
-          onNew={() => ws.openConsole()}
-          newTitle="New SQL console (Ctrl+T)"
-          actions={toolbarState.activeToolbar ?? undefined}
-        />
-
-        <!-- active content (keep tables mounted to preserve grid state) -->
-        <div class="min-h-0 flex-1">
-          {#each ws.tabs as tab (tab.id)}
-            <div class="h-full {ws.activeId === tab.id ? '' : 'hidden'}">
-              {#if tab.kind === 'table'}
-                <TableView
-                  {connId}
-                  schema={tab.schema}
-                  table={tab.table}
-                  filter={tab.filter}
-                  isActive={ws.activeId === tab.id}
-                  onOpenTable={(s, t, f) => ws.openTable(s, t, f)}
-                />
-              {:else if tab.kind === 'console'}
-                <SqlConsole
-                  {connId}
-                  initialSql={tab.sql}
-                  onSqlChange={(s) => ws.updateSql(tab.id, s)}
-                  onOpenTable={(s, t, f) => ws.openTable(s, t, f)}
-                />
-              {/if}
-            </div>
-          {/each}
-        </div>
-      {/if}
+      {@render tableSqlSpace()}
     </Resizable.Pane>
   </Resizable.PaneGroup>
 </div>

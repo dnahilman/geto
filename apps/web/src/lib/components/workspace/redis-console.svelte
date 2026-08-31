@@ -97,7 +97,7 @@
     mutationFn: async (lines: string[]) => {
       const out: StatementResult[] = []
       const logs: { cmd: string; ok: boolean; ms: number }[] = []
-      for (const [i, line] of lines.entries()) {
+      for (const line of lines) {
         const argv = tokenize(line)
         if (argv.length === 0) continue
         const t0 = performance.now()

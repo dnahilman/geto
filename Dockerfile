@@ -36,3 +36,19 @@ RUN echo "=== App Size Breakdown ===" && du -sh ./apps/server/node_modules ./app
 VOLUME ["/data"]
 EXPOSE 7020
 CMD ["bun", "apps/server/src/index.ts"]
+
+# ---- stage 4: embedded routeup runtime (Target 2: geto:routeup) ----
+FROM runtime AS routeup
+
+# Install Routeup binary
+RUN apk add --no-cache curl && \
+    curl -fsSL https://get.routeup.dev | sh && \
+    apk del curl
+
+# Copy root package.json for Routeup config discovery
+COPY package.json ./package.json
+
+VOLUME ["/data", "/root/.routeup"]
+EXPOSE 443 7020
+CMD ["routeup"]
+

@@ -54,7 +54,9 @@
         {/if}
         <span class="truncate font-mono text-xs font-bold text-foreground">{resolvedTitle}</span>
         {#if resolvedType}
-          <span class="truncate font-mono text-xs font-normal text-muted-foreground/70 lowercase">{resolvedType}</span>
+          <span class="truncate font-mono text-xs font-normal text-muted-foreground/70 lowercase"
+            >{resolvedType}</span
+          >
         {/if}
       </div>
       {#if isSorted}
@@ -74,7 +76,9 @@
       {/if}
       <span class="truncate font-mono text-xs font-bold text-foreground">{resolvedTitle}</span>
       {#if resolvedType}
-        <span class="truncate font-mono text-xs font-normal text-muted-foreground/70 lowercase">{resolvedType}</span>
+        <span class="truncate font-mono text-xs font-normal text-muted-foreground/70 lowercase"
+          >{resolvedType}</span
+        >
       {/if}
     </div>
   {/if}

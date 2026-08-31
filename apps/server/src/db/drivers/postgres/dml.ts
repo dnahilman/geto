@@ -82,7 +82,7 @@ export function buildDelete(
 export function buildCreateTable(schema: string, table: string, columns: ColumnSpec[]): string {
   if (columns.length === 0) throw new Error('A table needs at least one column')
   const defs = columns.map((c) => {
-    if (!/^[A-Za-z][A-Za-z0-9 _().,\[\]]*$/.test(c.type)) {
+    if (!/^[A-Za-z][A-Za-z0-9 _().,[\]]*$/.test(c.type)) {
       throw new Error(`Invalid column type: ${c.type}`)
     }
     let def = `${quoteIdent(c.name)} ${c.type}`

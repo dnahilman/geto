@@ -56,7 +56,6 @@
   let active = $state<'history' | number>('history')
   let results = $state<StatementResult[]>([])
   // Per-result-tab view toggle (keyed by statement index).
-  // svelte-ignore state_referenced_locally
   let views = $state<Record<number, 'table' | 'json' | 'structure'>>({})
   let stmtCount = $state(1)
 
@@ -381,7 +380,10 @@
       <AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
       <AlertDialog.Action
         class="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-        onclick={() => { clear.mutate(); clearConfirm = false }}
+        onclick={() => {
+          clear.mutate()
+          clearConfirm = false
+        }}
       >
         Clear history
       </AlertDialog.Action>

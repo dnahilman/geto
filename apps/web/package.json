@@ -6,7 +6,8 @@
     "dev": "vite dev --port 5174",
     "build": "vite build",
     "preview": "vite preview",
-    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json"
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+    "lint": "eslint ."
   },
   "devDependencies": {
     "@internationalized/date": "^3.12.0",

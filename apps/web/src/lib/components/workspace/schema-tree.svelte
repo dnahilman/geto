@@ -1,25 +1,16 @@
 <script lang="ts">
-  import {
-    createQuery,
-    createMutation,
-    useQueryClient,
-    keepPreviousData,
-  } from '@tanstack/svelte-query'
+  import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-query'
   import {
     ChevronRight,
     Table2,
     Eye,
     Layers,
-    RefreshCw,
     Trash2,
     Eraser,
     Plus,
     EllipsisVertical,
-    Loader2,
   } from 'lucide-svelte'
   import { toast } from 'svelte-sonner'
-  import { Input } from '$lib/components/ui/input'
-  import { Button } from '$lib/components/ui/button'
   import { ScrollArea } from '$lib/components/ui/scroll-area'
   import * as DropdownMenu from '$lib/components/ui/dropdown-menu'
   import * as AlertDialog from '$lib/components/ui/alert-dialog'
@@ -41,21 +32,9 @@
 
   const qc = useQueryClient()
 
-  // Server-side, debounced relation search. `filterInput` is what the user types;
-  // `debounced` (300ms later) drives the query key + request. placeholderData keeps
-  // the previous results on screen while the new ones load, so the tree never flashes.
-  let filterInput = $state('')
-  let debounced = $state('')
-  $effect(() => {
-    const v = filterInput
-    const timer = setTimeout(() => (debounced = v.trim()), 300)
-    return () => clearTimeout(timer)
-  })
-
   const tree = createQuery(() => ({
-    queryKey: [...treeKey(connId), debounced],
-    queryFn: () => getTree(connId, debounced || undefined),
-    placeholderData: keepPreviousData,
+    queryKey: treeKey(connId),
+    queryFn: () => getTree(connId),
   }))
 
   let collapsed = $state<Record<string, boolean>>({})
@@ -101,37 +80,14 @@
   }
 
   function toggle(schema: string) {
-    // No-op while a filter is active: expanded() ignores collapsed state during
-    // filtering, so mutating it would silently apply the wrong state on filter clear.
-    if (!debounced) collapsed[schema] = !collapsed[schema]
+    collapsed[schema] = !collapsed[schema]
   }
-  // While a filter is active, force every (matching) schema open so results show.
   function expanded(schema: string) {
-    return debounced ? true : !collapsed[schema]
+    return !collapsed[schema]
   }
 </script>
 
 <div class="flex h-full flex-col">
-  <div class="flex items-center gap-1 p-2">
-    <div class="relative flex-1">
-      <Input bind:value={filterInput} placeholder="Filter tables…" class="h-8" />
-      {#if tree.isFetching && !tree.isLoading}
-        <Loader2
-          class="text-muted-foreground absolute top-1/2 right-2 size-3.5 -translate-y-1/2 animate-spin"
-        />
-      {/if}
-    </div>
-    <Button
-      variant="ghost"
-      size="icon"
-      class="size-8 shrink-0"
-      title="Refresh"
-      onclick={refreshTree}
-    >
-      <RefreshCw class="size-4" />
-    </Button>
-  </div>
-
   <ScrollArea class="min-h-0 flex-1">
     <div class="px-2 pb-4 text-sm">
       {#if tree.isLoading}
@@ -139,9 +95,7 @@
       {:else if tree.isError}
         <p class="text-destructive p-2 text-xs">{tree.error.message}</p>
       {:else if tree.data && tree.data.length === 0}
-        <p class="text-muted-foreground p-2 text-xs">
-          {debounced ? 'No tables match.' : 'No tables.'}
-        </p>
+        <p class="text-muted-foreground p-2 text-xs">No tables.</p>
       {:else if tree.data}
         {#each tree.data as s (s.schema)}
           {@const open = expanded(s.schema)}
@@ -273,7 +227,12 @@
       <AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
       <AlertDialog.Action
         class="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-        onclick={() => { if (confirm) { act.mutate(confirm); confirm = null } }}
+        onclick={() => {
+          if (confirm) {
+            act.mutate(confirm)
+            confirm = null
+          }
+        }}
       >
         {confirm?.kind === 'drop' ? 'Drop table' : 'Truncate'}
       </AlertDialog.Action>

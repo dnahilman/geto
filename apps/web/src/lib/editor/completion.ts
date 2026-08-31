@@ -9,7 +9,7 @@
 // sources read the live index on every keystroke, so they stay current on their own.
 import { autocompletion, snippetCompletion } from '@codemirror/autocomplete'
 import type { Completion, CompletionContext, CompletionResult } from '@codemirror/autocomplete'
-import { EditorState, Transaction, type Extension } from '@codemirror/state'
+import { EditorState, type Extension } from '@codemirror/state'
 import {
   sql,
   PostgreSQL,

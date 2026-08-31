@@ -46,6 +46,16 @@ porsager `postgres` · `bun:sqlite` (saved connections + history).
 
 Requires [Bun](https://bun.com/) and a reachable PostgreSQL.
 
+### Option 1: Single-command Local Dev with HTTPS (Routeup)
+Starts backend (`:7020`), frontend Vite (`:5174`), and routes trusted local HTTPS at **`https://geto.localhost`**:
+
+```sh
+bun install
+cp .env.example .env        # set GETO_AUTH_PASSWORD
+bun routeup                 # or: routeup
+```
+
+### Option 2: Standard Dev Servers (Plain HTTP)
 ```sh
 bun install
 cp .env.example .env        # set GETO_AUTH_PASSWORD
@@ -53,7 +63,7 @@ bun run dev:server          # API on :7020 (or PORT)
 bun run dev:web             # SPA on :5174, proxies /api to the server
 ```
 
-Open the web dev server and sign in with `GETO_AUTH_PASSWORD`.
+Open `http://localhost:5174` and sign in with `GETO_AUTH_PASSWORD`.
 
 ## Production build
 
@@ -62,23 +72,84 @@ bun run build               # builds the SPA → apps/web/build
 bun run start               # Elysia serves the SPA + API on :PORT
 ```
 
-## Container (single image)
+## Container (Multi-Target Dockerfile)
 
-The image is a multi-stage build — the SPA is compiled **inside the container**,
-then only the built assets and the server's lean runtime deps land in the final
-~240 MB image. No host pre-build needed.
+The [Dockerfile](./Dockerfile) provides two build targets via multi-stage builds:
+1. **`runtime` (`geto:latest`)** — Minimal clean production image (**~113 MB**).
+2. **`routeup` (`geto:routeup`)** — Embedded Routeup proxy (**~129 MB**) providing self-contained trusted HTTPS on `https://geto.localhost`.
 
+### 1. Build Images
 ```sh
-cp .env.example .env          # optional — defaults are baked into compose
-podman compose up --build     # or: docker compose up --build
+# Build clean image (~113 MB)
+bun run docker:build          # or: docker build --target runtime -t geto:latest .
+
+# Build embedded Routeup image (~129 MB)
+bun run docker:build:routeup  # or: docker build --target routeup -t geto:routeup .
 ```
 
-- geto is published on the host at **`http://localhost:${PORT}`** (the container
-  listens on 7020 internally; `PORT` only sets the host mapping). If host 7020 is
-  taken, set e.g. `PORT=3100` in `.env` and open `http://localhost:3100`.
-- To connect to a Postgres running on the **host** from inside the container, use
-  host **`host.docker.internal`** (not `localhost`).
-- Saved connections and history persist in the `geto-data` volume.
+### 2. Run with Docker Compose
+
+#### Mode A: Standalone Local HTTPS (with Routeup)
+Runs Geto with embedded Routeup on port `443` (HTTPS) and `7020`:
+```sh
+bun run compose:routeup       # or: docker compose -f docker-compose.routeup.yaml up -d
+```
+Access at **`https://geto.localhost`**.
+
+#### Mode B: Standard / Production Compose
+Runs clean Geto on port `7020`:
+```sh
+docker compose up -d          # uses docker-compose.yaml
+```
+Access at `http://localhost:7020`.
+
+---
+
+### 3. How to Trust the Container HTTPS Certificate (1-Time Setup)
+
+When running `docker-compose.routeup.yaml` for the first time, Routeup creates a Root CA inside the `geto-ca` volume. To get a trusted green lock in your host browser without certificate warnings, export and import the CA:
+
+#### Step 1: Export the Certificate from the Container
+```sh
+bun run docker:export-ca
+# Or manually:
+docker cp $(docker compose -f docker-compose.routeup.yaml ps -q geto):/root/.routeup/ca.crt ./geto-ca.crt
+```
+
+#### Step 2: Install Certificate to Host OS Trust Store
+
+##### 🪟 Windows
+In Windows **PowerShell** (no admin needed):
+```powershell
+Import-Certificate -FilePath ".\geto-ca.crt" -CertStoreLocation Cert:\CurrentUser\Root
+```
+*Or via CMD:* `certutil -user -addstore Root geto-ca.crt`
+
+##### 🍎 macOS
+In macOS **Terminal**:
+```sh
+sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain ./geto-ca.crt
+```
+
+##### 🐧 Linux
+* **Ubuntu / Debian:**
+  ```sh
+  sudo cp ./geto-ca.crt /usr/local/share/ca-certificates/geto-ca.crt
+  sudo update-ca-certificates
+  ```
+* **Fedora / RHEL / CentOS:**
+  ```sh
+  sudo cp ./geto-ca.crt /etc/pki/ca-trust/source/anchors/geto-ca.crt
+  sudo update-ca-trust
+  ```
+* **Arch Linux:**
+  ```sh
+  sudo trust anchor --store ./geto-ca.crt
+  ```
+
+After installing the certificate, restart your browser and open **`https://geto.localhost`**.
+
+---
 
 ### Install as an app
 geto ships a web manifest, so you can install it as a standalone-window app via

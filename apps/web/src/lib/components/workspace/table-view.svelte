@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { Snippet } from 'svelte'
   import DataGrid from './data-grid.svelte'
   import type { TabFilter } from '$lib/stores/workspace.svelte'
 
@@ -9,6 +10,7 @@
     filter = undefined,
     isActive = false,
     onOpenTable,
+    toolbar = $bindable(null),
   }: {
     connId: string
     schema: string
@@ -16,6 +18,7 @@
     filter?: TabFilter
     isActive?: boolean
     onOpenTable?: (schema: string, table: string, filter?: TabFilter) => void
+    toolbar?: Snippet | null
   } = $props()
 
   let dataView = $state<'table' | 'json' | 'structure'>('table')
@@ -30,4 +33,5 @@
   {onOpenTable}
   view={dataView}
   onViewChange={(v) => (dataView = v)}
+  bind:toolbar
 />

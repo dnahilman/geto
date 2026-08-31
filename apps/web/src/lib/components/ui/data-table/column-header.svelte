@@ -10,7 +10,7 @@
     typeName,
     class: className,
   }: {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     column: Column<any, any>
     label: string
     typeName?: string

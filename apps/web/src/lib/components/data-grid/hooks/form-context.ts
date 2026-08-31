@@ -1,3 +1,3 @@
-import { createFormCreatorContexts } from '@tanstack/svelte-form';
+import { createFormCreatorContexts } from '@tanstack/svelte-form'
 
-export const { useFieldContext, useFormContext } = createFormCreatorContexts();
+export const { useFieldContext, useFormContext } = createFormCreatorContexts()

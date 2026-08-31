@@ -18,7 +18,7 @@ export async function scan(redis: Redis, opts: ScanOptions): Promise<ScanResult>
 /** Fetch a key's value, shaped per its Redis type. */
 export async function get(redis: Redis, key: string): Promise<KeyValue> {
   const [type, ttl] = await Promise.all([redis.type(key), redis.ttl(key)])
-  let value: unknown = null
+  let value: unknown
   switch (type) {
     case 'string':
       value = await redis.get(key)

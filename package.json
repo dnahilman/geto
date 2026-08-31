@@ -11,17 +11,35 @@
     "build": "bun run --filter @geto/web build",
     "start": "bun run --filter @geto/server start",
     "routeup": "routeup",
-    "docker:build": "podman build -t geto:latest . && podman images geto:latest --format '📦 Image: {{.Repository}}:{{.Tag}} | Size: {{.Size}}'",
-    "docker:size": "podman images geto:latest --format 'table {{.Repository}}\t{{.Tag}}\t{{.Size}}\t{{.Created}}'",
+    "docker:build": "podman build --target runtime -t geto:latest . && podman images geto:latest --format '📦 Image: {{.Repository}}:{{.Tag}} | Size: {{.Size}}'",
+    "docker:build:routeup": "podman build --target routeup -t geto:routeup . && podman images geto:routeup --format '📦 Image: {{.Repository}}:{{.Tag}} | Size: {{.Size}}'",
+    "docker:size": "podman images geto --format 'table {{.Repository}}\t{{.Tag}}\t{{.Size}}\t{{.Created}}'",
     "docker:history": "podman history geto:latest --format 'table {{.Size}}\t{{.CreatedBy}}'",
+    "docker:export-ca": "podman cp $(podman-compose -f docker-compose.routeup.yaml ps -q geto):/root/.routeup/ca.crt ./geto-ca.crt && echo '✅ ca.crt exported to ./geto-ca.crt'",
     "compose:dev": "podman-compose -f docker-compose.dev.yml up --build",
-    "format": "prettier --write \"apps/**/*.{ts,svelte,js,json,css}\""
+    "compose:routeup": "podman-compose -f docker-compose.routeup.yaml up --build -d",
+    "format": "prettier --write \"apps/**/*.{ts,svelte,js,json,css}\"",
+    "format:check": "prettier --check .",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
+  },
+  "routeup": {
+    "name": "geto",
+    "port": 7020,
+    "script": "start"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.9.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-svelte": "^3.23.0",
+    "globals": "^17.11.0",
     "playwright-core": "^1.60.0",
     "prettier": "^3.4.2",
     "prettier-plugin-svelte": "^3.3.3",
-    "typescript": "^5.7.3"
+    "svelte-eslint-parser": "^1.8.1",
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.68.0"
   },
   "overrides": {
     "elysia": "1.4.28"

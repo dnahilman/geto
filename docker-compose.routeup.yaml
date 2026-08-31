@@ -1,0 +1,24 @@
+services:
+  geto:
+    build:
+      context: .
+      target: routeup
+    image: geto:routeup
+    ports:
+      - '443:443'
+      - '${PORT:-7020}:7020'
+    environment:
+      NODE_ENV: production
+      GETO_AUTH_PASSWORD: ${GETO_AUTH_PASSWORD:-dev}
+      GETO_MASTER_KEY: ${GETO_MASTER_KEY:-}
+      GETO_DATA_DIR: /data
+    volumes:
+      - geto-data:/data
+      - geto-ca:/root/.routeup
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    restart: unless-stopped
+
+volumes:
+  geto-data:
+  geto-ca:

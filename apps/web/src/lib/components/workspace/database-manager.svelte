@@ -143,7 +143,12 @@
       <AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
       <AlertDialog.Action
         class="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-        onclick={() => { if (confirmDrop) { drop.mutate(confirmDrop); confirmDrop = null } }}
+        onclick={() => {
+          if (confirmDrop) {
+            drop.mutate(confirmDrop)
+            confirmDrop = null
+          }
+        }}
       >
         Drop database
       </AlertDialog.Action>
