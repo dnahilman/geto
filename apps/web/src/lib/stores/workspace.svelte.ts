@@ -35,6 +35,7 @@ type PersistedSession = {
  * the constructor calls $effect, which requires a component reactive context.
  */
 export class Workspace {
+  readonly connId: string
   tabs = $state<Tab[]>([])
   activeId = $state<string | null>(null)
   // $state so the sessionStorage $effect in the constructor tracks counter changes.
@@ -43,6 +44,7 @@ export class Workspace {
   private readonly kind: WorkspaceKind
 
   constructor(connId: string, kind: WorkspaceKind = 'relational') {
+    this.connId = connId
     this.storageKey = `geto:session:${connId}`
     this.kind = kind
     this.restore()

@@ -7,12 +7,13 @@
     mapDbToDataType,
     copyGridToClipboard,
     getCellClassName,
+    JsonView,
     type DynamicRow,
+    type RelationsConfig,
   } from '$lib/components/data-grid'
   import * as Table from '$lib/components/ui/table/index.js'
-  import { Button } from '$lib/components/ui/button'
   import { toast } from 'svelte-sonner'
-  import { X, RefreshCw, RotateCcw, Check } from 'lucide-svelte'
+  import { X } from 'lucide-svelte'
   import {
     createQuery,
     createMutation,
@@ -21,23 +22,12 @@
   } from '@tanstack/svelte-query'
   import {
     renderComponent,
-    createTableState,
     type ColumnSizingState,
     type PaginationState,
     type SortingState,
     type RowSelectionState,
-    type Updater,
-    type OnChangeFn,
   } from '@tanstack/svelte-table'
-  import {  untrack } from 'svelte'
-  import {
-    JsonView,
-    ExportMenu,
-    variantFor,
-    type RelationsConfig,
-    type GridColumn,
-    type DataGridApi,
-  } from '$lib/components/data-grid'
+  import { untrack } from 'svelte'
   import { getTableRows, getTableDetail, tableDetailKey } from '$lib/api/introspect'
   import { updateRow, type Row } from '$lib/api/mutations'
   import { historyKey, getCompletion, completionKey } from '$lib/api/query'
@@ -66,21 +56,30 @@
   } = $props()
 
   // 1. Pagination & Query States
-  let pageSize = $state(500)
-  let page = $state(0)
-  let orderBy = $state<string | undefined>(undefined)
-  let orderDir = $state<'ASC' | 'DESC'>('ASC')
+  let pagination = $state<PaginationState>({
+    pageIndex: 0,
+    pageSize: 50,
+  })
+  let sorting = $state<SortingState>([])
+  let rowSelection = $state<RowSelectionState>({})
+  let columnSizing = $state<ColumnSizingState>({})
   const qc = useQueryClient()
 
   const rowsKey = $derived(['table-rows', connId, schema, tableName, filter ?? null] as const)
   const rows = createQuery(() => ({
-    queryKey: [...rowsKey, page, pageSize, orderBy, orderDir],
+    queryKey: [
+      ...rowsKey,
+      pagination.pageIndex,
+      pagination.pageSize,
+      sorting[0]?.id,
+      sorting[0]?.desc ? 'DESC' : 'ASC',
+    ],
     queryFn: () =>
       getTableRows(connId, schema, tableName, {
-        limit: pageSize,
-        offset: page * pageSize,
-        orderBy,
-        orderDir,
+        limit: pagination.pageSize,
+        offset: pagination.pageIndex * pagination.pageSize,
+        orderBy: sorting[0]?.id,
+        orderDir: sorting[0]?.desc ? 'DESC' : 'ASC',
         filter: filter ? { column: filter.column, value: filter.value } : undefined,
       }),
     placeholderData: keepPreviousData,
@@ -98,7 +97,6 @@
   const cols = $derived(rows.data?.result.columns ?? [])
   const data = $derived<RowT[]>(rows.data?.result.rows ?? [])
   const est = $derived(rows.data?.estimatedRows ?? 0)
-  const atEnd = $derived(data.length < pageSize)
   const pk = $derived(detail.data?.primaryKey ?? [])
   const colInfo = $derived(new Map((detail.data?.columns ?? []).map((c) => [c.name, c])))
   const isEditable = $derived(pk.length > 0)
@@ -240,40 +238,7 @@
     return columnHelper.columns([selectCol, ...dbCols])
   })
 
-  // 5. Table State & Instance
-  const [columnSizing, setColumnSizing] = createTableState<ColumnSizingState>({})
-  const [rowSelection, setRowSelection] = createTableState<RowSelectionState>({})
-
-  const sorting = $derived.by<SortingState>(() => {
-    if (!orderBy) return []
-    return [{ id: orderBy, desc: orderDir === 'DESC' }]
-  })
-
-  const pagination = $derived<PaginationState>({
-    pageIndex: page,
-    pageSize,
-  })
-
-  const onSortingChange: OnChangeFn<SortingState> = (updater) => {
-    if (form.state.isDirty) return
-    table.resetCellSelection(true)
-    const next = typeof updater === 'function' ? updater(sorting) : updater
-    if (next.length) {
-      orderBy = next[0].id
-      orderDir = next[0].desc ? 'DESC' : 'ASC'
-    } else {
-      orderBy = undefined
-    }
-    page = 0
-  }
-
-  const onPaginationChange: OnChangeFn<PaginationState> = (updater) => {
-    if (form.state.isDirty) return
-    table.resetCellSelection(true)
-    const next = typeof updater === 'function' ? updater(pagination) : updater
-    page = next.pageIndex
-  }
-
+  // 5. Table Instance
   const table = createAppGridTable({
     get data() {
       return (form.state.values as { data?: DynamicRow[] })?.data ?? tableData
@@ -281,18 +246,17 @@
     get columns() {
       return columns
     },
+    manualPagination: true,
+    manualSorting: true,
     get rowCount() {
       return est
     },
-    get pageCount() {
-      return Math.ceil(est / pageSize) || 1
-    },
     state: {
       get columnSizing() {
-        return columnSizing()
+        return columnSizing
       },
       get rowSelection() {
-        return rowSelection()
+        return rowSelection
       },
       get sorting() {
         return sorting
@@ -301,10 +265,23 @@
         return pagination
       },
     },
-    onColumnSizingChange: (updater: Updater<ColumnSizingState>) => setColumnSizing(updater),
-    onRowSelectionChange: (updater: Updater<RowSelectionState>) => setRowSelection(updater),
-    onSortingChange,
-    onPaginationChange,
+    onColumnSizingChange: (updater) => {
+      columnSizing = typeof updater === 'function' ? updater(columnSizing) : updater
+    },
+    onRowSelectionChange: (updater) => {
+      rowSelection = typeof updater === 'function' ? updater(rowSelection) : updater
+    },
+    onSortingChange: (updater) => {
+      if (form.state.isDirty) return
+      table.resetCellSelection(true)
+      sorting = typeof updater === 'function' ? updater(sorting) : updater
+      pagination.pageIndex = 0
+    },
+    onPaginationChange: (updater) => {
+      if (form.state.isDirty) return
+      table.resetCellSelection(true)
+      pagination = typeof updater === 'function' ? updater(pagination) : updater
+    },
   })
 
   const headerGroups = $derived(table.getHeaderGroups())
@@ -441,7 +418,7 @@
           <JsonView
             columns={cols}
             rows={data}
-            offset={page * pageSize}
+            offset={pagination.pageIndex * pagination.pageSize}
             {relations}
             relationMap={relationMap ?? undefined}
           />
@@ -556,8 +533,11 @@
         {/if}
       </div>
 
-      <!-- Right: [←] page-size [→] -->
-      <table.PaginationControls />
+      <!-- Right: Pagination & Export -->
+      <div class="flex items-center gap-3">
+        <table.ExportMenu />
+        <table.PaginationControls />
+      </div>
     </div>
   </div>
 </table.AppTable>

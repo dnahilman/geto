@@ -6,7 +6,6 @@
   import {
     DataGrid,
     DataGridToolbar,
-    ExportMenu,
     JsonView,
     createDataGrid,
     variantFor,
@@ -16,6 +15,10 @@
   import { buildRelationMap, type RelationTarget } from '$lib/relations'
   import { insertRow, updateRow, deleteRow, type Row } from '$lib/api/mutations'
   import type { TabFilter } from '$lib/stores/workspace.svelte'
+  import { collectRows, toCSV, toJSON, toMarkdown, downloadFile, timestamp } from '$lib/export'
+  import * as DropdownMenu from '$lib/components/ui/dropdown-menu'
+  import { Button } from '$lib/components/ui/button'
+  import { Download, FileSpreadsheet, FileJson, FileText } from 'lucide-svelte'
 
   interface Props {
     connId: string
@@ -158,7 +161,69 @@
     grid.ctx.clearSelection()
     grid.clearExpanded()
   })
+
+  function exportData(format: 'csv' | 'json' | 'md') {
+    const { columns: colNames, rows: rowData } = collectRows(grid)
+    if (rowData.length === 0) {
+      toast.warning('No data to export')
+      return
+    }
+    const stamp = timestamp(new Date())
+    const base = source ? `${source.schema}.${source.table}` : 'query-result'
+    const filename = `${base}-${stamp}.${format === 'md' ? 'md' : format}`
+    let content = ''
+    let mime = 'text/plain'
+    if (format === 'csv') {
+      content = toCSV(colNames, rowData)
+      mime = 'text/csv'
+    } else if (format === 'json') {
+      content = toJSON(colNames, rowData)
+      mime = 'application/json'
+    } else if (format === 'md') {
+      content = toMarkdown(colNames, rowData)
+      mime = 'text/markdown'
+    }
+    downloadFile(filename, mime, content)
+    toast.success(`Exported ${rowData.length} row(s) to ${format.toUpperCase()}`)
+  }
 </script>
+
+{#snippet exportDropdown()}
+  <DropdownMenu.Root>
+    <DropdownMenu.Trigger>
+      {#snippet child({ props })}
+        <Button
+          {...props}
+          variant="ghost"
+          size="icon"
+          class="size-7 text-muted-foreground hover:text-foreground"
+          title="Export data"
+        >
+          <Download class="size-3.5" />
+        </Button>
+      {/snippet}
+    </DropdownMenu.Trigger>
+    <DropdownMenu.Content align="end" class="w-48 text-xs">
+      <DropdownMenu.Group>
+        <DropdownMenu.GroupHeading class="text-[10px] uppercase text-muted-foreground">
+          Export
+        </DropdownMenu.GroupHeading>
+        <DropdownMenu.Item onSelect={() => exportData('csv')} class="cursor-pointer gap-2">
+          <FileSpreadsheet class="size-3.5 text-emerald-500" />
+          <span>CSV</span>
+        </DropdownMenu.Item>
+        <DropdownMenu.Item onSelect={() => exportData('json')} class="cursor-pointer gap-2">
+          <FileJson class="size-3.5 text-amber-500" />
+          <span>JSON</span>
+        </DropdownMenu.Item>
+        <DropdownMenu.Item onSelect={() => exportData('md')} class="cursor-pointer gap-2">
+          <FileText class="size-3.5 text-blue-500" />
+          <span>Markdown</span>
+        </DropdownMenu.Item>
+      </DropdownMenu.Group>
+    </DropdownMenu.Content>
+  </DropdownMenu.Root>
+{/snippet}
 
 <div class="flex h-full flex-col">
   {#if source}
@@ -168,17 +233,12 @@
         {#if grid.dirty}
           <span class="text-muted-foreground text-xs">unsaved changes — Apply or Cancel</span>
         {/if}
-        <ExportMenu
-          api={grid}
-          baseName={`${source.schema}.${source.table}`}
-          {view}
-          {onViewChange}
-        />
+        {@render exportDropdown()}
       </div>
     </DataGridToolbar>
   {:else}
     <div class="flex items-center justify-end gap-2 border-b px-2 py-1" data-datagrid-toolbar>
-      <ExportMenu api={grid} baseName="query-result" {view} {onViewChange} />
+      {@render exportDropdown()}
     </div>
   {/if}
   <div class="min-h-0 flex-1 overflow-auto">

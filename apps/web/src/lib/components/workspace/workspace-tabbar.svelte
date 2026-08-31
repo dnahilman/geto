@@ -1,18 +1,39 @@
 <script lang="ts">
-  import { Table2, KeyRound, SquareTerminal, X, Pin, PinOff, RefreshCw, RotateCcw, Loader, Check } from 'lucide-svelte'
+  import {
+    Table2,
+    KeyRound,
+    SquareTerminal,
+    X,
+    Pin,
+    PinOff,
+    RefreshCw,
+    RotateCcw,
+    Check,
+    Loader,
+  } from 'lucide-svelte'
   import * as ContextMenu from '$lib/components/ui/context-menu'
   import type { Workspace, Tab } from '$lib/stores/workspace.svelte'
-    import { useFormContext } from '../data-grid'
-    import { Button } from '../ui/button'
+  import { Button } from '../ui/button'
+  import { useQueryClient } from '@tanstack/svelte-query'
+  import { useFormContext } from '../data-grid'
 
   interface Props {
     ws: Workspace
   }
 
   let { ws }: Props = $props()
-
+  const qc = useQueryClient()
   const form = useFormContext()
-  
+
+  function refresh() {
+    const active = ws.active
+    if (active?.kind === 'table') {
+      qc.invalidateQueries({
+        queryKey: ['table-rows', ws.connId, active.schema, active.table, active.filter ?? null],
+      })
+    }
+  }
+
   function icon(kind: Tab['kind']) {
     if (kind === 'table') return Table2
     if (kind === 'rkey') return KeyRound
@@ -78,54 +99,54 @@
   </div>
 
   <!-- Sticky Toolbar at the end -->
+  {#if ws.active?.kind === 'table'}
     <div
       class="sticky right-0 z-10 flex shrink-0 items-center gap-2 border-l bg-background px-3 py-1 text-xs"
     >
-        <div class="flex items-center gap-1">
-          <Button
-            size="icon"
-            variant="ghost"
-            class="size-7 text-muted-foreground hover:text-foreground"
-            title="Refresh table"
-            disabled={form.state.isDirty}
-            <!-- onclick={refresh} -->
-          >
-            <RefreshCw class="size-3.5" />
-          </Button>
-      
-          <form.Subscribe
-            selector={(state) => ({ isDirty: state.isDirty, isSubmitting: state.isSubmitting })}
-          >
-            {#snippet children({ isDirty, isSubmitting })}
-              {#if isDirty}
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  class="size-7 text-muted-foreground hover:text-destructive"
-                  title="Discard changes"
-                  disabled={isSubmitting}
-                  onclick={() => form.reset()}
-                >
-                  <RotateCcw class="size-3.5" />
-                </Button>
-                <Button
-                  type="button"
-                  size="icon"
-                  class="size-7 bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs"
-                  title="Save changes"
-                  disabled={isSubmitting}
-                  onclick={() => form.handleSubmit()}
-                >
-                  {#if isSubmitting}
-                    <Loader class="size-3.5 animate-spin" />
-                  {:else}
-                    <Check class="size-3.5" />
-                  {/if}
-                </Button>
-              {/if}
-            {/snippet}
-          </form.Subscribe>
-        </div>
+      <div class="flex items-center gap-1">
+        <form.Subscribe
+          selector={(state) => ({ isDirty: state.isDirty, isSubmitting: state.isSubmitting })}
+        >
+          {#snippet children({ isDirty, isSubmitting })}
+            {#if isDirty}
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                class="size-7 text-muted-foreground hover:text-destructive"
+                title="Discard changes"
+                disabled={isSubmitting}
+                onclick={() => form.reset()}
+              >
+                <RotateCcw class="size-3.5" />
+              </Button>
+              <Button
+                type="button"
+                size="icon"
+                class="size-7 bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs"
+                title="Save changes"
+                disabled={isSubmitting}
+                onclick={() => form.handleSubmit()}
+              >
+                {#if isSubmitting}
+                  <Loader class="size-3.5 animate-spin" />
+                {:else}
+                  <Check class="size-3.5" />
+                {/if}
+              </Button>
+            {/if}
+          {/snippet}
+        </form.Subscribe>
+        <Button
+          size="icon"
+          variant="ghost"
+          class="size-7 text-muted-foreground hover:text-foreground"
+          title="Refresh table"
+          onclick={refresh}
+        >
+          <RefreshCw class="size-3.5" />
+        </Button>
+      </div>
     </div>
+  {/if}
 </div>

@@ -6,6 +6,7 @@ import GridCell from '../cells/grid-cell.svelte'
 import RowSelectCell from '../cells/row-select-cell.svelte'
 import { dataGridFeatures } from '../utils/table-features.js'
 import PaginationControls from '../pagination/pagination-controls.svelte'
+import ExportMenu from '../toolbar/export-menu.svelte'
 
 export const {
   appFeatures: gridFeatures,
@@ -23,6 +24,7 @@ export const {
   manualSorting: true,
   tableComponents: {
     PaginationControls,
+    ExportMenu,
   },
   headerComponents: {
     ColumnHeader,
