@@ -2,26 +2,31 @@
   import { useGridTableContext } from '../hooks/use-data-grid.js'
   import { useFormContext } from '../hooks/form-context.js'
   import { Button } from '$lib/components/ui/button'
-  import { RefreshCw, RotateCcw, Check, Loader, Funnel } from 'lucide-svelte'
+  import { RefreshCw, RotateCcw, Check, Loader, Funnel, Trash2 } from 'lucide-svelte'
   import ExportMenu from './export-menu.svelte'
   import PaginationControls from '../pagination/pagination-controls.svelte'
 
   interface Props {
     onRefresh?: () => void
+    onDeleteSelected?: () => void
+    isDeleting?: boolean
   }
 
-  let { onRefresh }: Props = $props()
+  let { onRefresh, onDeleteSelected, isDeleting = false }: Props = $props()
 
   const table = useGridTableContext()
   const form = useFormContext()
+
+  const selectedRows = $derived(table.getSelectedRowModel().rows)
+  const selectedCount = $derived(selectedRows.length)
 </script>
 
 <div
-  class="flex shrink-0 items-center justify-between border-b bg-background px-2 text-xs gap-2"
+  class="flex shrink-0 items-center justify-between border-b bg-background px-2 text-xs gap-2 py-0.5"
 >
-  <!-- Left: Save / Discard buttons via form context -->
+  <!-- Left: Actions & Save / Discard buttons -->
   <div class="flex items-center gap-1.5 ps-1">
-      <!-- todo create filters -->
+    <!-- todo create filters -->
     <Button
       type="button"
       variant="ghost"
@@ -31,6 +36,25 @@
     >
       <Funnel class="size-3.5" />
     </Button>
+
+    {#if selectedCount > 0}
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        class="h-7 px-2 text-xs text-destructive hover:bg-destructive/10 border-destructive/30 gap-1.5"
+        title="Delete {selectedCount} selected row{selectedCount > 1 ? 's' : ''}"
+        disabled={isDeleting}
+        onclick={onDeleteSelected}
+      >
+        {#if isDeleting}
+          <Loader class="size-3.5 animate-spin" />
+        {:else}
+          <Trash2 class="size-3.5" />
+        {/if}
+        <span>Delete ({selectedCount})</span>
+      </Button>
+    {/if}
     <form.Subscribe
       selector={(state) => ({ isDirty: state.isDirty, isSubmitting: state.isSubmitting })}
     >

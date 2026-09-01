@@ -12,8 +12,9 @@
     type RelationsConfig,
   } from '$lib/components/data-grid'
   import * as Table from '$lib/components/ui/table/index.js'
+  import * as AlertDialog from '$lib/components/ui/alert-dialog'
   import { toast } from 'svelte-sonner'
-  import { X, PanelLeft } from 'lucide-svelte'
+  import { X, PanelLeft, Trash2, Loader } from 'lucide-svelte'
   import { Button } from '$lib/components/ui/button'
   import {
     createQuery,
@@ -29,9 +30,10 @@
     type RowSelectionState,
   } from '@tanstack/svelte-table'
   import { untrack } from 'svelte'
-  import { getTableRows, getTableDetail, tableDetailKey } from '$lib/api/introspect'
-  import { updateRow, type Row } from '$lib/api/mutations'
-  import { historyKey, getCompletion, completionKey } from '$lib/api/query'
+  import { type TableData } from '$lib/api/introspect'
+  import { updateRow, deleteRow, type Row } from '$lib/api/mutations'
+  import { historyKey } from '$lib/api/query'
+  import { tableQueries } from '$lib/queries'
   import { buildRelationMap, type RelationTarget } from '$lib/relations'
   import WorkspaceSkeletons from './workspace-skeletons.svelte'
   import type { TabFilter } from '$lib/stores/workspace.svelte'
@@ -70,33 +72,27 @@
   let columnSizing = $state<ColumnSizingState>({})
   const qc = useQueryClient()
 
-  const rowsKey = $derived(['table-rows', connId, schema, tableName, filter ?? null] as const)
-  const rows = createQuery(() => ({
-    queryKey: [
-      ...rowsKey,
-      pagination.pageIndex,
-      pagination.pageSize,
-      sorting[0]?.id,
-      sorting[0]?.desc ? 'DESC' : 'ASC',
-    ],
-    queryFn: () =>
-      getTableRows(connId, schema, tableName, {
-        limit: pagination.pageSize,
-        offset: pagination.pageIndex * pagination.pageSize,
-        orderBy: sorting[0]?.id,
-        orderDir: sorting[0]?.desc ? 'DESC' : 'ASC',
-        filter: filter ? { column: filter.column, value: filter.value } : undefined,
-      }),
-    placeholderData: keepPreviousData,
-  }))
-  const detail = createQuery(() => ({
-    queryKey: tableDetailKey(connId, schema, tableName),
-    queryFn: () => getTableDetail(connId, schema, tableName),
-  }))
-  const completion = createQuery(() => ({
-    queryKey: completionKey(connId),
-    queryFn: () => getCompletion(connId),
-  }))
+  const currentQueryOpts = $derived(
+    tableQueries.rows(connId, schema, tableName, {
+      limit: pagination.pageSize,
+      offset: pagination.pageIndex * pagination.pageSize,
+      orderBy: sorting[0]?.id,
+      orderDir: sorting[0]?.desc ? 'DESC' : 'ASC',
+      filter: filter ? { column: filter.column, value: filter.value } : undefined,
+    }),
+  )
+  const rowsKey = $derived(
+    tableQueries.rowsRootKey(
+      connId,
+      schema,
+      tableName,
+      filter ? { column: filter.column, value: filter.value } : null,
+    ),
+  )
+
+  const rows = createQuery(() => currentQueryOpts)
+  const detail = createQuery(() => tableQueries.detail(connId, schema, tableName))
+  const completion = createQuery(() => tableQueries.completion(connId))
 
   type RowT = unknown[]
   const cols = $derived(rows.data?.result.columns ?? [])
@@ -136,13 +132,165 @@
       : undefined,
   )
 
-  // 3. Dynamic Rows & Form with In-Place Save
+  // 3. Dynamic Rows & Optimistic Mutations
   const tableData = $derived(mapSqlRowsToDynamicRows(cols, data, pk))
 
-  const updateMutation = createMutation(() => ({
-    mutationFn: ({ pkRow, values }: { pkRow: Row; values: Record<string, string | null> }) =>
-      updateRow(connId, schema, tableName, pkRow, values),
-    onError: (e: Error) => toast.error(e.message),
+  let deleteDialogOpen = $state(false)
+
+  // A. Optimistic Delete Mutation
+  const deleteMutation = createMutation(() => ({
+    mutationFn: async (rowsToDelete: DynamicRow[]) => {
+      const deletes = rowsToDelete.map((r) => {
+        const pkObj: Row = {}
+        if (pk.length > 0) {
+          for (const k of pk) pkObj[k] = r[k]
+        } else {
+          for (const c of cols) pkObj[c.name] = r[c.name]
+        }
+        return deleteRow(connId, schema, tableName, pkObj)
+      })
+      return Promise.all(deletes)
+    },
+    onMutate: async (rowsToDelete: DynamicRow[]) => {
+      // 1. Cancel outgoing queries
+      await qc.cancelQueries({ queryKey: currentQueryOpts.queryKey })
+
+      // 2. Snapshot previous data
+      const previousData = qc.getQueryData<TableData>(currentQueryOpts.queryKey)
+      const previousFormData = (form.state.values as { data?: DynamicRow[] })?.data ?? tableData
+
+      // 3. Optimistically update query cache
+      if (previousData) {
+        const remainingSqlRows = previousData.result.rows.filter((sqlRow) => {
+          return !rowsToDelete.some((delRow) => {
+            if (pk.length > 0) {
+              return pk.every((p) => delRow[p] === sqlRow[cols.findIndex((c) => c.name === p)])
+            }
+            return cols.every((c, i) => delRow[c.name] === sqlRow[i])
+          })
+        })
+
+        qc.setQueryData<TableData>(currentQueryOpts.queryKey, {
+          ...previousData,
+          result: {
+            ...previousData.result,
+            rows: remainingSqlRows,
+          },
+          estimatedRows: Math.max(0, previousData.estimatedRows - rowsToDelete.length),
+        })
+      }
+
+      // 4. Optimistically update Form state and reset selection
+      const remainingFormData = previousFormData.filter((r) => !rowsToDelete.includes(r))
+      form.reset({ data: remainingFormData })
+      rowSelection = {}
+      deleteDialogOpen = false
+
+      return { previousData, previousFormData }
+    },
+    onError: (e: Error, _vars, context) => {
+      if (context?.previousData) {
+        qc.setQueryData(currentQueryOpts.queryKey, context.previousData)
+      }
+      if (context?.previousFormData) {
+        form.reset({ data: context.previousFormData })
+      }
+      toast.error(e.message)
+    },
+    onSuccess: (_data, vars) => {
+      toast.success(`Deleted ${vars.length} row(s)`)
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: rowsKey })
+      qc.invalidateQueries({ queryKey: historyKey(connId) })
+    },
+  }))
+
+  function handleDeleteSelected() {
+    const selectedRows = table.getSelectedRowModel().rows
+    if (selectedRows.length === 0) return
+    deleteDialogOpen = true
+  }
+
+  async function confirmDelete() {
+    const selectedRows = table.getSelectedRowModel().rows
+    if (selectedRows.length === 0) return
+    const rowsToDelete = selectedRows.map((r) => r.original)
+    await deleteMutation.mutateAsync(rowsToDelete)
+  }
+
+  // B. Optimistic Batch Save/Update Mutation
+  interface RowUpdate {
+    pkRow: Row
+    values: Record<string, string | null>
+    rowIndex: number
+    newRow: DynamicRow
+  }
+
+  const saveMutation = createMutation(() => ({
+    mutationFn: async (updates: RowUpdate[]) => {
+      return Promise.all(
+        updates.map((u) => updateRow(connId, schema, tableName, u.pkRow, u.values)),
+      )
+    },
+    onMutate: async (updates: RowUpdate[]) => {
+      // 1. Cancel outgoing queries
+      await qc.cancelQueries({ queryKey: currentQueryOpts.queryKey })
+
+      // 2. Snapshot previous data
+      const previousData = qc.getQueryData<TableData>(currentQueryOpts.queryKey)
+      const previousFormData = (form.state.values as { data?: DynamicRow[] })?.data ?? tableData
+
+      // 3. Optimistically update Query Cache
+      if (previousData) {
+        const updatedSqlRows = previousData.result.rows.map((sqlRow, idx) => {
+          const update = updates.find((u) => u.rowIndex === idx)
+          if (!update) return sqlRow
+
+          const newSqlRow = [...sqlRow]
+          for (const [colName, val] of Object.entries(update.values)) {
+            const colIdx = cols.findIndex((c) => c.name === colName)
+            if (colIdx !== -1) {
+              newSqlRow[colIdx] = val
+            }
+          }
+          return newSqlRow
+        })
+
+        qc.setQueryData<TableData>(currentQueryOpts.queryKey, {
+          ...previousData,
+          result: {
+            ...previousData.result,
+            rows: updatedSqlRows,
+          },
+        })
+      }
+
+      // 4. Mark form as pristine with new values
+      const newFormData = previousFormData.map((row, idx) => {
+        const update = updates.find((u) => u.rowIndex === idx)
+        return update ? { ...row, ...update.newRow } : row
+      })
+      form.reset({ data: newFormData })
+
+      return { previousData, previousFormData }
+    },
+    onError: (e: Error, _vars, context) => {
+      if (context?.previousData) {
+        qc.setQueryData(currentQueryOpts.queryKey, context.previousData)
+      }
+      if (context?.previousFormData) {
+        form.reset({ data: context.previousFormData })
+      }
+      toast.error(e.message)
+    },
+    onSuccess: (_data, vars) => {
+      toast.success(`Saved ${vars.length} modified row(s)`)
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: rowsKey })
+      qc.invalidateQueries({ queryKey: historyKey(connId) })
+    },
   }))
 
   const form = createGridForm(() => ({
@@ -150,8 +298,7 @@
     onSubmit: async ({ value }: { value: { data: DynamicRow[] } }) => {
       if (!value.data || value.data.length === 0) return
       try {
-        let updatedCount = 0
-        const updates: Promise<unknown>[] = []
+        const updates: RowUpdate[] = []
 
         for (let i = 0; i < value.data.length; i++) {
           const newRow = value.data[i]
@@ -172,18 +319,13 @@
             for (const k of pk) {
               pkRow[k] = origRow[k]
             }
-            updates.push(updateMutation.mutateAsync({ pkRow, values: changedValues }))
-            updatedCount++
+            updates.push({ pkRow, values: changedValues, rowIndex: i, newRow })
           }
         }
 
         if (updates.length > 0) {
-          await Promise.all(updates)
-          refresh()
-          qc.invalidateQueries({ queryKey: historyKey(connId) })
-          toast.success(`Saved ${updatedCount} modified row(s)`)
+          await saveMutation.mutateAsync(updates)
         }
-        form.reset({ data: value.data })
       } catch (err) {
         console.error('Failed to save table changes:', err)
       }
@@ -348,7 +490,11 @@
   <form.AppForm>
     <div class="flex h-full flex-col">
       <!-- Sub-Header DataGrid Toolbar -->
-      <table.Toolbar onRefresh={refresh} />
+      <table.Toolbar
+        onRefresh={refresh}
+        onDeleteSelected={handleDeleteSelected}
+        isDeleting={deleteMutation.isPending}
+      />
 
       <!-- Main View Area -->
       <div class="min-h-0 flex-1 overflow-hidden">
@@ -560,3 +706,33 @@
     </div>
   </form.AppForm>
 </table.AppTable>
+
+<AlertDialog.Root bind:open={deleteDialogOpen}>
+  <AlertDialog.Content>
+    <AlertDialog.Header>
+      <AlertDialog.Title>
+        Delete {table.getSelectedRowModel().rows.length} row{table.getSelectedRowModel().rows.length > 1 ? 's' : ''}?
+      </AlertDialog.Title>
+      <AlertDialog.Description>
+        This will permanently delete the selected record{table.getSelectedRowModel().rows.length > 1 ? 's' : ''} from
+        <span class="font-mono font-medium text-foreground">{schema}.{tableName}</span>.
+        This action cannot be undone.
+      </AlertDialog.Description>
+    </AlertDialog.Header>
+    <AlertDialog.Footer>
+      <AlertDialog.Cancel disabled={deleteMutation.isPending}>Cancel</AlertDialog.Cancel>
+      <Button
+        variant="destructive"
+        disabled={deleteMutation.isPending}
+        onclick={confirmDelete}
+        class="gap-1.5"
+      >
+        {#if deleteMutation.isPending}
+          <Loader class="size-3.5 animate-spin" /> Deleting...
+        {:else}
+          <Trash2 class="size-3.5" /> Delete
+        {/if}
+      </Button>
+    </AlertDialog.Footer>
+  </AlertDialog.Content>
+</AlertDialog.Root>
