@@ -38,7 +38,7 @@
   }
 </script>
 
-<div class="relative flex items-center justify-between border-b bg-background">
+<div class="relative flex h-9 items-center justify-between border-b bg-background">
   <!-- Horizontal scrollable tabs -->
   <div class="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto px-1">
     {#each ws.tabs as tab (tab.id)}
@@ -97,7 +97,7 @@
 
   <!-- Sticky Toolbar at the end -->
   <div
-    class="sticky right-0 z-10 flex shrink-0 items-center gap-1 border-l bg-background px-2 py-1 text-xs"
+    class="sticky right-0 z-10 flex shrink-0 items-center gap-1 border-l border-b bg-background px-2 py-1 text-xs"
   >
     {#if activeTableTab}
       {@const ActiveIcon = currentOption.icon}
@@ -141,8 +141,8 @@
       variant="ghost"
       size="icon"
       class="size-7 text-muted-foreground hover:text-foreground"
-      title="New SQL console"
-      onclick={() => ws.openConsole()}
+      title={ws.kind === 'keyvalue' ? 'New Redis console' : 'New SQL console'}
+      onclick={() => (ws.kind === 'keyvalue' ? ws.openRedisConsole() : ws.openConsole())}
     >
       <SquareTerminal class="size-3.5" />
     </Button>

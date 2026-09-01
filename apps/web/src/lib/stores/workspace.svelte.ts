@@ -44,7 +44,7 @@ export class Workspace {
   // $state so the sessionStorage $effect in the constructor tracks counter changes.
   nextN = $state(1)
   private readonly storageKey: string
-  private readonly kind: WorkspaceKind
+  readonly kind: WorkspaceKind
 
   constructor(connId: string, kind: WorkspaceKind = 'relational') {
     this.connId = connId

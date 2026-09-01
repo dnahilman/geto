@@ -108,14 +108,14 @@
       <Resizable.Handle withHandle />
     {/if}
     <Resizable.Pane order={2} defaultSize={78} class="flex min-w-0 flex-col">
+      <WorkspaceTabbar {ws} />
+
       {#if ws.tabs.length === 0}
-        <div class="text-muted-foreground flex h-full flex-col items-center justify-center gap-2">
+        <div class="text-muted-foreground flex flex-1 flex-col items-center justify-center gap-2">
           <KeyRound class="size-8" />
           <p class="text-sm">Select a key from the sidebar, or open a console.</p>
         </div>
       {:else}
-        <WorkspaceTabbar {ws} />
-
         <div class="min-h-0 flex-1">
           {#each ws.tabs as tab (tab.id)}
             <div class="h-full {ws.activeId === tab.id ? '' : 'hidden'}">

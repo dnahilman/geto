@@ -151,39 +151,41 @@
 {/snippet}
 
 {#snippet tableSqlSpace()}
-  {#if ws.tabs.length === 0}
-    <div class="text-muted-foreground flex h-full flex-col items-center justify-center gap-2">
-      <Table2 class="size-8" />
-      <p class="text-sm">Select a table from the sidebar, or open the SQL console.</p>
-    </div>
-  {:else}
+  <div class="flex h-full flex-col">
     {@render tabbar()}
-    <!-- active content (keep tables mounted to preserve grid state) -->
-    <div class="min-h-0 flex-1">
-      {#each ws.tabs as tab (tab.id)}
-        <div class="h-full {ws.activeId === tab.id ? '' : 'hidden'}">
-          {#if tab.kind === 'table'}
-            <DataGrid
-              {connId}
-              schema={tab.schema}
-              tableName={tab.table}
-              filter={tab.filter}
-              view={tab.view ?? 'table'}
-              onToggleSidebar={() => (sidebarOpen = !sidebarOpen)}
-              onOpenTable={(s, t, f) => ws.openTable(s, t, f)}
-            />
-          {:else if tab.kind === 'console'}
-            <SqlConsole
-              {connId}
-              initialSql={tab.sql}
-              onSqlChange={(s) => ws.updateSql(tab.id, s)}
-              onOpenTable={(s, t, f) => ws.openTable(s, t, f)}
-            />
-          {/if}
-        </div>
-      {/each}
-    </div>
-  {/if}
+    {#if ws.tabs.length === 0}
+      <div class="text-muted-foreground flex flex-1 flex-col items-center justify-center gap-2">
+        <Table2 class="size-8" />
+        <p class="text-sm">Select a table from the sidebar, or open the SQL console.</p>
+      </div>
+    {:else}
+      <!-- active content (keep tables mounted to preserve grid state) -->
+      <div class="min-h-0 flex-1">
+        {#each ws.tabs as tab (tab.id)}
+          <div class="h-full {ws.activeId === tab.id ? '' : 'hidden'}">
+            {#if tab.kind === 'table'}
+              <DataGrid
+                {connId}
+                schema={tab.schema}
+                tableName={tab.table}
+                filter={tab.filter}
+                view={tab.view ?? 'table'}
+                onToggleSidebar={() => (sidebarOpen = !sidebarOpen)}
+                onOpenTable={(s, t, f) => ws.openTable(s, t, f)}
+              />
+            {:else if tab.kind === 'console'}
+              <SqlConsole
+                {connId}
+                initialSql={tab.sql}
+                onSqlChange={(s) => ws.updateSql(tab.id, s)}
+                onOpenTable={(s, t, f) => ws.openTable(s, t, f)}
+              />
+            {/if}
+          </div>
+        {/each}
+      </div>
+    {/if}
+  </div>
 {/snippet}
 
 <div class="flex h-screen flex-col">
