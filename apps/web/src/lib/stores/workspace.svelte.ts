@@ -5,6 +5,8 @@ export interface TabFilter {
   label: string
 }
 
+export type TableViewMode = 'table' | 'json' | 'structure'
+
 export type Tab =
   | {
       kind: 'table'
@@ -14,6 +16,7 @@ export type Tab =
       title: string
       filter?: TabFilter
       pinned?: boolean
+      view?: TableViewMode
     }
   | { kind: 'console'; id: string; title: string; n: number; sql: string; pinned?: boolean }
   // Redis (key-value) tabs — same store, never mixed with SQL tabs (a connection
@@ -177,6 +180,13 @@ export class Workspace {
 
   get active(): Tab | null {
     return this.tabs.find((t) => t.id === this.activeId) ?? null
+  }
+
+  setView(tabId: string, view: TableViewMode) {
+    const tab = this.tabs.find((t) => t.id === tabId)
+    if (tab?.kind === 'table') {
+      tab.view = view
+    }
   }
 
   reset() {

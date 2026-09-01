@@ -8,10 +8,14 @@
     KeyRound,
     PanelLeft,
     Users,
+    ChevronDown,
+    Copy,
   } from 'lucide-svelte'
   import * as Resizable from '$lib/components/ui/resizable'
+  import * as DropdownMenu from '$lib/components/ui/dropdown-menu'
   import { Button } from '$lib/components/ui/button'
   import { Badge } from '$lib/components/ui/badge'
+  import { ProviderIcon } from '$lib/components/icons'
   import SchemaTree from '$lib/components/workspace/schema-tree.svelte'
   import DataGrid from './data-grid.svelte'
   import SqlConsole from '$lib/components/workspace/sql-console.svelte'
@@ -30,7 +34,6 @@
   let { connId, conn }: Props = $props()
 
   const ws = new Workspace(connId, 'relational')
-
 
   $effect(() => {
     function onKeydown(e: KeyboardEvent) {
@@ -57,50 +60,6 @@
   }
 </script>
 
-{#snippet navbar()}
-  <header class="flex h-9 shrink-0 items-center gap-1 border-b bg-background px-2.5">
-    <Button variant="ghost" size="icon" class="size-7 shrink-0" href="/" title="Connections">
-      <ArrowLeft class="size-3.5" />
-    </Button>
-    <Button
-      variant="ghost"
-      size="icon"
-      class="size-7 shrink-0"
-      title="Toggle sidebar"
-      onclick={() => (sidebarOpen = !sidebarOpen)}
-    >
-      <PanelLeft class="size-3.5" />
-    </Button>
-    <div class="flex items-center gap-1.5 ml-1">
-      <Database class="size-3.5 text-muted-foreground" />
-      <span class="text-xs font-semibold tracking-tight">{conn?.name ?? connId}</span>
-      {#if conn?.database}<span class="text-muted-foreground font-mono text-[10px]"
-          >/ {conn.database}</span
-        >{/if}
-      {#if conn?.readonly}<Badge variant="secondary" class="h-4.5 px-1.5 text-[10px] uppercase font-semibold tracking-wider">read-only</Badge>{/if}
-    </div>
-    <div class="ml-auto flex items-center gap-1">
-      <Button
-        variant="ghost"
-        class="h-7 px-2 text-xs gap-1.5 text-muted-foreground hover:text-foreground"
-        onclick={copyConnString}
-        title="Copy connection string (with password)"
-      >
-        <KeyRound class="size-3.5" /> <span class="hidden sm:inline">Copy connection string</span>
-      </Button>
-      <Button variant="ghost" class="h-7 px-2 text-xs gap-1.5 text-muted-foreground hover:text-foreground" onclick={() => (dbManagerOpen = true)}>
-        <Database class="size-3.5" /> Databases
-      </Button>
-      <Button variant="ghost" class="h-7 px-2 text-xs gap-1.5 text-muted-foreground hover:text-foreground" onclick={() => (roleManagerOpen = true)}>
-        <Users class="size-3.5" /> Roles
-      </Button>
-      <Button variant="outline" class="h-7 px-2.5 text-xs gap-1.5 font-medium ml-1 shadow-2xs" onclick={() => ws.openConsole()}>
-        <SquareTerminal class="size-3.5" /> New SQL Console
-      </Button>
-    </div>
-  </header>
-{/snippet}
-
 {#snippet dialogs()}
   <DatabaseManager
     bind:open={dbManagerOpen}
@@ -112,6 +71,71 @@
   <RoleManager bind:open={roleManagerOpen} {connId} readonly={conn?.readonly ?? false} />
 {/snippet}
 
+{#snippet sidebarFooter()}
+  <div class="flex shrink-0 items-center gap-2 border-t px-3 py-1.5">
+    <img src="/logo.svg" alt="geto" class="h-5 w-auto invert" />
+    <span class="text-muted-foreground ml-auto font-mono text-xs">v{__APP_VERSION__}</span>
+  </div>
+{/snippet}
+
+{#snippet sidebarHeader()}
+  <div class="flex shrink-0 items-center gap-2 border-b px-3 py-2">
+    <div class="flex items-center gap-1.5 ml-1">
+      <ProviderIcon provider={conn?.provider ?? ''} class="size-3.5 shrink-0" />
+      <span class="text-xs font-semibold tracking-tight">{conn?.name ?? connId}</span>
+      {#if conn?.database}
+        <div class="h-4 w-px bg-border my-auto"></div>
+        <DropdownMenu.Root>
+          <DropdownMenu.Trigger>
+            {#snippet child({ props })}
+              <button
+                {...props}
+                type="button"
+                class="flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-mono font-medium hover:bg-accent transition-colors cursor-pointer"
+                title="Database actions ({conn.database})"
+              >
+                <span>{conn.database}</span>
+                <ChevronDown class="size-3 opacity-60" />
+              </button>
+            {/snippet}
+          </DropdownMenu.Trigger>
+          <DropdownMenu.Content align="start" class="w-48 text-xs">
+            <DropdownMenu.Group>
+              <DropdownMenu.GroupHeading class="text-[10px] uppercase text-muted-foreground">
+                Database Actions
+              </DropdownMenu.GroupHeading>
+              <DropdownMenu.Item
+                onSelect={() => (dbManagerOpen = true)}
+                class="gap-2 cursor-pointer"
+              >
+                <Database class="size-3.5" /> Switch database
+              </DropdownMenu.Item>
+              <DropdownMenu.Item
+                onSelect={() => (roleManagerOpen = true)}
+                class="gap-2 cursor-pointer"
+              >
+                <Users class="size-3.5" /> Roles & permissions
+              </DropdownMenu.Item>
+              <DropdownMenu.Separator />
+              <DropdownMenu.Item onSelect={copyConnString} class="gap-2 cursor-pointer">
+                <Copy class="size-3.5" /> Copy connection string
+              </DropdownMenu.Item>
+            </DropdownMenu.Group>
+          </DropdownMenu.Content>
+        </DropdownMenu.Root>
+      {/if}
+      {#if conn?.readonly}
+        <Badge
+          variant="secondary"
+          class="h-4.5 px-1.5 text-[10px] uppercase font-semibold tracking-wider"
+        >
+          read-only
+        </Badge>
+      {/if}
+    </div>
+  </div>
+{/snippet}
+
 {#snippet sidebar()}
   <Resizable.Pane
     order={1}
@@ -120,6 +144,7 @@
     maxSize={40}
     class="bg-sidebar flex flex-col"
   >
+    {@render sidebarHeader()}
     <div class="min-h-0 flex-1">
       <SchemaTree
         {connId}
@@ -127,10 +152,7 @@
         readonly={conn?.readonly ?? false}
       />
     </div>
-    <div class="flex shrink-0 items-center gap-2 border-t px-3 py-2">
-      <img src="/logo.svg" alt="geto" class="h-5 w-auto invert" />
-      <span class="text-muted-foreground ml-auto font-mono text-xs">v{__APP_VERSION__}</span>
-    </div>
+    {@render sidebarFooter()}
   </Resizable.Pane>
 {/snippet}
 
@@ -156,6 +178,9 @@
               schema={tab.schema}
               tableName={tab.table}
               filter={tab.filter}
+              view={tab.view ?? 'table'}
+              onViewChange={(v) => ws.setView(tab.id, v)}
+              onToggleSidebar={() => (sidebarOpen = !sidebarOpen)}
               isActive={ws.activeId === tab.id}
               onOpenTable={(s, t, f) => ws.openTable(s, t, f)}
             />
@@ -174,7 +199,6 @@
 {/snippet}
 
 <div class="flex h-screen flex-col">
-  {@render navbar()}
   {@render dialogs()}
 
   <Resizable.PaneGroup direction="horizontal" class="min-h-0 flex-1">

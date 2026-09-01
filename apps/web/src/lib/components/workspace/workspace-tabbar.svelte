@@ -6,33 +6,30 @@
     X,
     Pin,
     PinOff,
-    RefreshCw,
-    RotateCcw,
-    Check,
-    Loader,
+    Braces,
+    Layers,
+    ChevronDown,
   } from 'lucide-svelte'
   import * as ContextMenu from '$lib/components/ui/context-menu'
-  import type { Workspace, Tab } from '$lib/stores/workspace.svelte'
+  import * as DropdownMenu from '$lib/components/ui/dropdown-menu'
+  import type { Workspace, Tab, TableViewMode } from '$lib/stores/workspace.svelte'
   import { Button } from '../ui/button'
-  import { useQueryClient } from '@tanstack/svelte-query'
-  import { useFormContext } from '../data-grid'
 
   interface Props {
     ws: Workspace
   }
 
   let { ws }: Props = $props()
-  const qc = useQueryClient()
-  // const form = useFormContext()
 
-  function refresh() {
-    const active = ws.active
-    if (active?.kind === 'table') {
-      qc.invalidateQueries({
-        queryKey: ['table-rows', ws.connId, active.schema, active.table, active.filter ?? null],
-      })
-    }
-  }
+  const activeTableTab = $derived(ws.active?.kind === 'table' ? ws.active : null)
+  const currentView = $derived(activeTableTab?.view ?? 'table')
+
+  const viewOptions: { id: TableViewMode; label: string; icon: typeof Table2 }[] = [
+    { id: 'table', label: 'Table View', icon: Table2 },
+    { id: 'json', label: 'JSON View', icon: Braces },
+    { id: 'structure', label: 'Structure View', icon: Layers },
+  ]
+  const currentOption = $derived(viewOptions.find((o) => o.id === currentView) ?? viewOptions[0])
 
   function icon(kind: Tab['kind']) {
     if (kind === 'table') return Table2
@@ -99,54 +96,55 @@
   </div>
 
   <!-- Sticky Toolbar at the end -->
-  {#if ws.active?.kind === 'table'}
-    <div
-      class="sticky right-0 z-10 flex shrink-0 items-center gap-2 border-l bg-background px-3 py-1 text-xs"
-    >
-      <div class="flex items-center gap-1">
-        <!-- <form.Subscribe
-          selector={(state) => ({ isDirty: state.isDirty, isSubmitting: state.isSubmitting })}
-        >
-          {#snippet children({ isDirty, isSubmitting })}
-            {#if isDirty}
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                class="size-7 text-muted-foreground hover:text-destructive"
-                title="Discard changes"
-                disabled={isSubmitting}
-                onclick={() => form.reset()}
-              >
-                <RotateCcw class="size-3.5" />
-              </Button>
-              <Button
-                type="button"
-                size="icon"
-                class="size-7 bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs"
-                title="Save changes"
-                disabled={isSubmitting}
-                onclick={() => form.handleSubmit()}
-              >
-                {#if isSubmitting}
-                  <Loader class="size-3.5 animate-spin" />
-                {:else}
-                  <Check class="size-3.5" />
-                {/if}
-              </Button>
-            {/if}
+  <div
+    class="sticky right-0 z-10 flex shrink-0 items-center gap-1 border-l bg-background px-2 py-1 text-xs"
+  >
+    {#if activeTableTab}
+      {@const ActiveIcon = currentOption.icon}
+      <DropdownMenu.Root>
+        <DropdownMenu.Trigger>
+          {#snippet child({ props })}
+            <Button
+              {...props}
+              variant="ghost"
+              size="sm"
+              class="h-7 px-2 text-xs gap-1.5 text-muted-foreground hover:text-foreground font-normal"
+              title="Change view ({currentOption.label})"
+            >
+              <ActiveIcon class="size-3.5 text-foreground" />
+              <span class="capitalize hidden sm:inline text-[11px]">{currentView}</span>
+              <ChevronDown class="size-3 opacity-60" />
+            </Button>
           {/snippet}
-        </form.Subscribe> -->
-        <Button
-          size="icon"
-          variant="ghost"
-          class="size-7 text-muted-foreground hover:text-foreground"
-          title="Refresh table"
-          onclick={refresh}
-        >
-          <RefreshCw class="size-3.5" />
-        </Button>
-      </div>
-    </div>
-  {/if}
+        </DropdownMenu.Trigger>
+        <DropdownMenu.Content align="end" class="w-36 text-xs">
+          <DropdownMenu.Group>
+            <DropdownMenu.GroupHeading class="text-[10px] uppercase text-muted-foreground">
+              Table View
+            </DropdownMenu.GroupHeading>
+            {#each viewOptions as opt (opt.id)}
+              {@const OptIcon = opt.icon}
+              <DropdownMenu.Item
+                class="cursor-pointer gap-2 {currentView === opt.id ? 'bg-accent font-medium' : ''}"
+                onSelect={() => ws.setView(activeTableTab.id, opt.id)}
+              >
+                <OptIcon class="size-3.5" />
+                <span>{opt.label}</span>
+              </DropdownMenu.Item>
+            {/each}
+          </DropdownMenu.Group>
+        </DropdownMenu.Content>
+      </DropdownMenu.Root>
+      <div class="h-4 w-px bg-border my-auto mx-0.5"></div>
+    {/if}
+    <Button
+      variant="ghost"
+      size="icon"
+      class="size-7 text-muted-foreground hover:text-foreground"
+      title="New SQL console"
+      onclick={() => ws.openConsole()}
+    >
+      <SquareTerminal class="size-3.5" />
+    </Button>
+  </div>
 </div>
