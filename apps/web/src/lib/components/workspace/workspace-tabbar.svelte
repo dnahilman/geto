@@ -23,7 +23,7 @@
 
   let { ws }: Props = $props()
   const qc = useQueryClient()
-  const form = useFormContext()
+  // const form = useFormContext()
 
   function refresh() {
     const active = ws.active
@@ -104,7 +104,7 @@
       class="sticky right-0 z-10 flex shrink-0 items-center gap-2 border-l bg-background px-3 py-1 text-xs"
     >
       <div class="flex items-center gap-1">
-        <form.Subscribe
+        <!-- <form.Subscribe
           selector={(state) => ({ isDirty: state.isDirty, isSubmitting: state.isSubmitting })}
         >
           {#snippet children({ isDirty, isSubmitting })}
@@ -136,7 +136,7 @@
               </Button>
             {/if}
           {/snippet}
-        </form.Subscribe>
+        </form.Subscribe> -->
         <Button
           size="icon"
           variant="ghost"

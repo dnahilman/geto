@@ -13,7 +13,7 @@
   import { Button } from '$lib/components/ui/button'
   import { Badge } from '$lib/components/ui/badge'
   import SchemaTree from '$lib/components/workspace/schema-tree.svelte'
-  import TableView from '$lib/components/workspace/table-view.svelte'
+  import DataGrid from './data-grid.svelte'
   import SqlConsole from '$lib/components/workspace/sql-console.svelte'
   import DatabaseManager from '$lib/components/workspace/database-manager.svelte'
   import RoleManager from '$lib/components/workspace/role-manager.svelte'
@@ -151,10 +151,10 @@
       {#each ws.tabs as tab (tab.id)}
         <div class="h-full {ws.activeId === tab.id ? '' : 'hidden'}">
           {#if tab.kind === 'table'}
-            <TableView
+            <DataGrid
               {connId}
               schema={tab.schema}
-              table={tab.table}
+              tableName={tab.table}
               filter={tab.filter}
               isActive={ws.activeId === tab.id}
               onOpenTable={(s, t, f) => ws.openTable(s, t, f)}

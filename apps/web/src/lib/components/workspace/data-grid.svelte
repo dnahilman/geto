@@ -35,25 +35,27 @@
   import WorkspaceSkeletons from './workspace-skeletons.svelte'
   import type { TabFilter } from '$lib/stores/workspace.svelte'
 
-  let {
-    connId,
-    schema,
-    table: tableName,
-    filter = undefined,
-    isActive = false,
-    onOpenTable,
-    view = 'table',
-    onViewChange,
-  }: {
+  interface Props {
     connId: string
     schema: string
-    table: string
+    tableName: string
     filter?: TabFilter
     isActive?: boolean
     onOpenTable?: (schema: string, table: string, filter?: TabFilter) => void
     view?: 'table' | 'json' | 'structure'
     onViewChange?: (v: 'table' | 'json' | 'structure') => void
-  } = $props()
+  }
+
+  let {
+    connId,
+    schema,
+    tableName,
+    filter = undefined,
+    isActive = false,
+    onOpenTable,
+    view = $bindable('table'),
+    onViewChange,
+  }: Props = $props()
 
   // 1. Pagination & Query States
   let pagination = $state<PaginationState>({
