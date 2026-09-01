@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Database } from 'lucide-svelte'
   import PostgresIcon from './postgres-icon.svelte'
+  import MysqlIcon from './mysql-icon.svelte'
 
   interface Props {
     provider?: string
@@ -14,22 +15,8 @@
 
 {#if normalized === 'postgres' || normalized === 'postgresql'}
   <PostgresIcon class={className} />
-{:else if normalized === 'mysql'}
-  <svg
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    stroke-width="1.5"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-    class={className}
-  >
-    <path d="M3 17c3-3 6-3 9-1s6 2 9-1" />
-    <path
-      d="M4 12c2.5-4 7.5-6.5 12-5 2 .7 3.5 2 4.5 4-2-1-4.5-.5-6 .5-1.5 1-2.5 2.5-4 3-2.5.8-5-.5-6.5-2.5z"
-    />
-    <path d="M16 8.5c0-.8.7-1.5 1.5-1.5s1.5.7 1.5 1.5" />
-  </svg>
+{:else if normalized === 'mysql' || normalized === 'mysql2'}
+  <MysqlIcon class={className} />
 {:else if normalized === 'sqlite'}
   <svg
     viewBox="0 0 24 24"

@@ -4,10 +4,12 @@
 import type { ProviderId } from '$src/providers'
 import type { ProviderAdapter } from '$src/db/driver'
 import { postgresAdapter } from '$src/db/drivers/postgres/adapter'
+import { mysqlAdapter } from '$src/db/drivers/mysql/adapter'
 import { redisAdapter } from '$src/db/drivers/redis/adapter'
 
 const ADAPTERS: Record<ProviderId, ProviderAdapter> = {
   postgresql: postgresAdapter,
+  mysql: mysqlAdapter,
   redis: redisAdapter,
 }
 

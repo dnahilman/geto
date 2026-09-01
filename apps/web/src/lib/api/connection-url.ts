@@ -31,6 +31,19 @@ export function parseConnectionUrl(raw: string): Partial<ConnectionInput> | null
     }
   }
 
+  if (scheme === 'mysql' || scheme === 'mysql2') {
+    const sslmode = u.searchParams.get('sslmode') || u.searchParams.get('ssl-mode')
+    return {
+      provider: 'mysql',
+      host: host ? decodeURIComponent(host) : 'localhost',
+      port: u.port ? Number(u.port) : 3306,
+      database: decodeURIComponent(u.pathname.replace(/^\//, '')) || '',
+      username: u.username ? decodeURIComponent(u.username) : 'root',
+      password,
+      sslMode: (sslmode && SSL_MODES.includes(sslmode as SslMode) ? sslmode : 'prefer') as SslMode,
+    }
+  }
+
   if (scheme !== 'postgres' && scheme !== 'postgresql') return null
 
   const sslmode = u.searchParams.get('sslmode')

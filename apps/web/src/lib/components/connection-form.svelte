@@ -57,9 +57,13 @@
 
   // Provider-specific field defaults (port comes from provider metadata).
   function defaultsFor(provider: ConnectionInput['provider']) {
-    return provider === 'redis'
-      ? { database: '0', username: '', sslMode: 'disable' as SslMode }
-      : { database: 'postgres', username: 'postgres', sslMode: 'prefer' as SslMode }
+    if (provider === 'redis') {
+      return { database: '0', username: '', sslMode: 'disable' as SslMode }
+    }
+    if (provider === 'mysql') {
+      return { database: '', username: 'root', sslMode: 'prefer' as SslMode }
+    }
+    return { database: 'postgres', username: 'postgres', sslMode: 'prefer' as SslMode }
   }
   function blankFor(provider: ConnectionInput['provider'], port: number): ConnectionInput {
     return {

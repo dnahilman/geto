@@ -1,4 +1,4 @@
-export type ProviderId = 'postgresql' | 'redis'
+export type ProviderId = 'postgresql' | 'mysql' | 'redis'
 
 /** How a provider's data is shaped — drives which workspace the frontend renders. */
 export type ProviderKind = 'relational' | 'keyvalue'
@@ -18,6 +18,13 @@ export const PROVIDERS: Record<ProviderId, ProviderMeta> = {
     kind: 'relational',
     defaultPort: 5432,
     urlSchemes: ['postgres', 'postgresql'],
+  },
+  mysql: {
+    id: 'mysql',
+    label: 'MySQL',
+    kind: 'relational',
+    defaultPort: 3306,
+    urlSchemes: ['mysql', 'mysql2'],
   },
   redis: {
     id: 'redis',
