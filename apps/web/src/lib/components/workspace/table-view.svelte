@@ -14,8 +14,9 @@
   import * as Table from '$lib/components/ui/table/index.js'
   import * as AlertDialog from '$lib/components/ui/alert-dialog'
   import { toast } from 'svelte-sonner'
-  import { X, PanelLeft, Trash2, Loader } from 'lucide-svelte'
+  import { Trash2, Loader } from 'lucide-svelte'
   import { Button } from '$lib/components/ui/button'
+  import WorkspaceBottombar from './workspace-bottombar.svelte'
   import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-query'
   import {
     renderComponent,
@@ -652,54 +653,17 @@
       </div>
 
       <!-- Bottom Bar: Status Info & Sidebar Toggle -->
-      <div
-        class="flex shrink-0 items-center justify-between border-t bg-background px-2 py-1 text-xs w-full"
-      >
-        <!-- Left: Sidebar toggle button -->
-        <div class="flex items-center gap-1">
-          {#if onToggleSidebar}
-            <Button
-              variant="ghost"
-              size="icon"
-              class="size-6 text-muted-foreground hover:text-foreground"
-              title="Toggle sidebar"
-              onclick={onToggleSidebar}
-            >
-              <PanelLeft class="size-3.5" />
-            </Button>
-          {/if}
-        </div>
-
-        <!-- Right: Filter chip + estimated row count + duration -->
-        <div class="flex items-center gap-2">
-          {#if view !== 'structure'}
-            {#if filter}
-              <span
-                class="bg-accent text-foreground flex items-center gap-1 rounded px-1.5 py-0.5 font-mono"
-                title="Filtered view"
-              >
-                {filter.label}
-                <button
-                  type="button"
-                  class="hover:text-destructive"
-                  title="Remove filter"
-                  aria-label="Remove filter"
-                  onclick={() => onOpenTable?.(schema, tableName)}
-                >
-                  <X class="size-3" />
-                </button>
-              </span>
+      <WorkspaceBottombar {onToggleSidebar}>
+        {#if view !== 'structure'}
+          <span class={rows.isSuccess ? 'text-emerald-500' : 'text-muted-foreground'}>
+            {#if rows.isLoading}
+              Loading…
+            {:else}
+              ~{est.toLocaleString()} rows · {rows.data?.durationMs ?? 0}ms
             {/if}
-            <span class={rows.isSuccess ? 'text-emerald-500' : 'text-muted-foreground'}>
-              {#if rows.isLoading}
-                Loading…
-              {:else}
-                {filter ? '' : '~'}{est.toLocaleString()} rows · {rows.data?.durationMs ?? 0}ms
-              {/if}
-            </span>
-          {/if}
-        </div>
-      </div>
+          </span>
+        {/if}
+      </WorkspaceBottombar>
     </div>
   </form.AppForm>
 </table.AppTable>

@@ -6,6 +6,7 @@ import GridCell from '../cells/grid-cell.svelte'
 import RowSelectCell from '../cells/row-select-cell.svelte'
 import { dataGridFeatures } from '../utils/table-features.js'
 import GridToolbar from '../toolbar/grid-toolbar.svelte'
+import DataGridConsoleToolbar from '../toolbar/data-grid-console-toolbar.svelte'
 
 export const {
   appFeatures: gridFeatures,
@@ -23,6 +24,7 @@ export const {
   manualSorting: true,
   tableComponents: {
     Toolbar: GridToolbar,
+    DataGridConsoleToolbar,
   },
   headerComponents: {
     ColumnHeader,

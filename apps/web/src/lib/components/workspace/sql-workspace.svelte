@@ -6,11 +6,12 @@
   import { Badge } from '$lib/components/ui/badge'
   import { ProviderIcon } from '$lib/components/icons'
   import SchemaTree from '$lib/components/workspace/schema-tree.svelte'
-  import DataGrid from './data-grid.svelte'
-  import SqlConsole from '$lib/components/workspace/sql-console.svelte'
+  import TableView from './table-view.svelte'
+  import SQLConsole from '$lib/components/workspace/sql-console.svelte'
   import DatabaseManager from '$lib/components/workspace/database-manager.svelte'
   import RoleManager from '$lib/components/workspace/role-manager.svelte'
   import WorkspaceTabbar from '$lib/components/workspace/workspace-tabbar.svelte'
+  import WorkspaceBottombar from '$lib/components/workspace/workspace-bottombar.svelte'
   import { Workspace } from '$lib/stores/workspace.svelte'
   import { getConnectionString, type Connection } from '$lib/api/connections'
   import { copyText } from '$lib/clipboard'
@@ -150,7 +151,7 @@
   <WorkspaceTabbar {ws} />
 {/snippet}
 
-{#snippet tableSqlSpace()}
+{#snippet workspaces()}
   <div class="flex h-full flex-col">
     {@render tabbar()}
     {#if ws.tabs.length === 0}
@@ -158,13 +159,14 @@
         <Table2 class="size-8" />
         <p class="text-sm">Select a table from the sidebar, or open the SQL console.</p>
       </div>
+      <WorkspaceBottombar onToggleSidebar={() => (sidebarOpen = !sidebarOpen)} />
     {:else}
       <!-- active content (keep tables mounted to preserve grid state) -->
       <div class="min-h-0 flex-1">
         {#each ws.tabs as tab (tab.id)}
           <div class="h-full {ws.activeId === tab.id ? '' : 'hidden'}">
             {#if tab.kind === 'table'}
-              <DataGrid
+              <TableView
                 {connId}
                 schema={tab.schema}
                 tableName={tab.table}
@@ -174,11 +176,12 @@
                 onOpenTable={(s, t, f) => ws.openTable(s, t, f)}
               />
             {:else if tab.kind === 'console'}
-              <SqlConsole
+              <SQLConsole
                 {connId}
                 initialSql={tab.sql}
                 onSqlChange={(s) => ws.updateSql(tab.id, s)}
                 onOpenTable={(s, t, f) => ws.openTable(s, t, f)}
+                onToggleSidebar={() => (sidebarOpen = !sidebarOpen)}
               />
             {/if}
           </div>
@@ -197,7 +200,7 @@
       <Resizable.Handle withHandle />
     {/if}
     <Resizable.Pane order={2} defaultSize={80} class="flex min-w-0 flex-col">
-      {@render tableSqlSpace()}
+      {@render workspaces()}
     </Resizable.Pane>
   </Resizable.PaneGroup>
 </div>

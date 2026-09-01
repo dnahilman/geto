@@ -1,0 +1,42 @@
+<script lang="ts">
+  import { CircleCheck, CircleX } from 'lucide-svelte'
+  import { createQuery } from '@tanstack/svelte-query'
+  import { consoleQueries } from '$lib/queries'
+
+  interface Props {
+    connId: string
+    onSelect: (sqlText: string) => void
+  }
+
+  let { connId, onSelect }: Props = $props()
+
+  const history = createQuery(() => consoleQueries.history(connId))
+</script>
+
+<div class="flex h-full flex-col">
+  {#if history.data && history.data.length > 0}
+    <ul class="divide-y overflow-auto text-xs">
+      {#each history.data as h (h.id)}
+        <li>
+          <button
+            class="hover:bg-accent flex w-full items-start gap-2 px-3 py-1.5 text-left"
+            onclick={() => onSelect(h.sql)}
+            title="Load into editor"
+          >
+            {#if h.status === 'ok'}
+              <CircleCheck class="mt-0.5 size-3.5 shrink-0 text-emerald-500" />
+            {:else}
+              <CircleX class="text-destructive mt-0.5 size-3.5 shrink-0" />
+            {/if}
+            <span class="min-w-0 flex-1 truncate font-mono">{h.sql}</span>
+            <span class="text-muted-foreground shrink-0">
+              {h.status === 'ok' ? `${h.rowCount ?? 0} rows` : 'error'} · {h.durationMs ?? 0}ms
+            </span>
+          </button>
+        </li>
+      {/each}
+    </ul>
+  {:else}
+    <p class="text-muted-foreground p-3 text-sm">No queries yet.</p>
+  {/if}
+</div>
