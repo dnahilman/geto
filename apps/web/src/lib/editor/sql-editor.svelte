@@ -59,7 +59,7 @@
     completionSource?: CompletionSource
   } = $props()
 
-  const isSql = language === 'sql'
+  const isSql = $derived(language === 'sql')
   // Language extension for 'plain' mode: just optional autocomplete, no syntax.
   const plainLang = () => (completionSource ? autocompletion({ override: [completionSource] }) : [])
 

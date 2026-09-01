@@ -19,6 +19,7 @@
 
   let { connId, conn }: Props = $props()
 
+  // svelte-ignore state_referenced_locally
   const ws = new Workspace(connId, 'keyvalue')
   const readonly = $derived(conn?.readonly ?? false)
 
@@ -63,7 +64,10 @@
       <KeyRound class="size-3.5 text-muted-foreground" />
       <span class="text-xs font-semibold tracking-tight">{conn?.name ?? connId}</span>
       <Badge variant="secondary" class="h-4.5 px-1.5 text-[10px] font-semibold">Redis</Badge>
-      {#if readonly}<Badge variant="secondary" class="h-4.5 px-1.5 text-[10px] uppercase font-semibold tracking-wider">read-only</Badge>{/if}
+      {#if readonly}<Badge
+          variant="secondary"
+          class="h-4.5 px-1.5 text-[10px] uppercase font-semibold tracking-wider">read-only</Badge
+        >{/if}
     </div>
     <div class="ml-auto flex items-center gap-1">
       <Button
@@ -74,7 +78,11 @@
       >
         <KeyRound class="size-3.5" /> <span class="hidden sm:inline">Copy connection string</span>
       </Button>
-      <Button variant="outline" class="h-7 px-2.5 text-xs gap-1.5 font-medium ml-1 shadow-2xs" onclick={() => ws.openRedisConsole()}>
+      <Button
+        variant="outline"
+        class="h-7 px-2.5 text-xs gap-1.5 font-medium ml-1 shadow-2xs"
+        onclick={() => ws.openRedisConsole()}
+      >
         <SquareTerminal class="size-3.5" /> New console
       </Button>
     </div>

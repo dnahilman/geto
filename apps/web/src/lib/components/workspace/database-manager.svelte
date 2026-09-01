@@ -19,12 +19,7 @@
     onSwitched?: () => void
   }
 
-  let {
-    open = $bindable(false),
-    connId,
-    currentDatabase,
-    onSwitched,
-  }: Props = $props()
+  let { open = $bindable(false), connId, currentDatabase, onSwitched }: Props = $props()
 
   const qc = useQueryClient()
   const dbs = createQuery(() => ({

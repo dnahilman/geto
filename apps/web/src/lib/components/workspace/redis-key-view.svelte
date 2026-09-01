@@ -75,14 +75,7 @@
     {:else if value.data?.type === 'none'}
       <p class="text-muted-foreground p-4 text-sm">Key no longer exists.</p>
     {:else if result}
-      <ResultTable
-        {connId}
-        columns={result.columns}
-        rows={result.rows}
-        source={null}
-        {view}
-        onViewChange={(v) => (view = v)}
-      />
+      <ResultTable {connId} columns={result.columns} rows={result.rows} source={null} {view} />
     {:else}
       <p class="text-muted-foreground p-4 text-sm">Loading…</p>
     {/if}

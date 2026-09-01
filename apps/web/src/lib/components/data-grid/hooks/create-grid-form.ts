@@ -34,4 +34,3 @@ export const gridFormOpts = formOptions({
 
 export const formType = getGridFormType(gridFormOpts)
 export type GridFormType = typeof formType
-

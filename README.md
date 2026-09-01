@@ -47,6 +47,7 @@ porsager `postgres` · `bun:sqlite` (saved connections + history).
 Requires [Bun](https://bun.com/) and a reachable PostgreSQL.
 
 ### Option 1: Single-command Local Dev with HTTPS (Routeup)
+
 Starts backend (`:7020`), frontend Vite (`:5174`), and routes trusted local HTTPS at **`https://geto.localhost`**:
 
 ```sh
@@ -56,6 +57,7 @@ bun routeup                 # or: routeup
 ```
 
 ### Option 2: Standard Dev Servers (Plain HTTP)
+
 ```sh
 bun install
 cp .env.example .env        # set GETO_AUTH_PASSWORD
@@ -75,10 +77,12 @@ bun run start               # Elysia serves the SPA + API on :PORT
 ## Container (Multi-Target Dockerfile)
 
 The [Dockerfile](./Dockerfile) provides two build targets via multi-stage builds:
+
 1. **`runtime` (`geto:latest`)** — Minimal clean production image (**~113 MB**).
 2. **`routeup` (`geto:routeup`)** — Embedded Routeup proxy (**~129 MB**) providing self-contained trusted HTTPS on `https://geto.localhost`.
 
 ### 1. Build Images
+
 ```sh
 # Build clean image (~113 MB)
 bun run docker:build          # or: docker build --target runtime -t geto:latest .
@@ -90,17 +94,23 @@ bun run docker:build:routeup  # or: docker build --target routeup -t geto:routeu
 ### 2. Run with Docker Compose
 
 #### Mode A: Standalone Local HTTPS (with Routeup)
+
 Runs Geto with embedded Routeup on port `443` (HTTPS) and `7020`:
+
 ```sh
 bun run compose:routeup       # or: docker compose -f docker-compose.routeup.yaml up -d
 ```
+
 Access at **`https://geto.localhost`**.
 
 #### Mode B: Standard / Production Compose
+
 Runs clean Geto on port `7020`:
+
 ```sh
 docker compose up -d          # uses docker-compose.yaml
 ```
+
 Access at `http://localhost:7020`.
 
 ---
@@ -110,6 +120,7 @@ Access at `http://localhost:7020`.
 When running `docker-compose.routeup.yaml` for the first time, Routeup creates a Root CA inside the `geto-ca` volume. To get a trusted green lock in your host browser without certificate warnings, export and import the CA:
 
 #### Step 1: Export the Certificate from the Container
+
 ```sh
 bun run docker:export-ca
 # Or manually:
@@ -119,30 +130,36 @@ docker cp $(docker compose -f docker-compose.routeup.yaml ps -q geto):/root/.rou
 #### Step 2: Install Certificate to Host OS Trust Store
 
 ##### 🪟 Windows
+
 In Windows **PowerShell** (no admin needed):
+
 ```powershell
 Import-Certificate -FilePath ".\geto-ca.crt" -CertStoreLocation Cert:\CurrentUser\Root
 ```
-*Or via CMD:* `certutil -user -addstore Root geto-ca.crt`
+
+_Or via CMD:_ `certutil -user -addstore Root geto-ca.crt`
 
 ##### 🍎 macOS
+
 In macOS **Terminal**:
+
 ```sh
 sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain ./geto-ca.crt
 ```
 
 ##### 🐧 Linux
-* **Ubuntu / Debian:**
+
+- **Ubuntu / Debian:**
   ```sh
   sudo cp ./geto-ca.crt /usr/local/share/ca-certificates/geto-ca.crt
   sudo update-ca-certificates
   ```
-* **Fedora / RHEL / CentOS:**
+- **Fedora / RHEL / CentOS:**
   ```sh
   sudo cp ./geto-ca.crt /etc/pki/ca-trust/source/anchors/geto-ca.crt
   sudo update-ca-trust
   ```
-* **Arch Linux:**
+- **Arch Linux:**
   ```sh
   sudo trust anchor --store ./geto-ca.crt
   ```
@@ -152,6 +169,7 @@ After installing the certificate, restart your browser and open **`https://geto.
 ---
 
 ### Install as an app
+
 geto ships a web manifest, so you can install it as a standalone-window app via
 your browser's **Install / "Create shortcut → Open as window"**. This works over
 plain HTTP too (the manifest needs no HTTPS). Full PWA features (offline service
@@ -212,13 +230,13 @@ All optional — `docker-compose.dev.yml` sets sensible defaults you can overrid
 via a `.env` file or shell env. The production `docker-compose.yaml` instead
 **requires** `GETO_AUTH_PASSWORD` and `GETO_MASTER_KEY`.
 
-| Var | Default | Purpose |
-|-----|---------|---------|
-| `GETO_AUTH_PASSWORD` | `dev` | Login password |
-| `GETO_MASTER_KEY` | baked-in | Optional. Derives the at-rest encryption key + signs the session cookie. Set your own for real security; keep it stable |
-| `PORT` | `7020` | Host port geto is published on (container listens on 7020) |
-| `NODE_ENV` | `development` | `development` for plain-HTTP self-hosting |
-| `GETO_DATA_DIR` | `/data` (container) | Where the SQLite store lives |
+| Var                  | Default             | Purpose                                                                                                                 |
+| -------------------- | ------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `GETO_AUTH_PASSWORD` | `dev`               | Login password                                                                                                          |
+| `GETO_MASTER_KEY`    | baked-in            | Optional. Derives the at-rest encryption key + signs the session cookie. Set your own for real security; keep it stable |
+| `PORT`               | `7020`              | Host port geto is published on (container listens on 7020)                                                              |
+| `NODE_ENV`           | `development`       | `development` for plain-HTTP self-hosting                                                                               |
+| `GETO_DATA_DIR`      | `/data` (container) | Where the SQLite store lives                                                                                            |
 
 ## Security notes
 

@@ -19,6 +19,7 @@
 
   let { connId, initialCmd, onCmdChange }: Props = $props()
 
+  // svelte-ignore state_referenced_locally
   let cmd = $state(initialCmd)
   $effect(() => onCmdChange(cmd))
   let editorRef = $state<ReturnType<typeof SqlEditor>>()
@@ -232,7 +233,6 @@
                 rows={activeResult.rows}
                 source={null}
                 view={views[idx] ?? 'table'}
-                onViewChange={(v) => (views[idx] = v)}
               />
             </div>
           {:else}

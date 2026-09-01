@@ -10,7 +10,6 @@
     typeName,
     class: className,
   }: {
-     
     column: Column<any, any>
     label: string
     typeName?: string

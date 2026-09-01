@@ -56,13 +56,20 @@ export function buildRowsTsv(rows: Array<AnyGridRow>): string {
 }
 
 export function buildCellRangesTsv(table: AnyGridTable): string {
-  if (typeof (table as unknown as { getSelectedCellRangesData?: () => unknown[][][] }).getSelectedCellRangesData === 'function') {
-    const ranges = (table as unknown as { getSelectedCellRangesData: () => unknown[][][] }).getSelectedCellRangesData()
+  if (
+    typeof (table as unknown as { getSelectedCellRangesData?: () => unknown[][][] })
+      .getSelectedCellRangesData === 'function'
+  ) {
+    const ranges = (
+      table as unknown as { getSelectedCellRangesData: () => unknown[][][] }
+    ).getSelectedCellRangesData()
     if (Array.isArray(ranges) && ranges.length > 0 && ranges.some((r) => r.length > 0)) {
       return ranges
         .map((range) =>
           range
-            .map((row) => (Array.isArray(row) ? row.map(escapeTsvValue).join('\t') : escapeTsvValue(row)))
+            .map((row) =>
+              Array.isArray(row) ? row.map(escapeTsvValue).join('\t') : escapeTsvValue(row),
+            )
             .join('\n'),
         )
         .join('\n\n')

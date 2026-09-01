@@ -43,7 +43,8 @@
       {#each PRESETS as p (p)}
         <button
           type="button"
-          class="hover:bg-accent flex w-full rounded px-2 py-1 text-left font-mono text-xs {p === pageSize
+          class="hover:bg-accent flex w-full rounded px-2 py-1 text-left font-mono text-xs {p ===
+          pageSize
             ? 'bg-accent font-semibold'
             : ''}"
           onclick={() => table.setPageSize(Number(p))}
@@ -77,4 +78,3 @@
     <ChevronRightIcon class="size-4" />
   </Button>
 </ButtonGroup>
-

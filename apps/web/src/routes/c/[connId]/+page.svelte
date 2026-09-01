@@ -15,9 +15,11 @@
   const kind = $derived(providers.data?.find((p) => p.id === conn?.provider)?.kind)
 </script>
 
-{#if conn && kind === 'keyvalue'}
-  <RedisWorkspace {connId} {conn} />
-{:else}
-  <!-- relational (default) — also the render while metadata loads -->
-  <SqlWorkspace {connId} {conn} />
-{/if}
+{#key connId}
+  {#if conn && kind === 'keyvalue'}
+    <RedisWorkspace {connId} {conn} />
+  {:else}
+    <!-- relational (default) — also the render while metadata loads -->
+    <SqlWorkspace {connId} {conn} />
+  {/if}
+{/key}

@@ -1,0 +1,8 @@
+node_modules
+dist
+build
+.svelte-kit
+data
+.agents
+bun.lock
+*.sh

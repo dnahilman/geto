@@ -41,6 +41,7 @@
   let { connId, initialSql, onSqlChange, onOpenTable }: Props = $props()
 
   const qc = useQueryClient()
+  // svelte-ignore state_referenced_locally
   let sql = $state(initialSql)
 
   $effect(() => {
@@ -131,11 +132,6 @@
   }
   function rerun() {
     if (lastSql) run.mutate({ text: lastSql, confirm: false, off: offset, lim: pageSize })
-  }
-  function setPageSize(v: number) {
-    pageSize = v
-    offset = 0
-    rerun()
   }
   function prevPage() {
     if (offset > 0) {
@@ -274,7 +270,6 @@
                 startIndex={activeResult.offset}
                 source={activeResult.source}
                 view={views[idx] ?? 'table'}
-                onViewChange={(v) => (views[idx] = v)}
                 onApplied={rerun}
                 {onOpenTable}
               />

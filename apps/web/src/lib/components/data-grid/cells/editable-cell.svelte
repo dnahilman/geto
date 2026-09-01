@@ -34,15 +34,7 @@
     oncancel: () => void
   }
 
-  let {
-    value,
-    variant,
-    options = [],
-    typeName = '',
-    editing,
-    onsave,
-    oncancel,
-  }: Props = $props()
+  let { value, variant, options = [], typeName = '', editing, onsave, oncancel }: Props = $props()
 
   const withTz = $derived(/tz|with time zone/i.test(typeName))
 

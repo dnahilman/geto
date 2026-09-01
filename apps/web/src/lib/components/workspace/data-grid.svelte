@@ -16,12 +16,7 @@
   import { toast } from 'svelte-sonner'
   import { X, PanelLeft, Trash2, Loader } from 'lucide-svelte'
   import { Button } from '$lib/components/ui/button'
-  import {
-    createQuery,
-    createMutation,
-    keepPreviousData,
-    useQueryClient,
-  } from '@tanstack/svelte-query'
+  import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-query'
   import {
     renderComponent,
     type ColumnSizingState,
@@ -43,10 +38,8 @@
     schema: string
     tableName: string
     filter?: TabFilter
-    isActive?: boolean
     onOpenTable?: (schema: string, table: string, filter?: TabFilter) => void
     view?: 'table' | 'json' | 'structure'
-    onViewChange?: (v: 'table' | 'json' | 'structure') => void
     onToggleSidebar?: () => void
   }
 
@@ -55,10 +48,8 @@
     schema,
     tableName,
     filter = undefined,
-    isActive = false,
     onOpenTable,
     view = $bindable('table'),
-    onViewChange,
     onToggleSidebar,
   }: Props = $props()
 
@@ -481,7 +472,6 @@
       }
     }
   }
-
 </script>
 
 <svelte:window onkeydown={handleKeyDown} />
@@ -505,7 +495,9 @@
             <div class="space-y-6 p-4 text-sm">
               {#if detail.data}
                 <section>
-                  <h3 class="text-muted-foreground mb-2 text-xs font-semibold uppercase">Columns</h3>
+                  <h3 class="text-muted-foreground mb-2 text-xs font-semibold uppercase">
+                    Columns
+                  </h3>
                   <table class="w-full text-left text-xs">
                     <thead class="text-muted-foreground">
                       <tr>
@@ -531,7 +523,9 @@
                 </section>
 
                 <section>
-                  <h3 class="text-muted-foreground mb-2 text-xs font-semibold uppercase">Indexes</h3>
+                  <h3 class="text-muted-foreground mb-2 text-xs font-semibold uppercase">
+                    Indexes
+                  </h3>
                   {#if detail.data.indexes.length}
                     <ul class="space-y-1 font-mono text-xs">
                       {#each detail.data.indexes as idx (idx.name)}
@@ -614,7 +608,10 @@
             <Table.Body class="bg-background">
               {#if tableRows.length === 0}
                 <Table.Row>
-                  <Table.Cell colspan={columns.length} class="h-24 text-center text-muted-foreground">
+                  <Table.Cell
+                    colspan={columns.length}
+                    class="h-24 text-center text-muted-foreground"
+                  >
                     No results found
                   </Table.Cell>
                 </Table.Row>
@@ -711,12 +708,17 @@
   <AlertDialog.Content>
     <AlertDialog.Header>
       <AlertDialog.Title>
-        Delete {table.getSelectedRowModel().rows.length} row{table.getSelectedRowModel().rows.length > 1 ? 's' : ''}?
+        Delete {table.getSelectedRowModel().rows.length} row{table.getSelectedRowModel().rows
+          .length > 1
+          ? 's'
+          : ''}?
       </AlertDialog.Title>
       <AlertDialog.Description>
-        This will permanently delete the selected record{table.getSelectedRowModel().rows.length > 1 ? 's' : ''} from
-        <span class="font-mono font-medium text-foreground">{schema}.{tableName}</span>.
-        This action cannot be undone.
+        This will permanently delete the selected record{table.getSelectedRowModel().rows.length > 1
+          ? 's'
+          : ''} from
+        <span class="font-mono font-medium text-foreground">{schema}.{tableName}</span>. This action
+        cannot be undone.
       </AlertDialog.Description>
     </AlertDialog.Header>
     <AlertDialog.Footer>

@@ -13,12 +13,7 @@
     relationsEnabled?: boolean
   }
 
-  let {
-    rowIndex,
-    colIndex,
-    value = undefined,
-    relationsEnabled = false,
-  }: Props = $props()
+  let { rowIndex, colIndex, value = undefined, relationsEnabled = false }: Props = $props()
 
   const ctx = getContext<DataGridContext>(DATA_GRID_KEY)
   const col = $derived(ctx.columns[colIndex])

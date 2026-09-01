@@ -20,14 +20,7 @@
     readonly?: boolean
   }
 
-  let {
-    open = $bindable(false),
-    connId,
-    schema,
-    name,
-    kind,
-    readonly = false,
-  }: Props = $props()
+  let { open = $bindable(false), connId, schema, name, kind, readonly = false }: Props = $props()
 
   const TABLE_PRIVS = ['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'TRUNCATE', 'REFERENCES', 'TRIGGER']
   const SCHEMA_PRIVS = ['USAGE', 'CREATE']

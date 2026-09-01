@@ -27,7 +27,6 @@
     startIndex?: number
     source?: ResultSource | null
     view?: 'table' | 'json' | 'structure'
-    onViewChange?: (v: 'table' | 'json' | 'structure') => void
     onApplied?: () => void
     onOpenTable?: (schema: string, table: string, filter?: TabFilter) => void
   }
@@ -39,7 +38,6 @@
     startIndex = 0,
     source = null,
     view = 'table',
-    onViewChange,
     onApplied,
     onOpenTable,
   }: Props = $props()

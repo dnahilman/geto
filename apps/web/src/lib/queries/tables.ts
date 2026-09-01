@@ -1,11 +1,5 @@
 import { queryOptions, keepPreviousData } from '@tanstack/svelte-query'
-import {
-  getTableRows,
-  getTableDetail,
-  type RowFilter,
-  type TableData,
-  type TableDetail,
-} from '$lib/api/introspect'
+import { getTableRows, getTableDetail, type RowFilter } from '$lib/api/introspect'
 import { getCompletion } from '$lib/api/query'
 
 export const tableQueries = {

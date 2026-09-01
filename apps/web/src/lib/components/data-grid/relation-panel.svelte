@@ -26,13 +26,7 @@
     initialView?: 'table' | 'json'
   }
 
-  let {
-    connId,
-    expansion,
-    onOpenInTab,
-    onCollapse,
-    initialView = 'table',
-  }: Props = $props()
+  let { connId, expansion, onOpenInTab, onCollapse, initialView = 'table' }: Props = $props()
 
   const target = $derived(expansion.target)
   const valueStr = $derived(String(expansion.value))
@@ -139,7 +133,12 @@
     {:else if view === 'json'}
       <JsonView columns={cols} rows={data} offset={page * PAGE} />
     {:else}
-      <ResultGrid api={grid} offset={page * PAGE} loading={q.isLoading} emptyText="No related rows" />
+      <ResultGrid
+        api={grid}
+        offset={page * PAGE}
+        loading={q.isLoading}
+        emptyText="No related rows"
+      />
     {/if}
   </div>
 

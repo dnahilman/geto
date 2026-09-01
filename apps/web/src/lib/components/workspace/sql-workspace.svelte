@@ -1,19 +1,8 @@
 <script lang="ts">
   import { toast } from 'svelte-sonner'
-  import {
-    ArrowLeft,
-    Database,
-    SquareTerminal,
-    Table2,
-    KeyRound,
-    PanelLeft,
-    Users,
-    ChevronDown,
-    Copy,
-  } from 'lucide-svelte'
+  import { Database, Table2, Users, ChevronDown, Copy } from 'lucide-svelte'
   import * as Resizable from '$lib/components/ui/resizable'
   import * as DropdownMenu from '$lib/components/ui/dropdown-menu'
-  import { Button } from '$lib/components/ui/button'
   import { Badge } from '$lib/components/ui/badge'
   import { ProviderIcon } from '$lib/components/icons'
   import SchemaTree from '$lib/components/workspace/schema-tree.svelte'
@@ -33,6 +22,7 @@
 
   let { connId, conn }: Props = $props()
 
+  // svelte-ignore state_referenced_locally
   const ws = new Workspace(connId, 'relational')
 
   $effect(() => {
@@ -179,9 +169,7 @@
               tableName={tab.table}
               filter={tab.filter}
               view={tab.view ?? 'table'}
-              onViewChange={(v) => ws.setView(tab.id, v)}
               onToggleSidebar={() => (sidebarOpen = !sidebarOpen)}
-              isActive={ws.activeId === tab.id}
               onOpenTable={(s, t, f) => ws.openTable(s, t, f)}
             />
           {:else if tab.kind === 'console'}
