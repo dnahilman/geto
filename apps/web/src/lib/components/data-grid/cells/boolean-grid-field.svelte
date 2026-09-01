@@ -39,6 +39,7 @@
         variant="outline"
         size="xs"
         class="h-6 font-mono text-[10px] text-muted-foreground hover:text-foreground"
+        onmousedown={(e) => e.preventDefault()}
         onclick={() => {
           setNull()
           stopEditing()

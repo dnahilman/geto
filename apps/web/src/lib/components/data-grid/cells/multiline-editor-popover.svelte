@@ -1,5 +1,6 @@
 <script lang="ts">
   import * as Popover from '$lib/components/ui/popover/index.js'
+  import * as Kbd from '$lib/components/ui/kbd/index.js'
   import { Button } from '$lib/components/ui/button/index.js'
   import AlignLeftIcon from '@lucide/svelte/icons/align-left'
 
@@ -87,7 +88,7 @@
       <AlignLeftIcon class="size-3.5" />
     </Popover.Trigger>
 
-    <!-- Tooltip matching Screenshot .temp/multi-editor.png -->
+    <!-- Tooltip -->
     <div
       class="pointer-events-none absolute bottom-full left-1/2 z-50 mb-1.5 hidden -translate-x-1/2 items-center gap-1.5 rounded-md border border-neutral-800 bg-[#0d1117] px-2 py-1 text-[11px] font-medium whitespace-nowrap text-neutral-200 shadow-xl select-none group-hover/tooltip:flex"
     >
@@ -138,6 +139,7 @@
         variant="ghost"
         size="sm"
         class="h-7 font-mono text-xs text-neutral-400 hover:bg-neutral-800 hover:text-white"
+        onmousedown={(e) => e.preventDefault()}
         onclick={handleSetNull}
       >
         Set NULL
@@ -148,27 +150,14 @@
           type="button"
           variant="outline"
           size="sm"
-          class="h-7 border-neutral-700 bg-neutral-800 text-xs text-neutral-300 hover:bg-neutral-700 hover:text-white"
+          class="pe-2 text-xs"
           onclick={handleCancel}
         >
-          <span>Cancel</span>
-          <kbd
-            class="py-0.2 rounded border border-neutral-700 bg-neutral-900 px-1 text-[10px] text-neutral-400"
-          >
-            Esc
-          </kbd>
+          Cancel <Kbd.Root>Esc</Kbd.Root>
         </Button>
 
-        <Button
-          type="button"
-          size="sm"
-          class="h-7 bg-neutral-100 text-xs font-medium text-neutral-900 hover:bg-neutral-200"
-          onclick={handleSave}
-        >
-          <span>Save</span>
-          <kbd class="py-0.2 rounded bg-neutral-300/80 px-1 text-[10px] text-neutral-900">
-            Ctrl+Enter
-          </kbd>
+        <Button type="button" size="sm" class="pe-2 text-xs font-medium" onclick={handleSave}>
+          Save <Kbd.Root>Ctrl+Enter</Kbd.Root>
         </Button>
       </div>
     </div>

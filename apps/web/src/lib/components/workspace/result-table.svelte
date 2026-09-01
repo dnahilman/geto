@@ -11,7 +11,8 @@
     startIndex?: number
     source?: ResultSource | null
     view?: 'table' | 'json' | 'structure'
-    onApplied?: () => void
+    onRowsChange?: (newRows: unknown[][]) => void
+    onRefresh?: () => void
     onOpenTable?: (schema: string, table: string, filter?: TabFilter) => void
   }
 
@@ -22,9 +23,20 @@
     startIndex = 0,
     source = null,
     view = 'table',
-    onApplied,
+    onRowsChange,
+    onRefresh,
     onOpenTable,
   }: Props = $props()
 </script>
 
-<SqlConsoleTable {connId} {columns} {rows} {startIndex} {source} {view} {onApplied} {onOpenTable} />
+<SqlConsoleTable
+  {connId}
+  {columns}
+  {rows}
+  {startIndex}
+  {source}
+  {view}
+  {onRowsChange}
+  {onRefresh}
+  {onOpenTable}
+/>

@@ -156,7 +156,11 @@
         startIndex={result.offset}
         source={result.source}
         view={views[index] ?? 'table'}
-        onApplied={rerun}
+        onRowsChange={(newRows) => {
+          results[index].rows = newRows
+          results[index].rowCount = newRows.length
+        }}
+        onRefresh={rerun}
         {onOpenTable}
       />
     </div>

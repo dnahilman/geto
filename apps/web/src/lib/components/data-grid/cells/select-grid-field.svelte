@@ -4,7 +4,7 @@
   import CellContainer from './cell-container.svelte'
   import * as Select from '$lib/components/ui/select/index.js'
 
-  const field = useFieldContext<string>()
+  const field = useFieldContext<string | null>()
 
   let cell: ReturnType<typeof useGridTableCellContext> | undefined
   try {
@@ -17,11 +17,7 @@
   const selectOptions = $derived(
     meta?.options && meta.options.length > 0
       ? meta.options.map((opt) => ({ value: opt, label: opt }))
-      : [
-          { value: 'relationship', label: 'Relationship' },
-          { value: 'complicated', label: 'Complicated' },
-          { value: 'single', label: 'Single' },
-        ],
+      : [],
   )
 
   let isOpen = $state(true)
@@ -32,9 +28,11 @@
     <Select.Root
       type="single"
       bind:open={isOpen}
-      value={field.state.value}
+      value={field.state.value ?? undefined}
       onValueChange={(val: string) => {
-        if (val) {
+        if (val === '__NULL__') {
+          field.handleChange(null)
+        } else if (val) {
           field.handleChange(val)
         }
         stopEditing()
@@ -52,6 +50,9 @@
       </Select.Trigger>
       <Select.Content portalProps={{}}>
         <Select.Group>
+          <Select.Item value="__NULL__" label="NULL" class="italic text-muted-foreground font-mono">
+            NULL
+          </Select.Item>
           {#each selectOptions as opt (opt.value)}
             <Select.Item value={opt.value} label={opt.label}>
               {opt.label}

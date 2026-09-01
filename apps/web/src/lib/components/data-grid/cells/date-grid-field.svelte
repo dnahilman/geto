@@ -42,14 +42,15 @@
     if (shortcut === 'null') {
       selectedDate = undefined
       field.handleChange(null)
-    } else {
-      const res = getShortcutDateTime(shortcut)
-      selectedDate = res.date
-      if (res.date) {
-        currentYear = res.date.year
-        currentMonth = res.date.month
-        field.handleChange(formatDateOnly(res.date))
-      }
+      isOpen = false
+      return
+    }
+    const res = getShortcutDateTime(shortcut)
+    selectedDate = res.date
+    if (res.date) {
+      currentYear = res.date.year
+      currentMonth = res.date.month
+      field.handleChange(formatDateOnly(res.date))
     }
     viewMode = 'days'
   }
@@ -181,6 +182,7 @@
             <button
               type="button"
               class="rounded px-2 py-1 text-left font-mono transition-colors hover:bg-neutral-800 hover:text-white"
+              onmousedown={(e) => e.preventDefault()}
               onclick={() => handleShortcut('null')}
             >
               NULL
@@ -188,6 +190,7 @@
             <button
               type="button"
               class="rounded px-2 py-1 text-left font-mono transition-colors hover:bg-neutral-800 hover:text-white"
+              onmousedown={(e) => e.preventDefault()}
               onclick={() => handleShortcut('now')}
             >
               now
@@ -195,6 +198,7 @@
             <button
               type="button"
               class="rounded px-2 py-1 text-left font-mono transition-colors hover:bg-neutral-800 hover:text-white"
+              onmousedown={(e) => e.preventDefault()}
               onclick={() => handleShortcut('today')}
             >
               today
@@ -202,6 +206,7 @@
             <button
               type="button"
               class="rounded px-2 py-1 text-left font-mono transition-colors hover:bg-neutral-800 hover:text-white"
+              onmousedown={(e) => e.preventDefault()}
               onclick={() => handleShortcut('tomorrow')}
             >
               tomorrow
@@ -209,6 +214,7 @@
             <button
               type="button"
               class="rounded px-2 py-1 text-left font-mono transition-colors hover:bg-neutral-800 hover:text-white"
+              onmousedown={(e) => e.preventDefault()}
               onclick={() => handleShortcut('yesterday')}
             >
               yesterday

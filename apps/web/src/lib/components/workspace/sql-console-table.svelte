@@ -34,7 +34,8 @@
     startIndex?: number
     source?: ResultSource | null
     view?: 'table' | 'json' | 'structure'
-    onApplied?: () => void
+    onRowsChange?: (newRows: unknown[][]) => void
+    onRefresh?: () => void
     onOpenTable?: (schema: string, table: string, filter?: TabFilter) => void
   }
 
@@ -45,16 +46,27 @@
     startIndex = 0,
     source = null,
     view = 'table',
-    onApplied,
+    onRowsChange,
+    onRefresh,
     onOpenTable: _onOpenTable,
   }: Props = $props()
 
+  interface RowUpdate {
+    pkRow: Row
+    values: Record<string, string | null>
+    rowIndex: number
+    newRow: DynamicRow
+  }
+
   const pk = $derived(source?.primaryKey ?? [])
   const isEditable = $derived(!!source && pk.length > 0)
-  const tableData = $derived(mapSqlRowsToDynamicRows(columns, rows, pk))
+
+  let localRows = $state<unknown[][]>(untrack(() => rows))
+  const tableData = $derived(mapSqlRowsToDynamicRows(columns, localRows, pk))
 
   let deleteDialogOpen = $state(false)
 
+  // A. Optimistic Delete Mutation
   const deleteMutation = createMutation(() => ({
     mutationFn: async (rowsToDelete: DynamicRow[]) => {
       if (!source) return []
@@ -65,14 +77,44 @@
       })
       return Promise.all(deletes)
     },
-    onSuccess: (_data, vars) => {
-      toast.success(`Deleted ${vars.length} row(s)`)
+    onMutate: async (rowsToDelete: DynamicRow[]) => {
+      const previousRows = localRows
+      const previousFormData = (form.state.values as { data?: DynamicRow[] })?.data ?? tableData
+
+      const remainingSqlRows = localRows.filter((sqlRow) => {
+        return !rowsToDelete.some((delRow) => {
+          if (pk.length > 0) {
+            return pk.every((p) => {
+              const colIdx = columns.findIndex((c) => c.name === p)
+              return delRow[p] === sqlRow[colIdx]
+            })
+          }
+          return columns.every((c, i) => delRow[c.name] === sqlRow[i])
+        })
+      })
+
+      localRows = remainingSqlRows
+      onRowsChange?.(remainingSqlRows)
+
+      const remainingFormData = mapSqlRowsToDynamicRows(columns, remainingSqlRows, pk)
+      form.reset({ data: remainingFormData })
       rowSelection = {}
       deleteDialogOpen = false
-      onApplied?.()
+
+      return { previousRows, previousFormData }
     },
-    onError: (e: Error) => {
-      toast.error(e.message)
+    onError: (err: Error, _vars, context) => {
+      if (context?.previousRows) {
+        localRows = context.previousRows
+        onRowsChange?.(context.previousRows)
+      }
+      if (context?.previousFormData) {
+        form.reset({ data: context.previousFormData })
+      }
+      toast.error(err.message)
+    },
+    onSuccess: (_data, vars) => {
+      toast.success(`Deleted ${vars.length} row(s)`)
     },
   }))
 
@@ -89,12 +131,64 @@
     await deleteMutation.mutateAsync(rowsToDelete)
   }
 
+  // B. Optimistic Batch Save/Update Mutation
+  const saveMutation = createMutation(() => ({
+    mutationFn: async (updates: RowUpdate[]) => {
+      if (!source) return []
+      return Promise.all(
+        updates.map((u) => updateRow(connId, source.schema, source.table, u.pkRow, u.values)),
+      )
+    },
+    onMutate: async (updates: RowUpdate[]) => {
+      const previousRows = localRows
+      const previousFormData = (form.state.values as { data?: DynamicRow[] })?.data ?? tableData
+
+      const updatedSqlRows = localRows.map((sqlRow, idx) => {
+        const update = updates.find((u) => u.rowIndex === idx)
+        if (!update) return sqlRow
+
+        const newSqlRow = [...sqlRow]
+        for (const [colName, val] of Object.entries(update.values)) {
+          const colIdx = columns.findIndex((c) => c.name === colName)
+          if (colIdx !== -1) {
+            newSqlRow[colIdx] = val
+          }
+        }
+        return newSqlRow
+      })
+
+      localRows = updatedSqlRows
+      onRowsChange?.(updatedSqlRows)
+
+      const newFormData = previousFormData.map((row, idx) => {
+        const update = updates.find((u) => u.rowIndex === idx)
+        return update ? { ...row, ...update.newRow } : row
+      })
+      form.reset({ data: newFormData })
+
+      return { previousRows, previousFormData }
+    },
+    onError: (err: Error, _vars, context) => {
+      if (context?.previousRows) {
+        localRows = context.previousRows
+        onRowsChange?.(context.previousRows)
+      }
+      if (context?.previousFormData) {
+        form.reset({ data: context.previousFormData })
+      }
+      toast.error(err.message)
+    },
+    onSuccess: (_data, vars) => {
+      toast.success(`Saved ${vars.length} modified row(s)`)
+    },
+  }))
+
   const form = createGridForm(() => ({
     defaultValues: { data: tableData },
     onSubmit: async ({ value }: { value: { data: DynamicRow[] } }) => {
       if (!source || !value.data || value.data.length === 0) return
       try {
-        const updates: Promise<unknown>[] = []
+        const updates: RowUpdate[] = []
         for (let i = 0; i < value.data.length; i++) {
           const newRow = value.data[i]
           const origRow = tableData[i]
@@ -114,17 +208,15 @@
             for (const k of pk) {
               pkRow[k] = origRow[k]
             }
-            updates.push(updateRow(connId, source.schema, source.table, pkRow, changedValues))
+            updates.push({ pkRow, values: changedValues, rowIndex: i, newRow })
           }
         }
 
         if (updates.length > 0) {
-          await Promise.all(updates)
-          toast.success('Changes applied')
-          onApplied?.()
+          await saveMutation.mutateAsync(updates)
         }
       } catch (err) {
-        toast.error((err as Error).message)
+        console.error('Failed to save console table changes:', err)
       }
     },
   }))
@@ -133,6 +225,7 @@
   $effect(() => {
     if (rows && rows !== prevRowsRef) {
       prevRowsRef = rows
+      localRows = rows
       untrack(() => {
         form.reset({ data: tableData })
       })
@@ -182,7 +275,7 @@
     return columnHelper.columns(dbCols)
   })
 
-  let pagination = $state<PaginationState>({ pageIndex: 0, pageSize: 500 })
+  let pagination = $state<PaginationState>({ pageIndex: 0, pageSize: 50 })
   let columnSizing = $state<ColumnSizingState>({})
   let rowSelection = $state<RowSelectionState>({})
 
@@ -277,7 +370,7 @@
       <!-- Sub-Header Console Toolbar -->
       <table.DataGridConsoleToolbar
         {isEditable}
-        onRefresh={onApplied}
+        {onRefresh}
         onDeleteSelected={handleDeleteSelected}
         isDeleting={deleteMutation.isPending}
       />
@@ -306,7 +399,7 @@
             </table>
           </div>
         {:else if view === 'json'}
-          <JsonView {columns} {rows} offset={startIndex} />
+          <JsonView {columns} rows={localRows} offset={startIndex} />
         {:else}
           <!-- Modern TanStack Table Grid -->
           <Table.Root

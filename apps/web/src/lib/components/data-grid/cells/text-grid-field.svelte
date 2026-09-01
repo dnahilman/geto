@@ -5,7 +5,7 @@
   import { Input } from '$lib/components/ui/input/index.js'
   import AlignLeftIcon from '@lucide/svelte/icons/align-left'
 
-  const field = useFieldContext<string>()
+  const field = useFieldContext<string | null>()
 
   let inputRef = $state<HTMLInputElement | null>(null)
   let isMultiEditorOpen = $state(false)
@@ -18,7 +18,7 @@
   })
 
   function handleMultilineSave(val: string | null) {
-    field.handleChange(val ?? '')
+    field.handleChange(val)
     isMultiEditorOpen = false
   }
 

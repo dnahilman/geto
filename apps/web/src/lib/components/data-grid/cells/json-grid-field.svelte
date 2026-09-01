@@ -2,6 +2,7 @@
   import { useFieldContext } from '../hooks/form-context.js'
   import CellContainer from './cell-container.svelte'
   import * as Popover from '$lib/components/ui/popover/index.js'
+  import * as Kbd from '$lib/components/ui/kbd/index.js'
   import { Button } from '$lib/components/ui/button/index.js'
   import JsonDetailDialog from './json-detail-dialog.svelte'
   import Maximize2 from '@lucide/svelte/icons/maximize-2'
@@ -159,6 +160,7 @@
               variant="ghost"
               size="sm"
               class="h-7 font-mono text-xs text-neutral-400 hover:bg-neutral-800 hover:text-white"
+              onmousedown={(e) => e.preventDefault()}
               onclick={() => handleSetNull(stopEditing)}
             >
               Set NULL
@@ -168,6 +170,7 @@
               variant="ghost"
               size="sm"
               class="h-7 font-mono text-xs text-neutral-400 hover:bg-neutral-800 hover:text-white"
+              onmousedown={(e) => e.preventDefault()}
               onclick={() => handleSetEmpty(stopEditing)}
             >
               Set ''
@@ -179,27 +182,19 @@
               type="button"
               variant="outline"
               size="sm"
-              class="h-7 border-neutral-700 bg-neutral-800 text-xs text-neutral-300 hover:bg-neutral-700 hover:text-white"
+              class="pe-2 text-xs"
               onclick={() => handleCancel(stopEditing)}
             >
-              <span>Cancel</span>
-              <kbd
-                class="rounded border border-neutral-700 bg-neutral-900 px-1 py-0.5 text-[10px] text-neutral-400"
-              >
-                Esc
-              </kbd>
+              Cancel <Kbd.Root>Esc</Kbd.Root>
             </Button>
 
             <Button
               type="button"
               size="sm"
-              class="h-7 bg-neutral-100 text-xs font-medium text-neutral-900 hover:bg-neutral-200"
+              class="pe-2 text-xs font-medium"
               onclick={() => handleSave(stopEditing)}
             >
-              <span>Save</span>
-              <kbd class="rounded bg-neutral-300/80 px-1 py-0.5 text-[10px] text-neutral-900">
-                Ctrl+Enter
-              </kbd>
+              Save <Kbd.Root>Ctrl+Enter</Kbd.Root>
             </Button>
           </div>
         </div>
