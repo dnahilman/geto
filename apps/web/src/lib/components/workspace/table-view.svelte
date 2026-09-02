@@ -89,7 +89,6 @@
   type RowT = unknown[]
   const cols = $derived(rows.data?.result.columns ?? [])
   const data = $derived<RowT[]>(rows.data?.result.rows ?? [])
-  const est = $derived(rows.data?.estimatedRows ?? 0)
   const pk = $derived(detail.data?.primaryKey ?? [])
   const colInfo = $derived(new Map((detail.data?.columns ?? []).map((c) => [c.name, c])))
   const isEditable = $derived(pk.length > 0)
@@ -128,6 +127,11 @@
   const tableData = $derived(mapSqlRowsToDynamicRows(cols, data, pk))
 
   let deleteDialogOpen = $state(false)
+  let lastMutation = $state<{
+    type: 'update' | 'delete'
+    count: number
+    durationMs: number
+  } | null>(null)
 
   // A. Optimistic Delete Mutation
   const deleteMutation = createMutation(() => ({
@@ -144,6 +148,7 @@
       return Promise.all(deletes)
     },
     onMutate: async (rowsToDelete: DynamicRow[]) => {
+      const t0 = performance.now()
       // 1. Cancel outgoing queries
       await qc.cancelQueries({ queryKey: currentQueryOpts.queryKey })
 
@@ -168,7 +173,6 @@
             ...previousData.result,
             rows: remainingSqlRows,
           },
-          estimatedRows: Math.max(0, previousData.estimatedRows - rowsToDelete.length),
         })
       }
 
@@ -178,7 +182,7 @@
       rowSelection = {}
       deleteDialogOpen = false
 
-      return { previousData, previousFormData }
+      return { previousData, previousFormData, t0 }
     },
     onError: (e: Error, _vars, context) => {
       if (context?.previousData) {
@@ -189,7 +193,9 @@
       }
       toast.error(e.message)
     },
-    onSuccess: (_data, vars) => {
+    onSuccess: (_data, vars, context) => {
+      const durationMs = Math.round(performance.now() - (context?.t0 ?? performance.now()))
+      lastMutation = { type: 'delete', count: vars.length, durationMs }
       toast.success(`Deleted ${vars.length} row(s)`)
     },
     onSettled: () => {
@@ -226,6 +232,7 @@
       )
     },
     onMutate: async (updates: RowUpdate[]) => {
+      const t0 = performance.now()
       // 1. Cancel outgoing queries
       await qc.cancelQueries({ queryKey: currentQueryOpts.queryKey })
 
@@ -265,7 +272,7 @@
       })
       form.reset({ data: newFormData })
 
-      return { previousData, previousFormData }
+      return { previousData, previousFormData, t0 }
     },
     onError: (e: Error, _vars, context) => {
       if (context?.previousData) {
@@ -276,7 +283,9 @@
       }
       toast.error(e.message)
     },
-    onSuccess: (_data, vars) => {
+    onSuccess: (_data, vars, context) => {
+      const durationMs = Math.round(performance.now() - (context?.t0 ?? performance.now()))
+      lastMutation = { type: 'update', count: vars.length, durationMs }
       toast.success(`Saved ${vars.length} modified row(s)`)
     },
     onSettled: () => {
@@ -330,6 +339,7 @@
     const currentRows = rows.data?.result.rows
     if (currentRows && currentRows !== prevRowsRef) {
       prevRowsRef = currentRows
+      lastMutation = null
       untrack(() => {
         form.reset({ data: tableData })
       })
@@ -387,9 +397,6 @@
     },
     manualPagination: true,
     manualSorting: true,
-    get rowCount() {
-      return est
-    },
     state: {
       get columnSizing() {
         return columnSizing
@@ -658,8 +665,12 @@
           <span class={rows.isSuccess ? 'text-emerald-500' : 'text-muted-foreground'}>
             {#if rows.isLoading}
               Loading…
+            {:else if lastMutation}
+              {lastMutation.count.toLocaleString()} row{lastMutation.count === 1 ? '' : 's'} affected
+              · {lastMutation.durationMs}ms
             {:else}
-              ~{est.toLocaleString()} rows · {rows.data?.durationMs ?? 0}ms
+              {data.length.toLocaleString()} row{data.length === 1 ? '' : 's'} · {rows.data
+                ?.durationMs ?? 0}ms
             {/if}
           </span>
         {/if}

@@ -205,7 +205,7 @@ export async function getConstraints(
       ON tc.CONSTRAINT_SCHEMA = kcu.CONSTRAINT_SCHEMA
       AND tc.TABLE_NAME = kcu.TABLE_NAME
       AND tc.CONSTRAINT_NAME = kcu.CONSTRAINT_NAME
-    WHERE TABLE_SCHEMA = COALESCE(NULLIF(?, ''), DATABASE()) AND tc.TABLE_NAME = ?
+    WHERE tc.TABLE_SCHEMA = COALESCE(NULLIF(?, ''), DATABASE()) AND tc.TABLE_NAME = ?
     ORDER BY tc.CONSTRAINT_NAME, kcu.ORDINAL_POSITION
   `
   const [rows] = await pool.query({ sql, rowsAsArray: false, values: [schema, table] })
@@ -349,7 +349,7 @@ export async function getTableData(
   schema: string | null,
   table: string,
   opts: TableDataOptions,
-): Promise<{ result: QueryResult; estimatedRows: number }> {
+): Promise<{ result: QueryResult }> {
   const target = schema ? `${quoteIdent(schema)}.${quoteIdent(table)}` : quoteIdent(table)
   let sql = `SELECT * FROM ${target}`
   const params: unknown[] = []
@@ -367,17 +367,7 @@ export async function getTableData(
   params.push(opts.limit, opts.offset)
 
   const result = await executeSql(pool, sql, params)
-
-  // Get estimated rows from information_schema
-  const estSql = `
-    SELECT TABLE_ROWS AS count
-    FROM information_schema.TABLES
-    WHERE TABLE_SCHEMA = COALESCE(NULLIF(?, ''), DATABASE()) AND TABLE_NAME = ?
-  `
-  const [estRows] = await pool.query({ sql: estSql, rowsAsArray: false, values: [schema, table] })
-  const estimated = Number((estRows as Array<{ count?: number }>)?.[0]?.count) || result.rowCount
-
-  return { result, estimatedRows: estimated }
+  return { result }
 }
 
 export async function resolveSource(

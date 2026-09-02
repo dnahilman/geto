@@ -50,7 +50,7 @@ export class MysqlDriver implements DbDriver {
   readonly lifecycle: DbDriver['lifecycle']
 
   constructor(opts: ConnectionTarget) {
-    const pool = makePool(opts, 5)
+    const pool = makePool(opts, 10)
 
     this.exec = {
       query: (text, params = []) => executeSql(pool, text, params),

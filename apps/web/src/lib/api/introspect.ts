@@ -19,7 +19,6 @@ export interface TableDetail {
 
 export interface TableData {
   result: QueryResult
-  estimatedRows: number
   durationMs: number
 }
 

@@ -97,7 +97,7 @@ export interface DbDriver {
       schema: string | null,
       table: string,
       opts: TableDataOptions,
-    ): Promise<{ result: QueryResult; estimatedRows: number }>
+    ): Promise<{ result: QueryResult }>
     /** Decide whether a result maps to one editable base table (hides OIDs etc.). */
     resolveEditableSource(columns: ColumnMeta[]): Promise<EditableSource | null>
   }

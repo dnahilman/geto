@@ -27,6 +27,7 @@
         "ioredis": "^5.11.1",
         "mysql2": "^3.24.2",
         "pgsql-parser": "^17.9.15",
+        "picocolors": "^1.1.1",
         "postgres": "^3.4.9",
         "ssh2": "^1.17.0",
         "zod": "^4.4.3",

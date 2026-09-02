@@ -302,7 +302,7 @@ export async function getTableData(
   schema: string,
   table: string,
   opts: TableDataOptions,
-): Promise<{ result: QueryResult; estimatedRows: number }> {
+): Promise<{ result: QueryResult }> {
   const rel = `${quoteIdent(schema)}.${quoteIdent(table)}`
   const filtered = opts.filterColumn != null && opts.filterColumn !== ''
   // When filtered the value takes $1, so LIMIT/OFFSET shift to $2/$3.
@@ -316,21 +316,5 @@ export async function getTableData(
     ? [opts.filterValue ?? null, opts.limit, opts.offset]
     : [opts.limit, opts.offset]
   const result = await executeSql(sql, text, params)
-
-  // Unfiltered: the planner's reltuples estimate is instant. Filtered: the
-  // narrowed set is small/indexed, so an exact count is cheap and more useful.
-  let estimatedRows: number
-  if (filtered) {
-    const cnt = await executeSql(sql, `SELECT count(*) AS n FROM ${rel}${where}`, [
-      opts.filterValue ?? null,
-    ])
-    estimatedRows = Number(cnt.rows[0]?.[0] ?? 0)
-  } else {
-    const est = await sql<{ n: number }[]>`
-      SELECT GREATEST(c.reltuples, 0)::bigint AS n
-      FROM pg_class c JOIN pg_namespace ns ON ns.oid = c.relnamespace
-      WHERE ns.nspname = ${schema} AND c.relname = ${table}`
-    estimatedRows = Number(est[0]?.n ?? 0)
-  }
-  return { result, estimatedRows }
+  return { result }
 }

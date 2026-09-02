@@ -3,8 +3,10 @@ import { cors } from '@elysiajs/cors'
 import { env } from '$src/env'
 import { api } from '$src/app'
 import { staticPlugin } from '$src/static'
+import { loggerPlugin } from '$src/logger'
 
 const app = new Elysia()
+  .use(loggerPlugin())
   // In dev the web UI runs on a separate Vite origin; allow it. In prod the UI
   // is same-origin so CORS is effectively a no-op.
   .use(

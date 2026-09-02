@@ -52,7 +52,6 @@
 
   const cols = $derived(q.data?.result.columns ?? [])
   const data = $derived<unknown[][]>(q.data?.result.rows ?? [])
-  const est = $derived(q.data?.estimatedRows ?? 0)
 
   // Read-only: no PK threading, every column non-editable.
   const gridColumns = $derived<GridColumn[]>(
@@ -86,7 +85,9 @@
     <span class="font-mono font-medium">{target.table}</span>
     <span class="text-muted-foreground font-mono">{target.column} = {valueStr}</span>
     <span class="text-muted-foreground">
-      · {est.toLocaleString()} row{est === 1 ? '' : 's'}{target.virtual ? ' · inferred' : ''}
+      · {data.length.toLocaleString()} row{data.length === 1 ? '' : 's'}{target.virtual
+        ? ' · inferred'
+        : ''}
     </span>
     <div class="ml-auto flex items-center gap-2">
       <div class="bg-muted/60 text-muted-foreground flex items-center rounded-md p-0.5">
@@ -142,11 +143,11 @@
     {/if}
   </div>
 
-  {#if est > PAGE}
+  {#if page > 0 || data.length === PAGE}
     <div
       class="text-muted-foreground flex items-center justify-end gap-2 border-t px-2 py-1 text-xs"
     >
-      <span>{page * PAGE + 1}–{page * PAGE + data.length} of {est.toLocaleString()}</span>
+      <span>Page {page + 1} ({data.length} rows)</span>
       <Button
         size="icon-xs"
         variant="ghost"
@@ -158,7 +159,7 @@
       <Button
         size="icon-xs"
         variant="ghost"
-        disabled={(page + 1) * PAGE >= est}
+        disabled={data.length < PAGE}
         onclick={() => (page += 1)}
       >
         <ChevronRight class="size-3.5" />

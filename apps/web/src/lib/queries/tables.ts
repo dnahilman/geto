@@ -34,11 +34,16 @@ export const tableQueries = {
     queryOptions({
       queryKey: ['table-detail', connId, schema, tableName] as const,
       queryFn: () => getTableDetail(connId, schema, tableName),
+      staleTime: 5 * 60_000,
+      gcTime: 30 * 60_000,
+      retry: false,
     }),
 
   completion: (connId: string) =>
     queryOptions({
       queryKey: ['completion', connId] as const,
       queryFn: () => getCompletion(connId),
+      staleTime: 5 * 60_000,
+      gcTime: 30 * 60_000,
     }),
 }

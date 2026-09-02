@@ -113,8 +113,6 @@ suite('integration: real PostgreSQL', () => {
     expect(byName.result.rows.every((r) => r[nameIdx(byName.result.columns)] === 'widget')).toBe(
       true,
     )
-    // filtered count is exact (not the planner estimate)
-    expect(byName.estimatedRows).toBe(byName.result.rows.length)
 
     // string value bound against an int8 column (PG infers the column's type)
     const byBig = await getTableData(sql, 'geto_it', 't', {

@@ -66,9 +66,14 @@
                 </button>
               {:else}
                 <button
+                  type="button"
                   class="hover:bg-muted rounded p-0.5 opacity-50 group-hover:opacity-100"
                   title="Close"
-                  onclick={() => ws.close(tab.id)}
+                  onpointerdown={(e) => e.stopPropagation()}
+                  onclick={(e) => {
+                    e.stopPropagation()
+                    ws.close(tab.id)
+                  }}
                 >
                   <X class="size-3" />
                 </button>

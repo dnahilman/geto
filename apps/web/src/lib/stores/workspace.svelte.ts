@@ -144,11 +144,12 @@ export class Workspace {
   close(id: string) {
     const idx = this.tabs.findIndex((t) => t.id === id)
     if (idx === -1) return
-    this.tabs.splice(idx, 1)
-    if (this.activeId === id) {
-      // After splice, tabs[idx] is the right neighbor; tabs[idx-1] is the left.
-      this.activeId = this.tabs[idx]?.id ?? this.tabs[idx - 1]?.id ?? null
-    }
+    const nextActiveId =
+      this.activeId === id
+        ? (this.tabs[idx + 1]?.id ?? this.tabs[idx - 1]?.id ?? null)
+        : this.activeId
+    this.tabs = this.tabs.filter((t) => t.id !== id)
+    this.activeId = nextActiveId
   }
 
   /** Close every tab except `id` and any pinned tabs (VS Code "Close Others"). */
