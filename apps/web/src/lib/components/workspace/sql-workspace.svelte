@@ -4,7 +4,7 @@
   import * as Resizable from '$lib/components/ui/resizable'
   import * as DropdownMenu from '$lib/components/ui/dropdown-menu'
   import { Badge } from '$lib/components/ui/badge'
-  import { ProviderIcon } from '$lib/components/icons'
+  import ConnectionSwitcher from '$lib/components/workspace/connection-switcher.svelte'
   import SchemaTree from '$lib/components/workspace/schema-tree.svelte'
   import TableView from './table-view.svelte'
   import SQLConsole from '$lib/components/workspace/sql-console.svelte'
@@ -70,22 +70,21 @@
 {/snippet}
 
 {#snippet sidebarHeader()}
-  <div class="flex shrink-0 items-center gap-2 border-b px-3 py-2">
-    <div class="flex items-center gap-1.5 ml-1">
-      <ProviderIcon provider={conn?.provider ?? ''} class="size-3.5 shrink-0" />
-      <span class="text-xs font-semibold tracking-tight">{conn?.name ?? connId}</span>
+  <div class="flex shrink-0 items-center justify-between gap-1 border-b px-2 py-1.5 min-w-0">
+    <div class="flex items-center gap-1 min-w-0 flex-1">
+      <ConnectionSwitcher {connId} {conn} />
       {#if conn?.database}
-        <div class="h-4 w-px bg-border my-auto"></div>
+        <div class="h-3.5 w-px bg-border my-auto shrink-0"></div>
         <DropdownMenu.Root>
           <DropdownMenu.Trigger>
             {#snippet child({ props })}
               <button
                 {...props}
                 type="button"
-                class="flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-mono font-medium hover:bg-accent transition-colors cursor-pointer"
+                class="flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-mono font-medium hover:bg-accent transition-colors cursor-pointer shrink-0"
                 title="Database actions ({conn.database})"
               >
-                <span>{conn.database}</span>
+                <span class="max-w-[85px] truncate">{conn.database}</span>
                 <ChevronDown class="size-3 opacity-60" />
               </button>
             {/snippet}
@@ -115,15 +114,15 @@
           </DropdownMenu.Content>
         </DropdownMenu.Root>
       {/if}
-      {#if conn?.readonly}
-        <Badge
-          variant="secondary"
-          class="h-4.5 px-1.5 text-[10px] uppercase font-semibold tracking-wider"
-        >
-          read-only
-        </Badge>
-      {/if}
     </div>
+    {#if conn?.readonly}
+      <Badge
+        variant="secondary"
+        class="h-4 px-1 text-[9px] uppercase font-semibold tracking-wider shrink-0"
+      >
+        ro
+      </Badge>
+    {/if}
   </div>
 {/snippet}
 

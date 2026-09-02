@@ -1,9 +1,10 @@
 <script lang="ts">
   import { toast } from 'svelte-sonner'
-  import { ArrowLeft, KeyRound, PanelLeft, SquareTerminal } from 'lucide-svelte'
+  import { KeyRound, PanelLeft, SquareTerminal } from 'lucide-svelte'
   import * as Resizable from '$lib/components/ui/resizable'
   import { Button } from '$lib/components/ui/button'
   import { Badge } from '$lib/components/ui/badge'
+  import ConnectionSwitcher from '$lib/components/workspace/connection-switcher.svelte'
   import RedisKeyTree from '$lib/components/workspace/redis-key-tree.svelte'
   import RedisConsole from '$lib/components/workspace/redis-console.svelte'
   import RedisKeyView from '$lib/components/workspace/redis-key-view.svelte'
@@ -48,9 +49,6 @@
 
 <div class="flex h-screen flex-col">
   <header class="flex h-9 shrink-0 items-center gap-1 border-b bg-background px-2.5">
-    <Button variant="ghost" size="icon" class="size-7 shrink-0" href="/" title="Connections">
-      <ArrowLeft class="size-3.5" />
-    </Button>
     <Button
       variant="ghost"
       size="icon"
@@ -61,8 +59,7 @@
       <PanelLeft class="size-3.5" />
     </Button>
     <div class="flex items-center gap-1.5 ml-1">
-      <KeyRound class="size-3.5 text-muted-foreground" />
-      <span class="text-xs font-semibold tracking-tight">{conn?.name ?? connId}</span>
+      <ConnectionSwitcher {connId} {conn} />
       <Badge variant="secondary" class="h-4.5 px-1.5 text-[10px] font-semibold">Redis</Badge>
       {#if readonly}<Badge
           variant="secondary"

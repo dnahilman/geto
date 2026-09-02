@@ -26,9 +26,10 @@
   interface Props {
     open?: boolean
     connection?: Connection | null
+    onsaved?: (conn: Connection) => void
   }
 
-  let { open = $bindable(false), connection = null }: Props = $props()
+  let { open = $bindable(false), connection = null, onsaved }: Props = $props()
 
   const sslModes: SslMode[] = ['disable', 'allow', 'prefer', 'require', 'verify-ca', 'verify-full']
   const qc = useQueryClient()
@@ -166,10 +167,11 @@
       connection
         ? updateConnection(connection.id, withSsh(input))
         : createConnection(withSsh(input)),
-    onSuccess: () => {
+    onSuccess: (res: Connection) => {
       qc.invalidateQueries({ queryKey: connectionsKey })
       toast.success(connection ? 'Connection updated' : 'Connection created')
       open = false
+      onsaved?.(res)
     },
     onError: (e: Error) => toast.error(e.message),
   }))
