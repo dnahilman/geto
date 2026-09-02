@@ -15,7 +15,7 @@ import type { ColumnMeta, QueryResult } from '$src/db/shared/marshal'
 import { executeSql } from '$src/db/drivers/mysql/exec'
 import { quoteIdent } from '$src/db/drivers/mysql/dml'
 
-const SYSTEM_SCHEMAS = ["'information_schema'", "'performance_schema'", "'sys'"]
+const SYSTEM_SCHEMAS = ["'information_schema'", "'performance_schema'", "'sys'", "'mysql'"]
 
 function formatBytes(bytes: number): string {
   if (!bytes || bytes === 0) return '0 B'
@@ -44,7 +44,11 @@ export async function listDatabases(pool: mysql.Pool): Promise<DatabaseInfo[]> {
   }))
 }
 
-export async function listSchemas(pool: mysql.Pool): Promise<string[]> {
+export async function listSchemas(pool: mysql.Pool, targetDatabase?: string): Promise<string[]> {
+  const db = targetDatabase?.trim()
+  if (db) {
+    return [db]
+  }
   const sql = `
     SELECT SCHEMA_NAME AS name
     FROM information_schema.SCHEMATA
@@ -55,16 +59,24 @@ export async function listSchemas(pool: mysql.Pool): Promise<string[]> {
   return (rows as Array<{ name: string }>).map((r) => r.name)
 }
 
-export async function getTree(pool: mysql.Pool, search?: string): Promise<SchemaTree[]> {
+export async function getTree(
+  pool: mysql.Pool,
+  targetDatabase?: string,
+  search?: string,
+): Promise<SchemaTree[]> {
+  const db = targetDatabase?.trim()
   let sql = `
     SELECT
       TABLE_SCHEMA AS \`schema\`,
       TABLE_NAME AS \`name\`,
       CASE WHEN TABLE_TYPE = 'VIEW' THEN 'view' ELSE 'table' END AS \`type\`
     FROM information_schema.TABLES
-    WHERE TABLE_SCHEMA NOT IN (${SYSTEM_SCHEMAS.join(', ')})
+    WHERE ${db ? 'TABLE_SCHEMA = ?' : `(TABLE_SCHEMA = DATABASE() OR (DATABASE() IS NULL AND TABLE_SCHEMA NOT IN (${SYSTEM_SCHEMAS.join(', ')})))`}
   `
   const params: unknown[] = []
+  if (db) {
+    params.push(db)
+  }
   if (search && search.trim()) {
     sql += ` AND (TABLE_NAME LIKE ? OR TABLE_SCHEMA LIKE ?)`
     const pattern = `%${search.trim()}%`
@@ -110,7 +122,7 @@ export async function getColumns(
       COLUMN_KEY AS columnKey,
       EXTRA AS extra
     FROM information_schema.COLUMNS
-    WHERE TABLE_SCHEMA = COALESCE(?, DATABASE()) AND TABLE_NAME = ?
+    WHERE TABLE_SCHEMA = COALESCE(NULLIF(?, ''), DATABASE()) AND TABLE_NAME = ?
     ORDER BY ORDINAL_POSITION
   `
   const [rows] = await pool.query({ sql, rowsAsArray: false, values: [schema, table] })
@@ -148,7 +160,7 @@ export async function getIndexes(
       INDEX_TYPE AS indexType,
       GROUP_CONCAT(COLUMN_NAME ORDER BY SEQ_IN_INDEX) AS columns
     FROM information_schema.STATISTICS
-    WHERE TABLE_SCHEMA = COALESCE(?, DATABASE()) AND TABLE_NAME = ?
+    WHERE TABLE_SCHEMA = COALESCE(NULLIF(?, ''), DATABASE()) AND TABLE_NAME = ?
     GROUP BY INDEX_NAME, NON_UNIQUE, INDEX_TYPE
   `
   const [rows] = await pool.query({ sql, rowsAsArray: false, values: [schema, table] })
@@ -193,7 +205,7 @@ export async function getConstraints(
       ON tc.CONSTRAINT_SCHEMA = kcu.CONSTRAINT_SCHEMA
       AND tc.TABLE_NAME = kcu.TABLE_NAME
       AND tc.CONSTRAINT_NAME = kcu.CONSTRAINT_NAME
-    WHERE tc.TABLE_SCHEMA = COALESCE(?, DATABASE()) AND tc.TABLE_NAME = ?
+    WHERE TABLE_SCHEMA = COALESCE(NULLIF(?, ''), DATABASE()) AND tc.TABLE_NAME = ?
     ORDER BY tc.CONSTRAINT_NAME, kcu.ORDINAL_POSITION
   `
   const [rows] = await pool.query({ sql, rowsAsArray: false, values: [schema, table] })
@@ -228,7 +240,7 @@ export async function getPrimaryKey(
     SELECT COLUMN_NAME AS name
     FROM information_schema.KEY_COLUMN_USAGE
     WHERE CONSTRAINT_NAME = 'PRIMARY'
-      AND TABLE_SCHEMA = COALESCE(?, DATABASE())
+      AND TABLE_SCHEMA = COALESCE(NULLIF(?, ''), DATABASE())
       AND TABLE_NAME = ?
     ORDER BY ORDINAL_POSITION
   `
@@ -236,7 +248,11 @@ export async function getPrimaryKey(
   return (rows as Array<{ name: string }>).map((r) => r.name)
 }
 
-export async function getAllColumns(pool: mysql.Pool): Promise<CompletionColumn[]> {
+export async function getAllColumns(
+  pool: mysql.Pool,
+  targetDatabase?: string,
+): Promise<CompletionColumn[]> {
+  const db = targetDatabase?.trim()
   const sql = `
     SELECT
       TABLE_SCHEMA AS \`schema\`,
@@ -244,13 +260,17 @@ export async function getAllColumns(pool: mysql.Pool): Promise<CompletionColumn[
       COLUMN_NAME AS \`name\`,
       DATA_TYPE AS \`type\`
     FROM information_schema.COLUMNS
-    WHERE TABLE_SCHEMA NOT IN (${SYSTEM_SCHEMAS.join(', ')})
+    WHERE ${db ? 'TABLE_SCHEMA = ?' : `(TABLE_SCHEMA = DATABASE() OR (DATABASE() IS NULL AND TABLE_SCHEMA NOT IN (${SYSTEM_SCHEMAS.join(', ')})))`}
   `
-  const [rows] = await pool.query({ sql, rowsAsArray: false })
+  const [rows] = await pool.query({ sql, rowsAsArray: false, values: db ? [db] : [] })
   return rows as CompletionColumn[]
 }
 
-export async function getFunctions(pool: mysql.Pool): Promise<CompletionFunction[]> {
+export async function getFunctions(
+  pool: mysql.Pool,
+  targetDatabase?: string,
+): Promise<CompletionFunction[]> {
+  const db = targetDatabase?.trim()
   const sql = `
     SELECT
       ROUTINE_SCHEMA AS \`schema\`,
@@ -259,9 +279,9 @@ export async function getFunctions(pool: mysql.Pool): Promise<CompletionFunction
       '' AS \`args\`,
       LOWER(ROUTINE_TYPE) AS \`kind\`
     FROM information_schema.ROUTINES
-    WHERE ROUTINE_SCHEMA NOT IN (${SYSTEM_SCHEMAS.join(', ')})
+    WHERE ${db ? 'ROUTINE_SCHEMA = ?' : `(ROUTINE_SCHEMA = DATABASE() OR (DATABASE() IS NULL AND ROUTINE_SCHEMA NOT IN (${SYSTEM_SCHEMAS.join(', ')})))`}
   `
-  const [rows] = await pool.query({ sql, rowsAsArray: false })
+  const [rows] = await pool.query({ sql, rowsAsArray: false, values: db ? [db] : [] })
   return (
     rows as Array<{ schema: string; name: string; returns: string; args: string; kind: string }>
   ).map((r) => ({
@@ -273,7 +293,11 @@ export async function getFunctions(pool: mysql.Pool): Promise<CompletionFunction
   }))
 }
 
-export async function getForeignKeys(pool: mysql.Pool): Promise<CompletionForeignKey[]> {
+export async function getForeignKeys(
+  pool: mysql.Pool,
+  targetDatabase?: string,
+): Promise<CompletionForeignKey[]> {
+  const db = targetDatabase?.trim()
   const sql = `
     SELECT
       CONSTRAINT_NAME AS name,
@@ -285,10 +309,10 @@ export async function getForeignKeys(pool: mysql.Pool): Promise<CompletionForeig
       REFERENCED_COLUMN_NAME AS refColumn
     FROM information_schema.KEY_COLUMN_USAGE
     WHERE REFERENCED_TABLE_NAME IS NOT NULL
-      AND TABLE_SCHEMA NOT IN (${SYSTEM_SCHEMAS.join(', ')})
+      AND ${db ? 'TABLE_SCHEMA = ?' : `(TABLE_SCHEMA = DATABASE() OR (DATABASE() IS NULL AND TABLE_SCHEMA NOT IN (${SYSTEM_SCHEMAS.join(', ')})))`}
     ORDER BY CONSTRAINT_NAME, ORDINAL_POSITION
   `
-  const [rows] = await pool.query({ sql, rowsAsArray: false })
+  const [rows] = await pool.query({ sql, rowsAsArray: false, values: db ? [db] : [] })
   const map = new Map<string, CompletionForeignKey>()
 
   for (const r of rows as Array<{
@@ -348,7 +372,7 @@ export async function getTableData(
   const estSql = `
     SELECT TABLE_ROWS AS count
     FROM information_schema.TABLES
-    WHERE TABLE_SCHEMA = COALESCE(?, DATABASE()) AND TABLE_NAME = ?
+    WHERE TABLE_SCHEMA = COALESCE(NULLIF(?, ''), DATABASE()) AND TABLE_NAME = ?
   `
   const [estRows] = await pool.query({ sql: estSql, rowsAsArray: false, values: [schema, table] })
   const estimated = Number((estRows as Array<{ count?: number }>)?.[0]?.count) || result.rowCount
@@ -361,11 +385,7 @@ export async function resolveSource(
   columns: ColumnMeta[],
 ): Promise<EditableSource | null> {
   if (columns.length === 0) return null
-  // In MySQL, check if columns belong to single table
-  // If result has columns without base table info, fallback
   const firstCol = columns[0]
   if (!firstCol) return null
-
-  // If executing a direct SELECT * FROM table, extract from completion/tree
   return null
 }

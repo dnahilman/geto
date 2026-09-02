@@ -1,7 +1,13 @@
 import { QueryClient } from '@tanstack/svelte-query'
 
+declare global {
+  interface Window {
+    __TANSTACK_QUERY_CLIENT__: import('@tanstack/query-core').QueryClient
+  }
+}
+
 export function createQueryClient() {
-  return new QueryClient({
+  const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
         staleTime: 30_000,
@@ -11,4 +17,10 @@ export function createQueryClient() {
       },
     },
   })
+
+  if (typeof window !== 'undefined') {
+    window.__TANSTACK_QUERY_CLIENT__ = queryClient
+  }
+
+  return queryClient
 }

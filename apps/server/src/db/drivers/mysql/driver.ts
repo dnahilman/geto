@@ -65,16 +65,17 @@ export class MysqlDriver implements DbDriver {
 
     this.introspect = {
       listDatabases: () => listDatabases(pool),
-      listSchemas: () => listSchemas(pool),
-      getTree: (search) => getTree(pool, search),
-      getColumns: (schema, table) => getColumns(pool, schema, table),
-      getIndexes: (schema, table) => getIndexes(pool, schema, table),
-      getConstraints: (schema, table) => getConstraints(pool, schema, table),
-      getPrimaryKey: (schema, table) => getPrimaryKey(pool, schema, table),
-      getAllColumns: () => getAllColumns(pool),
-      getFunctions: () => getFunctions(pool),
-      getForeignKeys: () => getForeignKeys(pool),
-      getTableData: (schema, table, queryOpts) => getTableData(pool, schema, table, queryOpts),
+      listSchemas: () => listSchemas(pool, opts.database),
+      getTree: (search) => getTree(pool, opts.database, search),
+      getColumns: (schema, table) => getColumns(pool, schema || opts.database, table),
+      getIndexes: (schema, table) => getIndexes(pool, schema || opts.database, table),
+      getConstraints: (schema, table) => getConstraints(pool, schema || opts.database, table),
+      getPrimaryKey: (schema, table) => getPrimaryKey(pool, schema || opts.database, table),
+      getAllColumns: () => getAllColumns(pool, opts.database),
+      getFunctions: () => getFunctions(pool, opts.database),
+      getForeignKeys: () => getForeignKeys(pool, opts.database),
+      getTableData: (schema, table, queryOpts) =>
+        getTableData(pool, schema || opts.database, table, queryOpts),
       resolveEditableSource: (columns: ColumnMeta[]): Promise<EditableSource | null> =>
         resolveSource(pool, columns),
     }
