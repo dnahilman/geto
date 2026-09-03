@@ -5,7 +5,6 @@
   // inline (reusing RelationPanel, so nested relations keep the Table/JSON toggle).
   import { ArrowUpRight, Rows3 } from 'lucide-svelte'
   import * as DropdownMenu from '$lib/components/ui/dropdown-menu'
-  import RelationPanel from './relation-panel.svelte'
   import { valueHtml } from '$lib/json'
   import type { ExpandedRelation, RelationsConfig } from './data-grid-context'
   import type { RelationDescriptor, RelationTarget } from '$lib/relations'
@@ -118,14 +117,14 @@
           </div>
           {#if expanded[i]?.col === ci && relations}
             <div class="py-1 pl-4">
-              <RelationPanel
+              <!-- <RelationPanel
                 connId={relations.connId}
                 expansion={expanded[i]!.exp}
                 initialView="json"
                 onOpenInTab={() =>
                   relations!.openInTab(expanded[i]!.exp.target, expanded[i]!.exp.value)}
                 onCollapse={() => (expanded[i] = null)}
-              />
+              /> -->
             </div>
           {/if}
         {/each}

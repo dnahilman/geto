@@ -1,17 +1,14 @@
 // Types
 export * from './types.js'
-export * from './data-grid-context.js'
 
 // Hooks
 export * from './hooks/use-data-grid.js'
 export * from './hooks/create-grid-form.js'
 export * from './hooks/form-context.js'
-export { createDataGrid, type CreateDataGridOptions } from './hooks/create-data-grid.svelte.js'
 
 // Utils
 export * from './utils/dynamic-columns.js'
 export * from './utils/schema.js'
-export * from './utils/make-data.js'
 export * from './utils/date-utils.js'
 export * from './utils/field-state.svelte.js'
 export * from './utils/selection-styles.js'
@@ -21,9 +18,7 @@ export * from './utils/format.js'
 export * from './utils/cell-variant.js'
 
 // Views & Root Components
-export { default as ResultGrid, default as DataGrid } from './result-grid.svelte'
 export { default as JsonView } from './json-view.svelte'
-export { default as RelationPanel } from './relation-panel.svelte'
 
 // Cell Components
 export { default as CellContainer } from './cells/cell-container.svelte'

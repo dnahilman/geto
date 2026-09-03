@@ -1,7 +1,6 @@
 <script lang="ts">
   import { toast } from 'svelte-sonner'
   import { Maximize2 } from 'lucide-svelte'
-  import { formatCell } from '$lib/components/ui/data-table'
   import { asJsonObject } from '$lib/json'
   import JsonDetailDialog from './json-detail-dialog.svelte'
   import { Checkbox } from '$lib/components/ui/checkbox'
@@ -67,6 +66,13 @@
   const multiline = $derived(
     variant === 'text' && (expanded || draft.includes('\n') || draft.length > 60),
   )
+
+ function formatCell(v: unknown): { text: string; muted: boolean } {
+    if (v === null || v === undefined) return { text: 'NULL', muted: true }
+    if (typeof v === 'object') return { text: JSON.stringify(v), muted: false }
+    return { text: String(v), muted: false }
+  }
+
 
   const display = $derived(formatCell(realValue))
   // JSON-ish cells (objects/arrays, or strings that parse to them) stay inline but

@@ -9,7 +9,6 @@
     getCellClassName,
     JsonView,
     type DynamicRow,
-    type RelationsConfig,
   } from '$lib/components/data-grid'
   import * as Table from '$lib/components/ui/table/index.js'
   import * as AlertDialog from '$lib/components/ui/alert-dialog'
@@ -33,6 +32,7 @@
   import { buildRelationMap, type RelationTarget } from '$lib/relations'
   import WorkspaceSkeletons from './workspace-skeletons.svelte'
   import type { TabFilter } from '$lib/stores/workspace.svelte'
+    import type { RelationsConfig } from '../data-grid/data-grid-context'
 
   interface Props {
     connId: string
