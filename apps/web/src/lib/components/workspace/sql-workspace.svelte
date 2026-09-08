@@ -178,6 +178,7 @@
               <SQLConsole
                 {connId}
                 initialSql={tab.sql}
+                isActive={ws.activeId === tab.id}
                 onSqlChange={(s) => ws.updateSql(tab.id, s)}
                 onOpenTable={(s, t, f) => ws.openTable(s, t, f)}
                 onToggleSidebar={() => (sidebarOpen = !sidebarOpen)}

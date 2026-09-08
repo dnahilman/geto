@@ -4,7 +4,8 @@ node_modules/
 # build output
 apps/web/build/
 apps/web/.svelte-kit/
-apps/server/public/
+apps/server/target/
+target/
 
 # env & data
 .env
@@ -20,3 +21,10 @@ data/
 
 # local docs / planning (not for repo)
 docs/
+
+# local certificates
+*.crt
+*.key
+
+# editors
+.zed/

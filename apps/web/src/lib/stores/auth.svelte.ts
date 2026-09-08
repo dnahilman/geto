@@ -1,4 +1,4 @@
-import { client } from '$lib/api/eden'
+import { client } from '$lib/api/client'
 
 class AuthState {
   authenticated = $state(false)
@@ -6,7 +6,7 @@ class AuthState {
   loading = $state(false)
 
   async check() {
-    const { data } = await client.api.auth.me.get()
+    const { data } = await client.GET('/api/auth/me')
     this.authenticated = data?.authenticated ?? false
     this.checked = true
   }
@@ -14,7 +14,7 @@ class AuthState {
   async login(password: string): Promise<boolean> {
     this.loading = true
     try {
-      const { data, error } = await client.api.auth.login.post({ password })
+      const { data, error } = await client.POST('/api/auth/login', { body: { password } })
       if (error) return false
       this.authenticated = data?.authenticated ?? false
       return this.authenticated
@@ -24,7 +24,7 @@ class AuthState {
   }
 
   async logout() {
-    await client.api.auth.logout.post()
+    await client.POST('/api/auth/logout')
     this.authenticated = false
   }
 }

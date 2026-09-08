@@ -1,20 +1,30 @@
-import { client, unwrap } from '$lib/api/eden'
+import { client, unwrap } from '$lib/api/client'
 import type {
   DatabaseInfo,
   SchemaTree,
   ColumnInfo,
   IndexInfo,
   ConstraintInfo,
+  CompletionForeignKey,
   QueryResult,
-} from '@geto/server'
+} from '$lib/types/server'
 
-export type { DatabaseInfo, SchemaTree, ColumnInfo, IndexInfo, ConstraintInfo, QueryResult }
+export type {
+  DatabaseInfo,
+  SchemaTree,
+  ColumnInfo,
+  IndexInfo,
+  ConstraintInfo,
+  CompletionForeignKey,
+  QueryResult,
+}
 
 export interface TableDetail {
   columns: ColumnInfo[]
   indexes: IndexInfo[]
   constraints: ConstraintInfo[]
   primaryKey: string[]
+  foreignKeys: CompletionForeignKey[]
 }
 
 export interface TableData {
@@ -22,20 +32,28 @@ export interface TableData {
   durationMs: number
 }
 
-const conn = (id: string) => client.api.connections({ id })
-
 export const treeKey = (id: string) => ['tree', id] as const
 export const getTree = (id: string, search?: string): Promise<SchemaTree[]> =>
-  unwrap(conn(id).tree.get(search ? { query: { search } } : undefined)) as Promise<SchemaTree[]>
+  unwrap(
+    client.GET('/api/connections/{id}/tree', {
+      params: { path: { id }, query: search ? { search } : undefined },
+    }),
+  ) as Promise<SchemaTree[]>
 
 export const databasesKey = (id: string) => ['databases', id] as const
 export const getDatabases = (id: string): Promise<DatabaseInfo[]> =>
-  unwrap(conn(id).databases.get()) as Promise<DatabaseInfo[]>
+  unwrap(client.GET('/api/connections/{id}/databases', { params: { path: { id } } })) as Promise<
+    DatabaseInfo[]
+  >
 
 export const tableDetailKey = (id: string, schema: string, table: string) =>
   ['table-detail', id, schema, table] as const
 export const getTableDetail = (id: string, schema: string, table: string): Promise<TableDetail> =>
-  unwrap(conn(id).tables({ schema })({ table }).get()) as Promise<TableDetail>
+  unwrap(
+    client.GET('/api/connections/{id}/tables/{schema}/{table}', {
+      params: { path: { id, schema, table } },
+    }),
+  ) as Promise<TableDetail>
 
 /** Optional single-column equality filter applied server-side. */
 export interface RowFilter {
@@ -66,18 +84,19 @@ export const getTableRows = (
   },
 ): Promise<TableData> =>
   unwrap(
-    conn(id)
-      .tables({ schema })({ table })
-      .rows.get({
+    client.GET('/api/connections/{id}/tables/{schema}/{table}/rows', {
+      params: {
+        path: { id, schema, table },
         query: {
           limit: opts.limit,
           offset: opts.offset,
-          ...(opts.orderBy ? { orderBy: opts.orderBy, orderDir: opts.orderDir ?? 'ASC' } : {}),
+          ...(opts.orderBy ? { order_by: opts.orderBy, order_dir: opts.orderDir ?? 'ASC' } : {}),
           ...(opts.filter
-            ? { filterColumn: opts.filter.column, filterValue: opts.filter.value }
+            ? { filter_column: opts.filter.column, filter_value: opts.filter.value }
             : {}),
         },
-      }),
+      },
+    }),
   ) as Promise<TableData>
 
 /** Fetch rows of `schema.table` where `column = value` — the relation viewer's data source. */

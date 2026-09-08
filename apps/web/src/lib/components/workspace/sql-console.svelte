@@ -16,12 +16,20 @@
   interface Props {
     connId: string
     initialSql: string
+    isActive?: boolean
     onSqlChange: (sql: string) => void
     onOpenTable?: (schema: string, table: string, filter?: TabFilter) => void
     onToggleSidebar?: () => void
   }
 
-  let { connId, initialSql, onSqlChange, onOpenTable, onToggleSidebar }: Props = $props()
+  let {
+    connId,
+    initialSql,
+    isActive = true,
+    onSqlChange,
+    onOpenTable,
+    onToggleSidebar,
+  }: Props = $props()
 
   const qc = useQueryClient()
   // svelte-ignore state_referenced_locally
@@ -45,8 +53,14 @@
   let pageSize = $state(500)
   let lastSql = $state('')
 
-  const completion = createQuery(() => consoleQueries.completion(connId))
-  const history = createQuery(() => consoleQueries.history(connId))
+  const completion = createQuery(() => ({
+    ...consoleQueries.completion(connId),
+    enabled: isActive,
+  }))
+  const history = createQuery(() => ({
+    ...consoleQueries.history(connId),
+    enabled: isActive,
+  }))
 
   let clearConfirm = $state(false)
   const clear = createMutation(() => ({

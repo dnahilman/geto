@@ -1,5 +1,6 @@
 // Types
 export * from './types.js'
+export * from './data-grid-context.js'
 
 // Hooks
 export * from './hooks/use-data-grid.js'
@@ -8,7 +9,6 @@ export * from './hooks/form-context.js'
 
 // Utils
 export * from './utils/dynamic-columns.js'
-export * from './utils/schema.js'
 export * from './utils/date-utils.js'
 export * from './utils/field-state.svelte.js'
 export * from './utils/selection-styles.js'

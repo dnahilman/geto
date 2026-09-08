@@ -1,7 +1,7 @@
 // Map Redis command output / key values into the same {columns, rows} shape the
 // SQL result-table renders — so the Redis console + key view reuse the exact same
 // result components (Table / JSON view) as Postgres.
-import type { ColumnMeta, KeyValue, CommandResult } from '@geto/server'
+import type { ColumnMeta, KeyValue, CommandResult } from '$lib/types/server'
 
 export interface RedisResult {
   columns: ColumnMeta[]

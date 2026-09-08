@@ -32,7 +32,7 @@
   import { buildRelationMap, type RelationTarget } from '$lib/relations'
   import WorkspaceSkeletons from './workspace-skeletons.svelte'
   import type { TabFilter } from '$lib/stores/workspace.svelte'
-    import type { RelationsConfig } from '../data-grid/data-grid-context'
+  import type { RelationsConfig } from '../data-grid/data-grid-context'
 
   interface Props {
     connId: string
@@ -84,7 +84,6 @@
 
   const rows = createQuery(() => currentQueryOpts)
   const detail = createQuery(() => tableQueries.detail(connId, schema, tableName))
-  const completion = createQuery(() => tableQueries.completion(connId))
 
   type RowT = unknown[]
   const cols = $derived(rows.data?.result.columns ?? [])
@@ -99,9 +98,9 @@
 
   // 2. Relations Configuration
   const relationMap = $derived(
-    completion.data
+    detail.data?.foreignKeys
       ? buildRelationMap(
-          completion.data,
+          detail.data.foreignKeys,
           schema,
           tableName,
           cols.map((c) => ({ name: c.name })),

@@ -61,19 +61,10 @@ export class Workspace {
     })
   }
 
-  /** Seed a fresh console appropriate to the provider. */
-  private seedConsole() {
-    if (this.kind === 'keyvalue') this.openRedisConsole()
-    else this.openConsole()
-  }
-
   private restore() {
     try {
       const raw = sessionStorage.getItem(this.storageKey)
-      if (!raw) {
-        this.seedConsole()
-        return
-      }
+      if (!raw) return
       const data = JSON.parse(raw) as Partial<PersistedSession>
       if (Array.isArray(data.tabs) && data.tabs.length > 0) {
         this.tabs = data.tabs
@@ -81,11 +72,9 @@ export class Workspace {
           ? (data.activeId ?? null)
           : (data.tabs[0]?.id ?? null)
         this.nextN = typeof data.nextN === 'number' ? data.nextN : 1
-      } else {
-        this.seedConsole()
       }
     } catch {
-      this.seedConsole()
+      // Ignore parse errors, start with empty tabs
     }
   }
 
@@ -195,6 +184,5 @@ export class Workspace {
     this.tabs = []
     this.activeId = null
     this.nextN = 1
-    this.seedConsole()
   }
 }

@@ -4,9 +4,7 @@ services:
       context: .
       target: routeup
     image: geto:routeup
-    ports:
-      - '443:443'
-      - '${PORT:-7020}:7020'
+    network_mode: host
     environment:
       NODE_ENV: production
       GETO_AUTH_PASSWORD: ${GETO_AUTH_PASSWORD:-dev}

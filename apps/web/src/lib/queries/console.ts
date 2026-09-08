@@ -6,6 +6,8 @@ export const consoleQueries = {
     queryOptions({
       queryKey: completionKey(connId),
       queryFn: () => getCompletion(connId),
+      staleTime: 15 * 60_000,
+      gcTime: 30 * 60_000,
     }),
   history: (connId: string) =>
     queryOptions({

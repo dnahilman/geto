@@ -1,6 +1,5 @@
 import { queryOptions, keepPreviousData } from '@tanstack/svelte-query'
 import { getTableRows, getTableDetail, type RowFilter } from '$lib/api/introspect'
-import { getCompletion } from '$lib/api/query'
 
 export const tableQueries = {
   rowsRootKey: (connId: string, schema: string, tableName: string, filter?: RowFilter | null) =>
@@ -37,13 +36,5 @@ export const tableQueries = {
       staleTime: 5 * 60_000,
       gcTime: 30 * 60_000,
       retry: false,
-    }),
-
-  completion: (connId: string) =>
-    queryOptions({
-      queryKey: ['completion', connId] as const,
-      queryFn: () => getCompletion(connId),
-      staleTime: 5 * 60_000,
-      gcTime: 30 * 60_000,
     }),
 }

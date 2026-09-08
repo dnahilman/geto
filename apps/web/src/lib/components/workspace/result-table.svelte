@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { ColumnMeta } from '@geto/server'
+  import type { ColumnMeta } from '$lib/types/server'
   import type { ResultSource } from '$lib/api/query'
   import type { TabFilter } from '$lib/stores/workspace.svelte'
   import SqlConsoleTable from './sql-console-table.svelte'

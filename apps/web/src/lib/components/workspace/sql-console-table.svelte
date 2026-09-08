@@ -8,7 +8,7 @@
     type RowSelectionState,
     type PaginationState,
   } from '@tanstack/svelte-table'
-  import type { ColumnMeta } from '@geto/server'
+  import type { ColumnMeta } from '$lib/types/server'
   import type { ResultSource } from '$lib/api/query'
   import {
     createGridForm,

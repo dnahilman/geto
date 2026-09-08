@@ -67,8 +67,8 @@ export interface DataGridContext {
 }
 
 /** What `createDataGrid` returns; consumed by the `<DataGrid>` root + toolbars. */
-export interface DataGridApi<RowT = unknown[]> {
-  table: Table<RowT>
+export interface DataGridApi<RowT = any> {
+  table: Table<any, any>
   ctx: DataGridContext
   readonly dirty: boolean
   addRow(): void

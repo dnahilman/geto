@@ -1,9 +1,7 @@
-import { client, unwrap } from '$lib/api/eden'
-import type { ScanResult, KeyValue, CommandResult, KeyEntry } from '@geto/server'
+import { client, unwrap } from '$lib/api/client'
+import type { ScanResult, KeyValue, CommandResult, KeyEntry } from '$lib/types/server'
 
 export type { ScanResult, KeyValue, CommandResult, KeyEntry }
-
-const conn = (id: string) => client.api.connections({ id })
 
 export const keysScanKey = (id: string, match: string) => ['keys', id, match] as const
 
@@ -12,11 +10,14 @@ export const scanKeys = (
   opts: { match?: string; cursor?: string; count?: number },
 ): Promise<ScanResult> =>
   unwrap(
-    conn(id).keys.get({
-      query: {
-        ...(opts.match ? { match: opts.match } : {}),
-        ...(opts.cursor ? { cursor: opts.cursor } : {}),
-        ...(opts.count ? { count: String(opts.count) } : {}),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (client as any).GET(`/api/connections/${id}/keys`, {
+      params: {
+        query: {
+          ...(opts.match ? { match: opts.match } : {}),
+          ...(opts.cursor ? { cursor: opts.cursor } : {}),
+          ...(opts.count ? { count: String(opts.count) } : {}),
+        },
       },
     }),
   ) as Promise<ScanResult>
@@ -24,10 +25,23 @@ export const scanKeys = (
 export const keyValueKey = (id: string, key: string) => ['key', id, key] as const
 
 export const getKeyValue = (id: string, key: string): Promise<KeyValue> =>
-  unwrap(conn(id).keys.value.get({ query: { key } })) as Promise<KeyValue>
+  unwrap(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (client as any).GET(`/api/connections/${id}/keys/value`, {
+      params: { query: { key } },
+    }),
+  ) as Promise<KeyValue>
 
 export const deleteKey = (id: string, key: string): Promise<{ deleted: true }> =>
-  unwrap(conn(id).keys.delete(undefined, { query: { key } })) as Promise<{ deleted: true }>
+  unwrap(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (client as any).DELETE(`/api/connections/${id}/keys`, {
+      params: { query: { key } },
+    }),
+  ) as Promise<{ deleted: true }>
 
 export const runCommand = (id: string, argv: string[]): Promise<CommandResult> =>
-  unwrap(conn(id).command.post({ argv })) as Promise<CommandResult>
+  unwrap(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (client as any).POST(`/api/connections/${id}/command`, { body: { argv } }),
+  ) as Promise<CommandResult>

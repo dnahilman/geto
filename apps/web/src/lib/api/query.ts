@@ -1,5 +1,5 @@
-import { client, unwrap } from '$lib/api/eden'
-import type { QueryResult, HistoryEntry, SafetyReport } from '@geto/server'
+import { client, unwrap } from '$lib/api/client'
+import type { QueryResult, HistoryEntry, SafetyReport } from '$lib/types/server'
 
 export type { QueryResult, HistoryEntry, SafetyReport }
 
@@ -67,8 +67,6 @@ export interface CompletionData {
   }[]
 }
 
-const conn = (id: string) => client.api.connections({ id })
-
 export const runQuery = (
   id: string,
   sql: string,
@@ -76,19 +74,39 @@ export const runQuery = (
   opts: { limit?: number; offset?: number } = {},
 ): Promise<RunResponse> =>
   unwrap(
-    conn(id).query.post({ sql, confirmDangerous, limit: opts.limit, offset: opts.offset }),
+    client.POST('/api/connections/{id}/query', {
+      params: { path: { id } },
+      body: { sql, confirmDangerous, limit: opts.limit, offset: opts.offset },
+    }),
   ) as Promise<RunResponse>
 
 export const analyzeQuery = (id: string, sql: string): Promise<SafetyReport> =>
-  unwrap(conn(id).query.analyze.post({ sql })) as Promise<SafetyReport>
+  unwrap(
+    client.POST('/api/connections/{id}/query/analyze', {
+      params: { path: { id } },
+      body: { sql },
+    }),
+  ) as Promise<SafetyReport>
 
 export const completionKey = (id: string) => ['completion', id] as const
 export const getCompletion = (id: string): Promise<CompletionData> =>
-  unwrap(conn(id).completion.get()) as Promise<CompletionData>
+  unwrap(
+    client.GET('/api/connections/{id}/completion', {
+      params: { path: { id } },
+    }),
+  ) as Promise<CompletionData>
 
 export const historyKey = (id: string) => ['history', id] as const
 export const getHistory = (id: string): Promise<HistoryEntry[]> =>
-  unwrap(conn(id).history.get()) as Promise<HistoryEntry[]>
+  unwrap(
+    client.GET('/api/connections/{id}/history', {
+      params: { path: { id } },
+    }),
+  ) as Promise<HistoryEntry[]>
 
 export const clearHistory = (id: string): Promise<{ deleted: number }> =>
-  unwrap(conn(id).history.delete()) as Promise<{ deleted: number }>
+  unwrap(
+    client.DELETE('/api/connections/{id}/history', {
+      params: { path: { id } },
+    }),
+  ) as Promise<{ deleted: number }>

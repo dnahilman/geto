@@ -67,12 +67,11 @@
     variant === 'text' && (expanded || draft.includes('\n') || draft.length > 60),
   )
 
- function formatCell(v: unknown): { text: string; muted: boolean } {
+  function formatCell(v: unknown): { text: string; muted: boolean } {
     if (v === null || v === undefined) return { text: 'NULL', muted: true }
     if (typeof v === 'object') return { text: JSON.stringify(v), muted: false }
     return { text: String(v), muted: false }
   }
-
 
   const display = $derived(formatCell(realValue))
   // JSON-ish cells (objects/arrays, or strings that parse to them) stay inline but

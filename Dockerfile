@@ -1,54 +1,58 @@
-FROM oven/bun:alpine AS base
+# ---- stage 1: build the SvelteKit SPA ----
+FROM oven/bun:alpine AS web-build
 WORKDIR /app
-
-# ---- stage 1: build the SvelteKit SPA (heavy toolchain, discarded) ----
-FROM base AS build
 COPY package.json bunfig.toml bun.lock* ./
-COPY apps/server/package.json apps/server/
 COPY apps/web/package.json apps/web/
 RUN bun install --frozen-lockfile
-COPY . .
+COPY apps/web apps/web
 RUN bun run --filter @geto/web build
 
-# ---- stage 2: server production deps only (no web toolchain, no dev deps) ----
-FROM base AS server-deps
-COPY apps/server/package.json ./
-RUN bun install --production
+# ---- stage 2: build the Rust server binary ----
+FROM rust:slim-bookworm AS server-build
+WORKDIR /app
+RUN apt-get update && apt-get install -y --no-install-recommends pkg-config && rm -rf /var/lib/apt/lists/*
+COPY apps/server/Cargo.toml apps/server/Cargo.lock* ./apps/server/
+COPY apps/server/src ./apps/server/src
+WORKDIR /app/apps/server
+RUN cargo build --release
 
-# ---- stage 3: minimal runtime ----
-FROM base AS runtime
+# ---- stage 3: minimal runtime (Google Distroless) ----
+FROM gcr.io/distroless/cc-debian12:latest AS runtime
+WORKDIR /app
+
 ENV NODE_ENV=production \
     GETO_DATA_DIR=/data \
-    GETO_WEB_DIR=../web/build \
+    GETO_WEB_DIR=/app/web \
     PORT=7020
 
-COPY --from=server-deps /app/node_modules ./apps/server/node_modules
-COPY apps/server/package.json ./apps/server/package.json
-COPY apps/server/src ./apps/server/src
-# tsconfigs carry the `$src/*` -> ./src/* path map bun needs to resolve imports.
-COPY tsconfig.base.json ./tsconfig.base.json
-COPY apps/server/tsconfig.json ./apps/server/tsconfig.json
-COPY --from=build /app/apps/web/build ./apps/web/build
-
-# Log app directory sizes during build
-RUN echo "=== App Size Breakdown ===" && du -sh ./apps/server/node_modules ./apps/web/build .
+COPY --from=server-build /app/apps/server/target/release/geto-server /usr/local/bin/geto-server
+COPY --from=web-build /app/apps/web/build /app/web
 
 VOLUME ["/data"]
 EXPOSE 7020
-CMD ["bun", "apps/server/src/index.ts"]
+ENTRYPOINT ["/usr/local/bin/geto-server"]
 
-# ---- stage 4: embedded routeup runtime (Target 2: geto:routeup) ----
-FROM runtime AS routeup
+# ---- stage 4: embedded routeup runtime (Target: routeup) ----
+FROM debian:bookworm-slim AS routeup
 
-# Install Routeup binary
-RUN apk add --no-cache curl && \
+RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates libcap2-bin tzdata sudo && \
     curl -fsSL https://get.routeup.dev | sh && \
-    apk del curl
+    apt-get purge -y curl && apt-get autoremove -y && rm -rf /var/lib/apt/lists/*
 
-# Copy root package.json for Routeup config discovery
+WORKDIR /app
+ENV NODE_ENV=production \
+    GETO_DATA_DIR=/data \
+    GETO_WEB_DIR=/app/web \
+    PORT=7020
+
 COPY package.json ./package.json
+COPY --from=server-build /app/apps/server/target/release/geto-server /usr/local/bin/geto-server
+COPY --from=web-build /app/apps/web/build /app/web
+
+RUN printf '#!/bin/sh\nif [ ! -f /root/.routeup/ca.crt ]; then\n  routeup setup --server none --token none --no-start --no-trust\nfi\nexec routeup\n' > /usr/local/bin/entrypoint-routeup.sh && \
+    chmod +x /usr/local/bin/entrypoint-routeup.sh
 
 VOLUME ["/data", "/root/.routeup"]
 EXPOSE 443 7020
-CMD ["routeup"]
+CMD ["/usr/local/bin/entrypoint-routeup.sh"]
 
