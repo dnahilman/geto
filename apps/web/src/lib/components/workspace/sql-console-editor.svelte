@@ -10,9 +10,14 @@
     running?: boolean
     completion?: CompletionEntities
     onRun: (text: string) => void
+    onSqlChange?: (text: string) => void
   }
 
-  let { sql = $bindable(), running = false, completion, onRun }: Props = $props()
+  let { sql = $bindable(), running = false, completion, onRun, onSqlChange }: Props = $props()
+
+  $effect(() => {
+    onSqlChange?.(sql)
+  })
 
   let editorRef = $state<ReturnType<typeof SqlEditor>>()
 

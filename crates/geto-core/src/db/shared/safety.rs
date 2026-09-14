@@ -129,3 +129,101 @@ pub fn inspect_select(sql: &str) -> SelectInspection {
         has_limit,
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_safe_queries() {
+        let report = analyze_sql("SELECT * FROM users WHERE id = 1;");
+        assert!(!report.dangerous);
+        assert!(report.reasons.is_empty());
+        assert_eq!(report.statements.len(), 1);
+        assert_eq!(report.statements[0].command, "SELECT");
+
+        let report = analyze_sql("EXPLAIN SELECT 1;");
+        assert!(!report.dangerous);
+        assert_eq!(report.statements[0].command, "EXPLAIN");
+    }
+
+    #[test]
+    fn test_delete_without_where_flagged_dangerous() {
+        let report = analyze_sql("DELETE FROM users;");
+        assert!(report.dangerous);
+        assert_eq!(report.reasons.len(), 1);
+        assert!(report.reasons[0].contains("DELETE without a WHERE clause"));
+    }
+
+    #[test]
+    fn test_delete_with_where_is_safe() {
+        let report = analyze_sql("DELETE FROM users WHERE id = 42;");
+        assert!(!report.dangerous);
+        assert!(report.reasons.is_empty());
+    }
+
+    #[test]
+    fn test_update_without_where_flagged_dangerous() {
+        let report = analyze_sql("UPDATE users SET is_active = false;");
+        assert!(report.dangerous);
+        assert_eq!(report.reasons.len(), 1);
+        assert!(report.reasons[0].contains("UPDATE without a WHERE clause"));
+    }
+
+    #[test]
+    fn test_update_with_where_is_safe() {
+        let report = analyze_sql("UPDATE users SET is_active = false WHERE id = 1;");
+        assert!(!report.dangerous);
+        assert!(report.reasons.is_empty());
+    }
+
+    #[test]
+    fn test_truncate_and_drop_flagged_dangerous() {
+        let report = analyze_sql("TRUNCATE TABLE session_logs;");
+        assert!(report.dangerous);
+        assert!(report.reasons[0].contains("TRUNCATE removes all rows"));
+
+        let report = analyze_sql("DROP TABLE old_records;");
+        assert!(report.dangerous);
+        assert!(report.reasons[0].contains("DROP permanently removes"));
+    }
+
+    #[test]
+    fn test_alter_table_drop_column() {
+        let report = analyze_sql("ALTER TABLE users DROP COLUMN obsolete_field;");
+        assert!(report.dangerous);
+        assert!(report.reasons[0].contains("ALTER TABLE … DROP permanently removes"));
+
+        let report_safe = analyze_sql("ALTER TABLE users ADD COLUMN new_field INT;");
+        assert!(!report_safe.dangerous);
+    }
+
+    #[test]
+    fn test_multi_statement_safety() {
+        let sql = "SELECT * FROM users; DELETE FROM audit_logs; SELECT 1;";
+        let report = analyze_sql(sql);
+        assert!(report.dangerous);
+        assert_eq!(report.statements.len(), 3);
+        assert_eq!(report.statements[1].command, "DELETE");
+        assert!(report.statements[1].dangerous);
+    }
+
+    #[test]
+    fn test_inspect_select() {
+        let res = inspect_select("SELECT * FROM items LIMIT 10;");
+        assert!(res.single_select);
+        assert!(res.has_limit);
+
+        let res = inspect_select("SELECT * FROM items;");
+        assert!(res.single_select);
+        assert!(!res.has_limit);
+
+        let res = inspect_select("INSERT INTO items (id) VALUES (1);");
+        assert!(!res.single_select);
+        assert!(!res.has_limit);
+
+        let res = inspect_select("SELECT 1; SELECT 2;");
+        assert!(!res.single_select);
+        assert!(!res.has_limit);
+    }
+}

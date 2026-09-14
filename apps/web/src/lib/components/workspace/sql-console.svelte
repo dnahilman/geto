@@ -15,16 +15,16 @@
 
   interface Props {
     connId: string
-    initialSql: string
+    sql?: string
     isActive?: boolean
-    onSqlChange: (sql: string) => void
+    onSqlChange?: (sql: string) => void
     onOpenTable?: (schema: string, table: string, filter?: TabFilter) => void
     onToggleSidebar?: () => void
   }
 
   let {
     connId,
-    initialSql,
+    sql = $bindable(''),
     isActive = true,
     onSqlChange,
     onOpenTable,
@@ -32,12 +32,6 @@
   }: Props = $props()
 
   const qc = useQueryClient()
-  // svelte-ignore state_referenced_locally
-  let sql = $state(initialSql)
-
-  $effect(() => {
-    onSqlChange(sql)
-  })
 
   let editorRef = $state<ReturnType<typeof SqlConsoleEditor>>()
 
@@ -195,50 +189,56 @@
   {/if}
 {/snippet}
 
-<Resizable.PaneGroup direction="vertical" class="h-full">
-  <!-- ── Editor pane ── -->
-  <Resizable.Pane defaultSize={50} minSize={20} class="flex flex-col">
-    <SqlConsoleEditor
-      bind:this={editorRef}
-      bind:sql
-      running={run.isPending}
-      completion={completion.data}
-      onRun={doRun}
-    />
-  </Resizable.Pane>
+<div class="flex h-full flex-col">
+  <!-- ── Main resizable area ── -->
+  <div class="min-h-0 flex-1">
+    <Resizable.PaneGroup direction="vertical" class="h-full">
+      <!-- ── Editor pane ── -->
+      <Resizable.Pane defaultSize={50} minSize={20} class="flex flex-col">
+        <SqlConsoleEditor
+          bind:this={editorRef}
+          bind:sql
+          {onSqlChange}
+          running={run.isPending}
+          completion={completion.data}
+          onRun={doRun}
+        />
+      </Resizable.Pane>
 
-  <Resizable.Handle withHandle />
+      <Resizable.Handle withHandle />
 
-  <!-- ── Result pane ── -->
-  <Resizable.Pane defaultSize={50} class="flex min-h-0 flex-col">
-    <!-- Tab strip: History + per-statement results -->
-    {@render resultTabbar()}
+      <!-- ── Result pane ── -->
+      <Resizable.Pane defaultSize={50} class="flex min-h-0 flex-col">
+        <!-- Tab strip: History + per-statement results -->
+        {@render resultTabbar()}
 
-    <!-- Content area -->
-    <div class="min-h-0 flex-1 overflow-hidden">
-      {#if active === 'history'}
-        {@render historyView()}
-      {:else}
-        {@render activeResultView()}
+        <!-- Content area -->
+        <div class="min-h-0 flex-1 overflow-hidden">
+          {#if active === 'history'}
+            {@render historyView()}
+          {:else}
+            {@render activeResultView()}
+          {/if}
+        </div>
+      </Resizable.Pane>
+    </Resizable.PaneGroup>
+  </div>
+
+  <!-- ── Fixed Bottom bar: info (left) & toggle sidebar ── -->
+  <WorkspaceBottombar {onToggleSidebar}>
+    <span
+      class={run.isPending || !activeResult || activeResult.error
+        ? 'text-muted-foreground'
+        : 'text-emerald-500'}
+    >
+      {#if run.isPending}
+        Running…
+      {:else if activeResult && !activeResult.error}
+        {activeResult.rowCount} rows · {activeResult.durationMs}ms
       {/if}
-    </div>
-
-    <!-- ── Bottom bar: info (left) & toggle sidebar ── -->
-    <WorkspaceBottombar {onToggleSidebar}>
-      <span
-        class={run.isPending || !activeResult || activeResult.error
-          ? 'text-muted-foreground'
-          : 'text-emerald-500'}
-      >
-        {#if run.isPending}
-          Running…
-        {:else if activeResult && !activeResult.error}
-          {activeResult.rowCount} rows · {activeResult.durationMs}ms
-        {/if}
-      </span>
-    </WorkspaceBottombar>
-  </Resizable.Pane>
-</Resizable.PaneGroup>
+    </span>
+  </WorkspaceBottombar>
+</div>
 
 <AlertDialog.Root open={pending !== null} onOpenChange={(o) => !o && (pending = null)}>
   <AlertDialog.Content>

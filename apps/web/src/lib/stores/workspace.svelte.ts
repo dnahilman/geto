@@ -27,54 +27,18 @@ export type Tab =
 /** Which seed console a fresh/empty workspace opens. */
 export type WorkspaceKind = 'relational' | 'keyvalue'
 
-type PersistedSession = {
-  tabs: Tab[]
-  activeId: string | null
-  nextN: number
-}
-
-/**
- * Must be instantiated inside a Svelte component's <script> block —
- * the constructor calls $effect, which requires a component reactive context.
- */
 export class Workspace {
   readonly connId: string
   tabs = $state<Tab[]>([])
   activeId = $state<string | null>(null)
-  // $state so the sessionStorage $effect in the constructor tracks counter changes.
   nextN = $state(1)
-  private readonly storageKey: string
   readonly kind: WorkspaceKind
 
   constructor(connId: string, kind: WorkspaceKind = 'relational') {
     this.connId = connId
-    this.storageKey = `geto:session:${connId}`
     this.kind = kind
-    this.restore()
-    $effect(() => {
-      const session: PersistedSession = {
-        tabs: this.tabs,
-        activeId: this.activeId,
-        nextN: this.nextN,
-      }
-      sessionStorage.setItem(this.storageKey, JSON.stringify(session))
-    })
-  }
-
-  private restore() {
-    try {
-      const raw = sessionStorage.getItem(this.storageKey)
-      if (!raw) return
-      const data = JSON.parse(raw) as Partial<PersistedSession>
-      if (Array.isArray(data.tabs) && data.tabs.length > 0) {
-        this.tabs = data.tabs
-        this.activeId = data.tabs.some((t) => t.id === data.activeId)
-          ? (data.activeId ?? null)
-          : (data.tabs[0]?.id ?? null)
-        this.nextN = typeof data.nextN === 'number' ? data.nextN : 1
-      }
-    } catch {
-      // Ignore parse errors, start with empty tabs
+    if (import.meta.env.DEV) {
+      console.debug(`[Workspace] initialized for connection "${connId}" (${kind})`)
     }
   }
 
@@ -84,6 +48,9 @@ export class Workspace {
       ? `t:${schema}.${table}|${filter.column}=${filter.value}`
       : `t:${schema}.${table}`
     if (!this.tabs.some((t) => t.id === id)) {
+      if (import.meta.env.DEV) {
+        console.debug(`[Workspace] openTable: ${schema}.${table}`)
+      }
       this.tabs.push({
         kind: 'table',
         schema,
@@ -99,6 +66,9 @@ export class Workspace {
   openConsole() {
     const n = this.nextN++
     const id = crypto.randomUUID()
+    if (import.meta.env.DEV) {
+      console.debug(`[Workspace] openConsole #${n}`)
+    }
     this.tabs.push({ kind: 'console', id, title: `Query SQL #${n}`, n, sql: 'SELECT * FROM ' })
     this.activeId = id
   }
@@ -112,6 +82,9 @@ export class Workspace {
   openRedisConsole() {
     const n = this.nextN++
     const id = crypto.randomUUID()
+    if (import.meta.env.DEV) {
+      console.debug(`[Workspace] openRedisConsole #${n}`)
+    }
     this.tabs.push({ kind: 'rconsole', id, title: `Redis #${n}`, n, cmd: '' })
     this.activeId = id
   }
@@ -120,6 +93,9 @@ export class Workspace {
   openKey(key: string) {
     const id = `k:${key}`
     if (!this.tabs.some((t) => t.id === id)) {
+      if (import.meta.env.DEV) {
+        console.debug(`[Workspace] openKey: ${key}`)
+      }
       this.tabs.push({ kind: 'rkey', id, title: key, key })
     }
     this.activeId = id
@@ -133,6 +109,9 @@ export class Workspace {
   close(id: string) {
     const idx = this.tabs.findIndex((t) => t.id === id)
     if (idx === -1) return
+    if (import.meta.env.DEV) {
+      console.debug(`[Workspace] close tab: ${id}`)
+    }
     const nextActiveId =
       this.activeId === id
         ? (this.tabs[idx + 1]?.id ?? this.tabs[idx - 1]?.id ?? null)
@@ -143,6 +122,9 @@ export class Workspace {
 
   /** Close every tab except `id` and any pinned tabs (VS Code "Close Others"). */
   closeOthers(id: string) {
+    if (import.meta.env.DEV) {
+      console.debug(`[Workspace] closeOthers except: ${id}`)
+    }
     this.tabs = this.tabs.filter((t) => t.id === id || t.pinned)
     if (!this.tabs.some((t) => t.id === this.activeId)) {
       this.activeId = this.tabs.find((t) => t.id === id)?.id ?? this.tabs[0]?.id ?? null
@@ -151,6 +133,9 @@ export class Workspace {
 
   /** Close all tabs except pinned ones (pinning protects a tab from Close All). */
   closeAll() {
+    if (import.meta.env.DEV) {
+      console.debug('[Workspace] closeAll')
+    }
     this.tabs = this.tabs.filter((t) => t.pinned)
     if (!this.tabs.some((t) => t.id === this.activeId)) {
       this.activeId = this.tabs[0]?.id ?? null
@@ -162,6 +147,9 @@ export class Workspace {
     const tab = this.tabs.find((t) => t.id === id)
     if (!tab) return
     tab.pinned = !tab.pinned
+    if (import.meta.env.DEV) {
+      console.debug(`[Workspace] togglePin: ${id} -> ${tab.pinned ? 'pinned' : 'unpinned'}`)
+    }
     // Stable partition: pinned keep their relative order, then unpinned.
     const pinned = this.tabs.filter((t) => t.pinned)
     const rest = this.tabs.filter((t) => !t.pinned)
@@ -180,9 +168,27 @@ export class Workspace {
   }
 
   reset() {
-    sessionStorage.removeItem(this.storageKey)
+    if (import.meta.env.DEV) {
+      console.debug(`[Workspace] reset connection: ${this.connId}`)
+    }
     this.tabs = []
     this.activeId = null
     this.nextN = 1
   }
+}
+
+/** Global in-memory registry of workspaces by connection ID. */
+const workspaceStores = new Map<string, Workspace>()
+
+export function getWorkspace(connId: string, kind: WorkspaceKind = 'relational'): Workspace {
+  let ws = workspaceStores.get(connId)
+  if (!ws || ws.kind !== kind) {
+    ws = new Workspace(connId, kind)
+    workspaceStores.set(connId, ws)
+  }
+  return ws
+}
+
+export function removeWorkspace(connId: string) {
+  workspaceStores.delete(connId)
 }

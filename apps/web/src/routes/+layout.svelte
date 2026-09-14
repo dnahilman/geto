@@ -2,7 +2,6 @@
   import '../app.css'
   import { onMount } from 'svelte'
   import { QueryClientProvider } from '@tanstack/svelte-query'
-  import { ModeWatcher, setMode } from 'mode-watcher'
   import { Toaster } from '$lib/components/ui/sonner'
   import { createQueryClient } from '$lib/api/query-client'
   import { auth } from '$lib/stores/auth.svelte'
@@ -14,20 +13,11 @@
   const queryClient = createQueryClient()
 
   onMount(() => {
-    try {
-      localStorage.setItem('mode-watcher-mode', 'dark')
-      setMode('dark')
-      document.documentElement.classList.add('dark')
-      document.documentElement.style.colorScheme = 'dark'
-    } catch (err) {
-      console.error('Failed to initialize dark mode:', err)
-    }
     void auth.check()
   })
 </script>
 
-<ModeWatcher defaultMode="dark" track={false} />
-<Toaster richColors closeButton theme="dark" />
+<Toaster richColors theme="dark" />
 
 <div class="flex h-screen w-screen flex-col overflow-hidden bg-background text-foreground">
   <Titlebar />

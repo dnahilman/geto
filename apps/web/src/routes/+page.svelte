@@ -25,8 +25,6 @@
     listConnections,
     deleteConnection,
     getConnectionString,
-    getProviders,
-    providersKey,
     type Connection,
   } from '$lib/api/connections'
 
@@ -36,12 +34,15 @@
     queryFn: listConnections,
   }))
 
-  const providers = createQuery(() => ({
-    queryKey: providersKey,
-    queryFn: getProviders,
-  }))
+  const PROVIDER_LABELS: Record<string, string> = {
+    postgresql: 'PostgreSQL',
+    postgres: 'PostgreSQL',
+    mysql: 'MySQL',
+    sqlite: 'SQLite',
+    redis: 'Redis',
+  }
 
-  const providerLabel = (id: string) => providers.data?.find((p) => p.id === id)?.label ?? id
+  const providerLabel = (id: string) => PROVIDER_LABELS[id.toLowerCase()] ?? id
 
   let formOpen = $state(false)
   let editing = $state<Connection | null>(null)

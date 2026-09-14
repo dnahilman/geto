@@ -366,3 +366,44 @@ pub fn marshal_pg_rows(rows: &[sqlx::postgres::PgRow], sql: &str) -> QueryResult
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_detect_command() {
+        assert_eq!(detect_command("SELECT * FROM users"), Some("SELECT".to_string()));
+        assert_eq!(detect_command("  insert into tbl values (1)"), Some("INSERT".to_string()));
+        assert_eq!(detect_command("\n\tUPDATE tbl SET a = 1"), Some("UPDATE".to_string()));
+        assert_eq!(detect_command("DELETE FROM tbl"), Some("DELETE".to_string()));
+        assert_eq!(detect_command("WITH cte AS (...) SELECT * FROM cte"), Some("WITH".to_string()));
+        assert_eq!(detect_command(""), None);
+        assert_eq!(detect_command("   "), None);
+        assert_eq!(detect_command("1234"), None);
+    }
+
+    #[test]
+    fn test_map_mysql_type() {
+        assert_eq!(map_mysql_type("TINYINT"), (1, "tinyint"));
+        assert_eq!(map_mysql_type("BOOLEAN"), (1, "tinyint"));
+        assert_eq!(map_mysql_type("SMALLINT"), (2, "smallint"));
+        assert_eq!(map_mysql_type("INT"), (3, "int"));
+        assert_eq!(map_mysql_type("INTEGER"), (3, "int"));
+        assert_eq!(map_mysql_type("FLOAT"), (4, "float"));
+        assert_eq!(map_mysql_type("DOUBLE"), (5, "double"));
+        assert_eq!(map_mysql_type("TIMESTAMP"), (7, "timestamp"));
+        assert_eq!(map_mysql_type("BIGINT"), (8, "bigint"));
+        assert_eq!(map_mysql_type("DATE"), (10, "date"));
+        assert_eq!(map_mysql_type("TIME"), (11, "time"));
+        assert_eq!(map_mysql_type("DATETIME"), (12, "datetime"));
+        assert_eq!(map_mysql_type("YEAR"), (13, "year"));
+        assert_eq!(map_mysql_type("VARCHAR"), (253, "var_string"));
+        assert_eq!(map_mysql_type("CHAR"), (253, "var_string"));
+        assert_eq!(map_mysql_type("JSON"), (245, "json"));
+        assert_eq!(map_mysql_type("DECIMAL"), (246, "newdecimal"));
+        assert_eq!(map_mysql_type("ENUM"), (247, "enum"));
+        assert_eq!(map_mysql_type("UNKNOWN_TYPE"), (253, "var_string"));
+    }
+}
+
+

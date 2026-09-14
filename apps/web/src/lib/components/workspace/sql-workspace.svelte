@@ -12,7 +12,7 @@
   import RoleManager from '$lib/components/workspace/role-manager.svelte'
   import WorkspaceTabbar from '$lib/components/workspace/workspace-tabbar.svelte'
   import WorkspaceBottombar from '$lib/components/workspace/workspace-bottombar.svelte'
-  import { Workspace } from '$lib/stores/workspace.svelte'
+  import { getWorkspace } from '$lib/stores/workspace.svelte'
   import { getConnectionString, type Connection } from '$lib/api/connections'
   import { copyText } from '$lib/clipboard'
 
@@ -24,7 +24,7 @@
   let { connId, conn }: Props = $props()
 
   // svelte-ignore state_referenced_locally
-  const ws = new Workspace(connId, 'relational')
+  const ws = getWorkspace(connId, 'relational')
 
   $effect(() => {
     function onKeydown(e: KeyboardEvent) {
@@ -177,9 +177,8 @@
             {:else if tab.kind === 'console'}
               <SQLConsole
                 {connId}
-                initialSql={tab.sql}
+                bind:sql={tab.sql}
                 isActive={ws.activeId === tab.id}
-                onSqlChange={(s) => ws.updateSql(tab.id, s)}
                 onOpenTable={(s, t, f) => ws.openTable(s, t, f)}
                 onToggleSidebar={() => (sidebarOpen = !sidebarOpen)}
               />

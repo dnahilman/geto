@@ -5,11 +5,11 @@
     SquareTerminal,
     X,
     Pin,
-    PinOff,
     Braces,
     Layers,
     ChevronDown,
   } from 'lucide-svelte'
+  import * as Tabs from '$lib/components/ui/tabs'
   import * as ContextMenu from '$lib/components/ui/context-menu'
   import * as DropdownMenu from '$lib/components/ui/dropdown-menu'
   import type { Workspace, Tab, TableViewMode } from '$lib/stores/workspace.svelte'
@@ -38,75 +38,82 @@
   }
 </script>
 
-<div class="relative flex h-9 items-center justify-between border-b bg-background">
-  <!-- Horizontal scrollable tabs -->
-  <div class="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto px-1">
-    {#each ws.tabs as tab (tab.id)}
-      {@const Icon = icon(tab.kind)}
-      <ContextMenu.Root>
-        <ContextMenu.Trigger>
-          {#snippet child({ props })}
-            <div
-              {...props}
-              class="group flex items-center gap-1 border-b-2 px-2 py-1.5 text-xs shrink-0
-                {ws.activeId === tab.id ? 'border-primary' : 'hover:bg-accent border-transparent'}"
-              ondblclick={() => ws.togglePin(tab.id)}
-            >
-              <button class="flex items-center gap-1.5" onclick={() => (ws.activeId = tab.id)}>
+{#snippet tabbar()}
+  <!-- Horizontal scrollable tabs using ui/tabs -->
+  <Tabs.Root
+    value={ws.activeId ?? undefined}
+    onValueChange={(val) => {
+      if (val) ws.activeId = val
+    }}
+    class="min-w-0 flex-1 h-full"
+  >
+    <Tabs.List
+      variant="line"
+      class="flex h-full items-center justify-start gap-1 overflow-x-auto overflow-y-hidden bg-transparent p-0 px-1 border-0"
+    >
+      {#each ws.tabs as tab (tab.id)}
+        {@const Icon = icon(tab.kind)}
+        <ContextMenu.Root>
+          <ContextMenu.Trigger>
+            {#snippet child({ props })}
+              <Tabs.Trigger
+                {...props}
+                value={tab.id}
+                class="group relative flex h-full items-center gap-1.5 rounded-none border-t-0 border-x-0 border-b-2 border-transparent px-0 py-1 text-xs shrink-0 after:hidden ring-0 outline-none shadow-none focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 focus-visible:border-transparent data-[state=active]:border-b-primary data-[state=active]:border-t-transparent data-[state=active]:border-x-transparent data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none dark:data-active:border-transparent dark:data-active:border-b-primary dark:data-[state=active]:border-transparent dark:data-[state=active]:border-b-primary hover:text-foreground text-muted-foreground transition-colors cursor-pointer"
+                ondblclick={() => ws.togglePin(tab.id)}
+              >
                 <Icon class="size-3.5 shrink-0" />
                 <span class={tab.pinned ? 'italic' : ''}>{tab.title}</span>
-              </button>
-              {#if tab.pinned}
-                <button
-                  class="hover:bg-muted rounded p-0.5"
-                  title="Unpin"
-                  onclick={() => ws.togglePin(tab.id)}
-                >
-                  <Pin class="size-3 fill-current" />
-                </button>
-              {:else}
-                <button
-                  type="button"
-                  class="hover:bg-muted rounded p-0.5 opacity-50 group-hover:opacity-100"
-                  title="Close"
-                  onpointerdown={(e) => e.stopPropagation()}
-                  onmousedown={(e) => e.stopPropagation()}
-                  onpointerup={(e) => e.stopPropagation()}
-                  onmouseup={(e) => e.stopPropagation()}
-                  onclick={(e) => {
-                    e.stopPropagation()
-                    ws.close(tab.id)
-                  }}
-                >
-                  <X class="size-3" />
-                </button>
-              {/if}
-            </div>
-          {/snippet}
-        </ContextMenu.Trigger>
-        <ContextMenu.Content class="w-44">
-          <ContextMenu.Item onSelect={() => ws.close(tab.id)}>
-            <X class="size-4" /> Close
-          </ContextMenu.Item>
-          <ContextMenu.Item onSelect={() => ws.closeOthers(tab.id)}>Close Others</ContextMenu.Item>
-          <ContextMenu.Item onSelect={() => ws.closeAll()}>Close All</ContextMenu.Item>
-          <ContextMenu.Separator />
-          <ContextMenu.Item onSelect={() => ws.togglePin(tab.id)}>
-            {#if tab.pinned}
-              <PinOff class="size-4" /> Unpin
-            {:else}
-              <Pin class="size-4" /> Pin
-            {/if}
-          </ContextMenu.Item>
-        </ContextMenu.Content>
-      </ContextMenu.Root>
-    {/each}
-  </div>
+                {#if tab.pinned}
+                  <button
+                    type="button"
+                    class="hover:bg-muted rounded p-0.5"
+                    title="Unpin"
+                    onclick={(e) => {
+                      e.stopPropagation()
+                      ws.togglePin(tab.id)
+                    }}
+                  >
+                    <Pin class="size-3 fill-current" />
+                  </button>
+                {:else}
+                  <button
+                    type="button"
+                    class="hover:bg-muted rounded p-0.5 opacity-50 group-hover:opacity-100"
+                    title="Close"
+                    onpointerdown={(e) => e.stopPropagation()}
+                    onmousedown={(e) => e.stopPropagation()}
+                    onpointerup={(e) => e.stopPropagation()}
+                    onmouseup={(e) => e.stopPropagation()}
+                    onclick={(e) => {
+                      e.stopPropagation()
+                      ws.close(tab.id)
+                    }}
+                  >
+                    <X class="size-3" />
+                  </button>
+                {/if}
+              </Tabs.Trigger>
+            {/snippet}
+          </ContextMenu.Trigger>
+          <ContextMenu.Content class="w-44">
+            <ContextMenu.Item onSelect={() => ws.close(tab.id)}>Close</ContextMenu.Item>
+            <ContextMenu.Item onSelect={() => ws.closeOthers(tab.id)}>Close Others</ContextMenu.Item>
+            <ContextMenu.Item onSelect={() => ws.closeAll()}>Close All</ContextMenu.Item>
+            <ContextMenu.Separator />
+            <ContextMenu.Item onSelect={() => ws.togglePin(tab.id)}>
+              {tab.pinned ? 'Unpin' : 'Pin'}
+            </ContextMenu.Item>
+          </ContextMenu.Content>
+        </ContextMenu.Root>
+      {/each}
+    </Tabs.List>
+  </Tabs.Root>
+{/snippet}
 
-  <!-- Sticky Toolbar at the end -->
-  <div
-    class="sticky right-0 z-10 flex shrink-0 items-center gap-1 border-l border-b bg-background px-2 py-1 text-xs"
-  >
+{#snippet tabbarAction()}
+  <!-- Action Toolbar at the end -->
+  <div class="flex h-full shrink-0 items-center gap-1 border-l bg-background px-2 text-xs">
     {#if activeTableTab}
       {@const ActiveIcon = currentOption.icon}
       <DropdownMenu.Root>
@@ -155,4 +162,9 @@
       <SquareTerminal class="size-3.5" />
     </Button>
   </div>
+{/snippet}
+
+<div class="relative flex h-9 items-center justify-between border-b bg-background">
+  {@render tabbar()}
+  {@render tabbarAction()}
 </div>

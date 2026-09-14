@@ -9,7 +9,7 @@
   import RedisConsole from '$lib/components/workspace/redis-console.svelte'
   import RedisKeyView from '$lib/components/workspace/redis-key-view.svelte'
   import WorkspaceTabbar from '$lib/components/workspace/workspace-tabbar.svelte'
-  import { Workspace } from '$lib/stores/workspace.svelte'
+  import { getWorkspace } from '$lib/stores/workspace.svelte'
   import { getConnectionString, type Connection } from '$lib/api/connections'
   import { copyText } from '$lib/clipboard'
 
@@ -21,7 +21,11 @@
   let { connId, conn }: Props = $props()
 
   // svelte-ignore state_referenced_locally
-  const ws = new Workspace(connId, 'keyvalue')
+  const ws = getWorkspace(connId, 'keyvalue')
+
+  // Svelte 5 $inspect rune: automatically stripped in production builds
+  $inspect('[Workspace:Redis]', ws.activeId, ws.tabs)
+
   const readonly = $derived(conn?.readonly ?? false)
 
   $effect(() => {

@@ -13,7 +13,7 @@
   import * as Table from '$lib/components/ui/table/index.js'
   import * as AlertDialog from '$lib/components/ui/alert-dialog'
   import { toast } from 'svelte-sonner'
-  import { Trash2, Loader } from 'lucide-svelte'
+  import { Trash2, Loader, Database } from 'lucide-svelte'
   import { Button } from '$lib/components/ui/button'
   import WorkspaceBottombar from './workspace-bottombar.svelte'
   import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-query'
@@ -487,11 +487,13 @@
   <form.AppForm>
     <div class="flex h-full flex-col">
       <!-- Sub-Header DataGrid Toolbar -->
-      <table.Toolbar
-        onRefresh={refresh}
-        onDeleteSelected={handleDeleteSelected}
-        isDeleting={deleteMutation.isPending}
-      />
+      {#if tableRows.length > 0}
+        <table.Toolbar
+          onRefresh={refresh}
+          onDeleteSelected={handleDeleteSelected}
+          isDeleting={deleteMutation.isPending}
+        />
+      {/if}
 
       <!-- Main View Area -->
       <div class="min-h-0 flex-1 overflow-hidden">
@@ -583,6 +585,22 @@
           <div class="h-full w-full overflow-hidden">
             <WorkspaceSkeletons type="table" cols={6} rows={14} />
           </div>
+        {:else if tableRows.length === 0}
+          <div class="flex h-full w-full items-center justify-center">
+            <div
+              class="flex flex-col items-center justify-center gap-2 rounded-xl border bg-background/90 px-8 py-6 text-center shadow-md backdrop-blur-xs"
+            >
+              <div class="rounded-full bg-muted p-2.5">
+                <Database class="size-5 text-muted-foreground" />
+              </div>
+              <div class="space-y-1">
+                <p class="text-sm font-medium text-foreground">No records found</p>
+                <p class="text-xs text-muted-foreground">
+                  {filter ? 'No records match the active filter' : 'This table is currently empty'}
+                </p>
+              </div>
+            </div>
+          </div>
         {:else}
           <!-- TanStack Table v9 Data Grid -->
           <Table.Root
@@ -613,46 +631,31 @@
               {/each}
             </Table.Header>
             <Table.Body class="bg-background">
-              {#if tableRows.length === 0}
-                <Table.Row>
-                  <Table.Cell
-                    colspan={columns.length}
-                    class="h-24 text-center text-muted-foreground"
-                  >
-                    No results found
-                  </Table.Cell>
+              {#each tableRows as row (row.id)}
+                <Table.Row
+                  class="group transition-colors {row.getIsSelected()
+                    ? 'bg-primary/10 hover:bg-primary/15'
+                    : 'hover:bg-muted/40'}"
+                >
+                  {#each row.getAllCells() as c (c.id)}
+                    <table.AppCell cell={c}>
+                      {#snippet children(cell)}
+                        <Table.Cell
+                          style="width: {cell.column.getSize()}px;"
+                          class="relative h-8 border-r border-b p-0 align-middle last:border-r-0 {getCellClassName(
+                            cell,
+                          )}"
+                          tabindex={cell.getTabIndex()}
+                          onmousedown={cell.getSelectionStartHandler()}
+                          onmouseenter={cell.getSelectionExtendHandler()}
+                        >
+                          <cell.FlexRender {cell} />
+                        </Table.Cell>
+                      {/snippet}
+                    </table.AppCell>
+                  {/each}
                 </Table.Row>
-              {:else}
-                {#each tableRows as row (row.id)}
-                  <Table.Row
-                    class="group transition-colors {row.getIsSelected()
-                      ? 'bg-primary/10 hover:bg-primary/15'
-                      : 'hover:bg-muted/40'}"
-                  >
-                    {#each row.getAllCells() as c (c.id)}
-                      <table.AppCell cell={c}>
-                        {#snippet children(cell)}
-                          <Table.Cell
-                            style="width: {cell.column.getSize()}px;"
-                            class="relative h-8 border-r border-b p-0 align-middle last:border-r-0 {getCellClassName(
-                              cell,
-                            )}"
-                            tabindex={cell.getTabIndex()}
-                            onmousedown={cell.column.id !== 'select'
-                              ? cell.getSelectionStartHandler()
-                              : undefined}
-                            onmouseenter={cell.column.id !== 'select'
-                              ? cell.getSelectionExtendHandler()
-                              : undefined}
-                          >
-                            <cell.FlexRender {cell} />
-                          </Table.Cell>
-                        {/snippet}
-                      </table.AppCell>
-                    {/each}
-                  </Table.Row>
-                {/each}
-              {/if}
+              {/each}
             </Table.Body>
           </Table.Root>
         {/if}

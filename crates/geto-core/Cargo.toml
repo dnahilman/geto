@@ -30,3 +30,7 @@ indexmap = { version = "2", features = ["serde"] }
 tracing = "0.1"
 dotenvy = "0.15"
 axum = { version = "0.8", optional = true }
+
+[dev-dependencies]
+tempfile = "3"
+
