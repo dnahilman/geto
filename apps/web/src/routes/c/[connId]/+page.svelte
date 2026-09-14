@@ -20,7 +20,7 @@
 
 {#key connId}
   {#if connections.isLoading}
-    <div class="flex h-screen flex-col bg-background">
+    <div class="flex h-full flex-col bg-background">
       <Resizable.PaneGroup direction="horizontal" class="min-h-0 flex-1">
         <Resizable.Pane
           order={1}

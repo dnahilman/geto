@@ -4,6 +4,7 @@ use sqlx::SqlitePool;
 use crate::config::Config;
 use crate::crypto::SecretCipher;
 use crate::db::DriverRegistry;
+use geto_core::state::CoreState;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -12,19 +13,29 @@ pub struct AppState {
     pub sqlite_pool: SqlitePool,
     pub session_token: String,
     pub registry: Arc<DriverRegistry>,
+    pub core: CoreState,
 }
 
 impl AppState {
     pub fn new(config: Config, sqlite_pool: SqlitePool) -> Self {
-        let cipher = SecretCipher::new(&config.master_key);
+        let core = CoreState::new(sqlite_pool.clone(), &config.master_key);
         let session_token = crate::auth::generate_session_token(&config.master_key);
-        let registry = Arc::new(DriverRegistry::new());
         Self {
             config,
-            cipher,
+            cipher: core.cipher.clone(),
             sqlite_pool,
             session_token,
-            registry,
+            registry: core.registry.clone(),
+            core,
         }
+    }
+}
+
+impl geto_core::db::ConnectionSecretsProvider for AppState {
+    fn sqlite_pool(&self) -> &SqlitePool {
+        &self.sqlite_pool
+    }
+    fn cipher(&self) -> &SecretCipher {
+        &self.cipher
     }
 }

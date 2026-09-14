@@ -1,12 +1,14 @@
 pub mod auth;
 pub mod config;
-pub mod crypto;
-pub mod db;
-pub mod error;
 pub mod openapi;
 pub mod routes;
 pub mod state;
-pub mod store;
+
+pub use geto_core::crypto;
+pub use geto_core::db;
+pub use geto_core::error;
+pub use geto_core::services;
+pub use geto_core::store;
 
 use std::sync::Arc;
 use axum::{http::StatusCode, response::Json, Router};

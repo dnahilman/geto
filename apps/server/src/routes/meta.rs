@@ -5,19 +5,13 @@ use axum::{
     routing::get,
     Router,
 };
-use serde::Deserialize;
 
-use crate::db::types::{
+pub use geto_core::services::meta::TreeQuery;
+use geto_core::db::types::{
     CompletionResponse, DatabaseInfo, SchemaTree, TableDetailResponse,
 };
 use crate::error::AppError;
 use crate::state::AppState;
-
-#[derive(Deserialize, utoipa::IntoParams)]
-#[into_params(parameter_in = Query)]
-pub struct TreeQuery {
-    pub search: Option<String>,
-}
 
 pub fn router() -> Router<Arc<AppState>> {
     Router::new()
@@ -46,8 +40,7 @@ pub async fn list_databases_handler(
     State(state): State<Arc<AppState>>,
     Path(id): Path<String>,
 ) -> Result<Json<Vec<DatabaseInfo>>, AppError> {
-    let driver = state.registry.get_driver(&state, &id).await?;
-    let databases = driver.list_databases().await?;
+    let databases = geto_core::services::meta::list_databases(&state.registry, &state.core, &id).await?;
     Ok(Json(databases))
 }
 
@@ -66,8 +59,7 @@ pub async fn list_schemas_handler(
     State(state): State<Arc<AppState>>,
     Path(id): Path<String>,
 ) -> Result<Json<Vec<String>>, AppError> {
-    let driver = state.registry.get_driver(&state, &id).await?;
-    let schemas = driver.list_schemas().await?;
+    let schemas = geto_core::services::meta::list_schemas(&state.registry, &state.core, &id).await?;
     Ok(Json(schemas))
 }
 
@@ -88,8 +80,7 @@ pub async fn get_tree_handler(
     Path(id): Path<String>,
     Query(q): Query<TreeQuery>,
 ) -> Result<Json<Vec<SchemaTree>>, AppError> {
-    let driver = state.registry.get_driver(&state, &id).await?;
-    let tree = driver.get_tree(q.search.as_deref()).await?;
+    let tree = geto_core::services::meta::get_tree(&state.registry, &state.core, &id, q.search.as_deref()).await?;
     Ok(Json(tree))
 }
 
@@ -110,8 +101,7 @@ pub async fn get_table_detail_handler(
     State(state): State<Arc<AppState>>,
     Path((id, schema, table)): Path<(String, String, String)>,
 ) -> Result<Json<TableDetailResponse>, AppError> {
-    let driver = state.registry.get_driver(&state, &id).await?;
-    let detail = driver.get_table_detail(Some(&schema), &table).await?;
+    let detail = geto_core::services::meta::get_table_detail(&state.registry, &state.core, &id, &schema, &table).await?;
     Ok(Json(detail))
 }
 
@@ -130,7 +120,6 @@ pub async fn get_completion_handler(
     State(state): State<Arc<AppState>>,
     Path(id): Path<String>,
 ) -> Result<Json<CompletionResponse>, AppError> {
-    let driver = state.registry.get_driver(&state, &id).await?;
-    let completion = driver.get_completion().await?;
+    let completion = geto_core::services::meta::get_completion(&state.registry, &state.core, &id).await?;
     Ok(Json(completion))
 }

@@ -4,35 +4,20 @@
   "private": true,
   "type": "module",
   "workspaces": [
-    "apps/web"
+    "apps/web",
+    "apps/desktop"
   ],
   "scripts": {
-    "dev": "cargo run --manifest-path apps/server/Cargo.toml",
-    "dev:all": "bun run --filter @geto/web dev & cargo run --manifest-path apps/server/Cargo.toml",
-    "dev:server": "cargo run --manifest-path apps/server/Cargo.toml",
-    "dev:web": "bun run --filter @geto/web dev",
-    "codegen:openapi": "cargo run --manifest-path apps/server/Cargo.toml -- export-openapi > openapi.json && bunx openapi-typescript openapi.json -o apps/web/src/lib/types/api.d.ts",
-    "build:web": "bun run --filter @geto/web build",
-    "build:server": "cargo build --release --manifest-path apps/server/Cargo.toml",
-    "build": "bun run build:web && bun run build:server",
+    "dev": "bun run dev:desktop",
+    "dev:desktop": "bun run --filter @geto/desktop dev",
+    "dev:web": "bun run --filter @geto/web dev & cargo run --manifest-path apps/server/Cargo.toml",
+    "build:desktop": "bun run --filter @geto/desktop build",
+    "build": "bun run --filter @geto/web build && cargo build --release --manifest-path apps/server/Cargo.toml",
     "start": "./apps/server/target/release/geto-server",
-    "routeup": "routeup",
-    "docker:build": "podman build --target runtime -t geto:latest . && podman images geto:latest --format '📦 Image: {{.Repository}}:{{.Tag}} | Size: {{.Size}}'",
-    "docker:build:routeup": "podman build --target routeup -t geto:routeup . && podman images geto:routeup --format '📦 Image: {{.Repository}}:{{.Tag}} | Size: {{.Size}}'",
-    "docker:size": "podman images geto --format 'table {{.Repository}}\t{{.Tag}}\t{{.Size}}\t{{.Created}}'",
-    "docker:history": "podman history geto:latest --format 'table {{.Size}}\t{{.CreatedBy}}'",
-    "docker:export-ca": "podman cp $(podman-compose -f docker-compose.routeup.yaml ps -q geto):/root/.routeup/ca.crt ./geto-ca.crt && echo '✅ ca.crt exported to ./geto-ca.crt'",
-    "compose:dev": "podman-compose -f docker-compose.dev.yml up --build",
-    "compose:routeup": "podman-compose -f docker-compose.routeup.yaml up --build -d",
+    "docker:build": "podman build -t geto:latest .",
+    "codegen": "cargo run --manifest-path apps/server/Cargo.toml -- export-openapi > openapi.json && bunx openapi-typescript openapi.json -o apps/web/src/lib/types/api.d.ts",
     "format": "prettier --write \"apps/**/*.{ts,svelte,js,json,css}\"",
-    "format:check": "prettier --check .",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
-  },
-  "routeup": {
-    "name": "geto",
-    "port": 7020,
-    "script": "start"
+    "lint": "eslint ."
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

@@ -13,9 +13,17 @@ use geto_server::store::db::init_db;
 
 #[tokio::test]
 async fn test_static_spa_serving_and_api_fallback() {
-    let sqlite_path = PathBuf::from("../server/data");
+    let sqlite_path = [
+        PathBuf::from("./data"),
+        PathBuf::from("../../data"),
+        PathBuf::from("../server/data"),
+        PathBuf::from("./apps/server/data"),
+    ]
+    .into_iter()
+    .find(|p| p.join("geto.sqlite").exists())
+    .unwrap_or_else(|| PathBuf::from("./data"));
     if !sqlite_path.join("geto.sqlite").exists() {
-        eprintln!("geto.sqlite not found at ../server/data, skipping test");
+        eprintln!("geto.sqlite not found, skipping test");
         return;
     }
 

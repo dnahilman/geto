@@ -1,4 +1,5 @@
 import { client, unwrap } from '$lib/api/client'
+import { execute } from '$lib/api/transport'
 import type {
   DatabaseInfo,
   SchemaTree,
@@ -34,26 +35,32 @@ export interface TableData {
 
 export const treeKey = (id: string) => ['tree', id] as const
 export const getTree = (id: string, search?: string): Promise<SchemaTree[]> =>
-  unwrap(
-    client.GET('/api/connections/{id}/tree', {
-      params: { path: { id }, query: search ? { search } : undefined },
-    }),
-  ) as Promise<SchemaTree[]>
+  execute('get_schema_tree', { connectionId: id, search: search ?? null }, () =>
+    unwrap(
+      client.GET('/api/connections/{id}/tree', {
+        params: { path: { id }, query: search ? { search } : undefined },
+      }),
+    ) as Promise<SchemaTree[]>,
+  )
 
 export const databasesKey = (id: string) => ['databases', id] as const
 export const getDatabases = (id: string): Promise<DatabaseInfo[]> =>
-  unwrap(client.GET('/api/connections/{id}/databases', { params: { path: { id } } })) as Promise<
-    DatabaseInfo[]
-  >
+  execute('list_databases', { connectionId: id }, () =>
+    unwrap(client.GET('/api/connections/{id}/databases', { params: { path: { id } } })) as Promise<
+      DatabaseInfo[]
+    >,
+  )
 
 export const tableDetailKey = (id: string, schema: string, table: string) =>
   ['table-detail', id, schema, table] as const
 export const getTableDetail = (id: string, schema: string, table: string): Promise<TableDetail> =>
-  unwrap(
-    client.GET('/api/connections/{id}/tables/{schema}/{table}', {
-      params: { path: { id, schema, table } },
-    }),
-  ) as Promise<TableDetail>
+  execute('get_table_detail', { connectionId: id, schema, table }, () =>
+    unwrap(
+      client.GET('/api/connections/{id}/tables/{schema}/{table}', {
+        params: { path: { id, schema, table } },
+      }),
+    ) as Promise<TableDetail>,
+  )
 
 /** Optional single-column equality filter applied server-side. */
 export interface RowFilter {
@@ -83,21 +90,38 @@ export const getTableRows = (
     filter?: RowFilter
   },
 ): Promise<TableData> =>
-  unwrap(
-    client.GET('/api/connections/{id}/tables/{schema}/{table}/rows', {
+  execute(
+    'get_table_rows',
+    {
+      connectionId: id,
+      schema,
+      table,
       params: {
-        path: { id, schema, table },
-        query: {
-          limit: opts.limit,
-          offset: opts.offset,
-          ...(opts.orderBy ? { order_by: opts.orderBy, order_dir: opts.orderDir ?? 'ASC' } : {}),
-          ...(opts.filter
-            ? { filter_column: opts.filter.column, filter_value: opts.filter.value }
-            : {}),
-        },
+        limit: opts.limit,
+        offset: opts.offset,
+        orderBy: opts.orderBy ?? null,
+        orderDir: opts.orderDir ?? 'ASC',
+        filterColumn: opts.filter?.column ?? null,
+        filterValue: opts.filter?.value ?? null,
       },
-    }),
-  ) as Promise<TableData>
+    },
+    () =>
+      unwrap(
+        client.GET('/api/connections/{id}/tables/{schema}/{table}/rows', {
+          params: {
+            path: { id, schema, table },
+            query: {
+              limit: opts.limit,
+              offset: opts.offset,
+              ...(opts.orderBy ? { order_by: opts.orderBy, order_dir: opts.orderDir ?? 'ASC' } : {}),
+              ...(opts.filter
+                ? { filter_column: opts.filter.column, filter_value: opts.filter.value }
+                : {}),
+            },
+          },
+        }),
+      ) as Promise<TableData>,
+  )
 
 /** Fetch rows of `schema.table` where `column = value` — the relation viewer's data source. */
 export const getRelatedRows = (

@@ -5,9 +5,9 @@ import { vitePreprocess } from '@sveltejs/vite-plugin-svelte'
 const config = {
   preprocess: vitePreprocess(),
   kit: {
-    // Pure SPA: emit a single fallback shell; Rust server serves it for every route.
+    // Pure SPA: emit a single fallback shell; Rust server and Tauri serve index.html for routes.
     adapter: adapter({
-      fallback: '200.html',
+      fallback: 'index.html',
       precompress: false,
       strict: false,
     }),

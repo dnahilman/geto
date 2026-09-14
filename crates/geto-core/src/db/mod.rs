@@ -5,4 +5,4 @@ pub mod shared;
 pub mod types;
 
 pub use driver::{Capabilities, DbDriver};
-pub use registry::DriverRegistry;
+pub use registry::{ConnectionSecretsProvider, DriverRegistry};

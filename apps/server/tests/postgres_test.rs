@@ -15,9 +15,17 @@ use geto_server::store::db::init_db;
 const POSTGRES_CONN_ID: &str = "e1ae546c-b34b-4bec-aad4-8ac7dae85efb";
 
 async fn setup_test_state() -> Option<Arc<AppState>> {
-    let sqlite_path = PathBuf::from("../server/data");
+    let sqlite_path = [
+        PathBuf::from("./data"),
+        PathBuf::from("../../data"),
+        PathBuf::from("../server/data"),
+        PathBuf::from("./apps/server/data"),
+    ]
+    .into_iter()
+    .find(|p| p.join("geto.sqlite").exists())
+    .unwrap_or_else(|| PathBuf::from("./data"));
     if !sqlite_path.join("geto.sqlite").exists() {
-        eprintln!("geto.sqlite not found at ../server/data, skipping postgres test");
+        eprintln!("geto.sqlite not found, skipping postgres test");
         return None;
     }
 

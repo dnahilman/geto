@@ -23,7 +23,7 @@
       .map((col) => col.id),
   )
 
-  function exportData(format: 'csv' | 'json' | 'md') {
+  async function exportData(format: 'csv' | 'json' | 'md') {
     if (activeRows.length === 0) {
       toast.warning('No data to export')
       return
@@ -51,8 +51,10 @@
       mime = 'text/markdown'
     }
 
-    downloadFile(filename, mime, content)
-    toast.success(`Exported ${activeRows.length} row(s) to ${format.toUpperCase()}`)
+    const saved = await downloadFile(filename, mime, content)
+    if (saved) {
+      toast.success(`Exported ${activeRows.length} row(s) to ${format.toUpperCase()}`)
+    }
   }
 </script>
 

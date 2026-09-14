@@ -4,6 +4,7 @@ version = "0.4.0"
 edition = "2021"
 
 [dependencies]
+geto-core = { path = "../../crates/geto-core", features = ["axum"] }
 axum = "0.8"
 tokio = { version = "1", features = ["full"] }
 sqlx = { version = "0.8", features = ["runtime-tokio", "sqlite", "mysql", "postgres", "tls-rustls", "chrono", "uuid", "json", "rust_decimal"] }
@@ -13,12 +14,6 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 chrono = { version = "0.4", features = ["serde"] }
 rust_decimal = "1"
-aes-gcm = "0.10"
-sha2 = "0.10"
-hmac = "0.12"
-base64 = "0.22"
-rand = "0.8"
-subtle = "2.6"
 tower = "0.5"
 tower-http = { version = "0.6", features = ["cors", "trace", "fs"] }
 tracing = "0.1"
@@ -26,13 +21,12 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 dotenvy = "0.15"
 thiserror = "2.0"
 uuid = { version = "1", features = ["v4", "serde"] }
-regex = "1"
+hmac = "0.12"
+sha2 = "0.10"
+subtle = "2.6"
 hex = "0.4"
-async-trait = "0.1"
-indexmap = { version = "2", features = ["serde"] }
 
 [dev-dependencies]
 reqwest = { version = "0.12", features = ["json", "cookies"] }
 http-body-util = "0.1"
 tower = { version = "0.5", features = ["util"] }
-

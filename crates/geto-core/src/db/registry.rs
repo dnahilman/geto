@@ -3,12 +3,54 @@ use std::sync::Arc;
 use std::time::Instant;
 use tokio::sync::RwLock;
 
+use crate::crypto::SecretCipher;
 use crate::db::driver::DbDriver;
 use crate::db::drivers::mysql::MySqlDriver;
 use crate::db::drivers::postgres::PostgresDriver;
 use crate::error::AppError;
-use crate::state::AppState;
+use crate::state::CoreState;
 use crate::store::connections::get_connection_secret;
+
+pub trait ConnectionSecretsProvider {
+    fn sqlite_pool(&self) -> &sqlx::SqlitePool;
+    fn cipher(&self) -> &SecretCipher;
+}
+
+impl<T: ConnectionSecretsProvider + ?Sized> ConnectionSecretsProvider for Arc<T> {
+    fn sqlite_pool(&self) -> &sqlx::SqlitePool {
+        (**self).sqlite_pool()
+    }
+    fn cipher(&self) -> &SecretCipher {
+        (**self).cipher()
+    }
+}
+
+impl<T: ConnectionSecretsProvider + ?Sized> ConnectionSecretsProvider for &T {
+    fn sqlite_pool(&self) -> &sqlx::SqlitePool {
+        (**self).sqlite_pool()
+    }
+    fn cipher(&self) -> &SecretCipher {
+        (**self).cipher()
+    }
+}
+
+impl ConnectionSecretsProvider for CoreState {
+    fn sqlite_pool(&self) -> &sqlx::SqlitePool {
+        &self.sqlite_pool
+    }
+    fn cipher(&self) -> &SecretCipher {
+        &self.cipher
+    }
+}
+
+impl ConnectionSecretsProvider for (&sqlx::SqlitePool, &SecretCipher) {
+    fn sqlite_pool(&self) -> &sqlx::SqlitePool {
+        self.0
+    }
+    fn cipher(&self) -> &SecretCipher {
+        self.1
+    }
+}
 
 struct CachedDriver {
     driver: Arc<dyn DbDriver>,
@@ -29,7 +71,17 @@ impl DriverRegistry {
 
     pub async fn get_driver(
         &self,
-        state: &AppState,
+        provider: &impl ConnectionSecretsProvider,
+        connection_id: &str,
+    ) -> Result<Arc<dyn DbDriver>, AppError> {
+        self.get_driver_direct(provider.sqlite_pool(), provider.cipher(), connection_id)
+            .await
+    }
+
+    pub async fn get_driver_direct(
+        &self,
+        sqlite_pool: &sqlx::SqlitePool,
+        cipher: &SecretCipher,
         connection_id: &str,
     ) -> Result<Arc<dyn DbDriver>, AppError> {
         // 1. Fast path: check read lock
@@ -42,7 +94,7 @@ impl DriverRegistry {
         }
 
         // 2. Fetch secret from database store
-        let secret = get_connection_secret(&state.sqlite_pool, &state.cipher, connection_id)
+        let secret = get_connection_secret(sqlite_pool, cipher, connection_id)
             .await?
             .ok_or_else(|| AppError::NotFound("Connection not found".to_string()))?;
 
@@ -72,6 +124,14 @@ impl DriverRegistry {
         );
 
         Ok(driver)
+    }
+
+    pub async fn get_driver_from_state(
+        &self,
+        state: &CoreState,
+        connection_id: &str,
+    ) -> Result<Arc<dyn DbDriver>, AppError> {
+        self.get_driver(state, connection_id).await
     }
 
     pub async fn close_driver(&self, connection_id: &str) {

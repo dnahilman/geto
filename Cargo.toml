@@ -1,0 +1,7 @@
+[workspace]
+members = [
+    "crates/geto-core",
+    "apps/server",
+    "apps/desktop/src-tauri",
+]
+resolver = "2"

@@ -4,26 +4,12 @@ use axum::{
     routing::{delete, post},
     Json, Router,
 };
-use serde::{Deserialize, Serialize};
 
+pub use geto_core::services::databases::{
+    CreateDatabaseRequest, CreateDatabaseResponse, DropDatabaseResponse,
+};
 use crate::error::AppError;
 use crate::state::AppState;
-
-#[derive(Debug, Deserialize, Serialize, utoipa::ToSchema)]
-pub struct CreateDatabaseRequest {
-    pub name: String,
-}
-
-#[derive(Debug, Serialize, Deserialize, utoipa::ToSchema)]
-pub struct CreateDatabaseResponse {
-    pub created: bool,
-    pub name: String,
-}
-
-#[derive(Debug, Serialize, Deserialize, utoipa::ToSchema)]
-pub struct DropDatabaseResponse {
-    pub dropped: bool,
-}
 
 #[utoipa::path(
     post,
@@ -42,15 +28,14 @@ pub async fn create_database_handler(
     Path(id): Path<String>,
     Json(body): Json<CreateDatabaseRequest>,
 ) -> Result<Json<CreateDatabaseResponse>, AppError> {
-    if body.name.trim().is_empty() {
-        return Err(AppError::BadRequest("Database name cannot be empty".to_string()));
-    }
-    let driver = state.registry.get_driver(&state, &id).await?;
-    driver.create_database(&body.name).await?;
-    Ok(Json(CreateDatabaseResponse {
-        created: true,
-        name: body.name,
-    }))
+    let res = geto_core::services::databases::create_database(
+        &state.registry,
+        &state.core,
+        &id,
+        &body.name,
+    )
+    .await?;
+    Ok(Json(res))
 }
 
 #[utoipa::path(
@@ -69,12 +54,14 @@ pub async fn drop_database_handler(
     State(state): State<Arc<AppState>>,
     Path((id, name)): Path<(String, String)>,
 ) -> Result<Json<DropDatabaseResponse>, AppError> {
-    if name.trim().is_empty() {
-        return Err(AppError::BadRequest("Database name cannot be empty".to_string()));
-    }
-    let driver = state.registry.get_driver(&state, &id).await?;
-    driver.drop_database(&name).await?;
-    Ok(Json(DropDatabaseResponse { dropped: true }))
+    let res = geto_core::services::databases::drop_database(
+        &state.registry,
+        &state.core,
+        &id,
+        &name,
+    )
+    .await?;
+    Ok(Json(res))
 }
 
 pub fn router() -> Router<Arc<AppState>> {

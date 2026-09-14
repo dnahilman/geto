@@ -15,7 +15,7 @@
 </script>
 
 <Sonner
-  theme={mode.current}
+  theme={mode.current ?? 'dark'}
   class="toaster group"
   style="--normal-bg: var(--color-popover); --normal-text: var(--color-popover-foreground); --normal-border: var(--color-border);"
   toastOptions={{ ...toastOptions, style: `${widthStyle} ${toastOptions?.style ?? ''}` }}

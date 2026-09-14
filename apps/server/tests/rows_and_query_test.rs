@@ -64,9 +64,17 @@ fn test_split_statements_complex() {
 
 #[tokio::test]
 async fn test_rows_and_query_routes_live() {
-    let sqlite_path = PathBuf::from("../server/data");
+    let sqlite_path = [
+        PathBuf::from("./data"),
+        PathBuf::from("../../data"),
+        PathBuf::from("../server/data"),
+        PathBuf::from("./apps/server/data"),
+    ]
+    .into_iter()
+    .find(|p| p.join("geto.sqlite").exists())
+    .unwrap_or_else(|| PathBuf::from("./data"));
     if !sqlite_path.join("geto.sqlite").exists() {
-        eprintln!("geto.sqlite not found at ../server/data, skipping live integration test");
+        eprintln!("geto.sqlite not found, skipping live integration test");
         return;
     }
 

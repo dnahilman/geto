@@ -27,4 +27,4 @@ docs/
 *.key
 
 # editors
-.zed/
+.temp

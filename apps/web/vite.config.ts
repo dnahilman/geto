@@ -9,6 +9,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const { version } = JSON.parse(readFileSync(join(__dirname, '../../package.json'), 'utf8'))
 
 export default defineConfig({
+  clearScreen: false,
   define: { __APP_VERSION__: JSON.stringify(version) },
   plugins: [tailwindcss(), sveltekit()],
   server: {
@@ -22,4 +23,5 @@ export default defineConfig({
       },
     },
   },
+  envPrefix: ['VITE_', 'TAURI_ENV_*', 'TAURI_PLATFORM_*'],
 })

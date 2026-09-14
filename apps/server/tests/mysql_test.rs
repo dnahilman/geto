@@ -136,9 +136,17 @@ fn test_parse_enum_values() {
 
 #[tokio::test]
 async fn test_mysql_meta_routes_against_saved_database() {
-    let sqlite_path = PathBuf::from("../server/data");
+    let sqlite_path = [
+        PathBuf::from("./data"),
+        PathBuf::from("../../data"),
+        PathBuf::from("../server/data"),
+        PathBuf::from("./apps/server/data"),
+    ]
+    .into_iter()
+    .find(|p| p.join("geto.sqlite").exists())
+    .unwrap_or_else(|| PathBuf::from("./data"));
     if !sqlite_path.join("geto.sqlite").exists() {
-        eprintln!("geto.sqlite not found at ../server/data, skipping live integration test");
+        eprintln!("geto.sqlite not found, skipping live integration test");
         return;
     }
 

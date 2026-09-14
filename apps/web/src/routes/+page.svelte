@@ -78,7 +78,7 @@
   }
 </script>
 
-<div class="mx-auto max-w-5xl p-6">
+<div class="mx-auto w-full max-w-5xl flex-1 overflow-y-auto p-6">
   <header class="mb-8 flex items-center justify-between">
     <div class="flex items-center gap-2.5">
       <img src="/logo.svg" alt="geto" class="h-7 w-auto invert" />

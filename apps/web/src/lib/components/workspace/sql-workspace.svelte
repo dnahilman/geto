@@ -191,7 +191,7 @@
   </div>
 {/snippet}
 
-<div class="flex h-screen flex-col">
+<div class="flex h-full flex-col">
   {@render dialogs()}
 
   <Resizable.PaneGroup direction="horizontal" class="min-h-0 flex-1">

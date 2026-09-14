@@ -2,6 +2,9 @@
 // `collectRows` reads the live grid api (selection + loaded page + pending edits);
 // the serializers and `downloadFile` are side-effect-free except for the actual
 // browser download. Shared with the grid's TSV copy via `collectRows`.
+import { isTauri } from '$lib/api/transport'
+import { save } from '@tauri-apps/plugin-dialog'
+import { writeTextFile } from '@tauri-apps/plugin-fs'
 import type { DataGridApi } from '$lib/components/data-grid'
 
 /**
@@ -70,8 +73,38 @@ export function toMarkdown(columns: string[], rows: unknown[][]): string {
   return [head, sep, ...body].join('\n')
 }
 
-/** Trigger a browser download of `content`. Works over plain HTTP (no secure context). */
-export function downloadFile(filename: string, mime: string, content: string): void {
+/** Trigger a native save dialog in Tauri desktop, or browser download of `content`. */
+export async function downloadFile(
+  filename: string,
+  mime: string,
+  content: string,
+): Promise<boolean> {
+  if (isTauri()) {
+    try {
+      const ext = filename.split('.').pop() || 'txt'
+      const filePath = await save({
+        defaultPath: filename,
+        filters: [
+          {
+            name: ext.toUpperCase(),
+            extensions: [ext],
+          },
+        ],
+      })
+
+      if (!filePath) {
+        // User cancelled file save dialog
+        return false
+      }
+
+      await writeTextFile(filePath, content)
+      return true
+    } catch (err) {
+      console.error('Failed to save file via Tauri dialog:', err)
+      // Fall through to browser download fallback
+    }
+  }
+
   const blob = new Blob([content], { type: `${mime};charset=utf-8` })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
@@ -81,6 +114,7 @@ export function downloadFile(filename: string, mime: string, content: string): v
   a.click()
   a.remove()
   URL.revokeObjectURL(url)
+  return true
 }
 
 /** `YYYYMMDD-HHmmss` stamp for unique filenames. */

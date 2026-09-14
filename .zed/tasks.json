@@ -1,0 +1,12 @@
+[
+  {
+    "label": "Desktop Dev",
+    "command": "bun run dev:desktop",
+    "cwd": "$ZED_WORKTREE_ROOT"
+  },
+  {
+    "label": "Web Dev",
+    "command": "bun run dev:web",
+    "cwd": "$ZED_WORKTREE_ROOT"
+  }
+]

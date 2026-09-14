@@ -11,10 +11,10 @@ RUN bun run --filter @geto/web build
 FROM rust:slim-bookworm AS server-build
 WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends pkg-config && rm -rf /var/lib/apt/lists/*
-COPY apps/server/Cargo.toml apps/server/Cargo.lock* ./apps/server/
-COPY apps/server/src ./apps/server/src
-WORKDIR /app/apps/server
-RUN cargo build --release
+COPY Cargo.toml Cargo.lock* ./
+COPY crates/geto-core ./crates/geto-core
+COPY apps/server ./apps/server
+RUN cargo build --release --package geto-server
 
 # ---- stage 3: minimal runtime (Google Distroless) ----
 FROM gcr.io/distroless/cc-debian12:latest AS runtime
@@ -25,34 +25,10 @@ ENV NODE_ENV=production \
     GETO_WEB_DIR=/app/web \
     PORT=7020
 
-COPY --from=server-build /app/apps/server/target/release/geto-server /usr/local/bin/geto-server
+COPY --from=server-build /app/target/release/geto-server /usr/local/bin/geto-server
 COPY --from=web-build /app/apps/web/build /app/web
+
 
 VOLUME ["/data"]
 EXPOSE 7020
 ENTRYPOINT ["/usr/local/bin/geto-server"]
-
-# ---- stage 4: embedded routeup runtime (Target: routeup) ----
-FROM debian:bookworm-slim AS routeup
-
-RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates libcap2-bin tzdata sudo && \
-    curl -fsSL https://get.routeup.dev | sh && \
-    apt-get purge -y curl && apt-get autoremove -y && rm -rf /var/lib/apt/lists/*
-
-WORKDIR /app
-ENV NODE_ENV=production \
-    GETO_DATA_DIR=/data \
-    GETO_WEB_DIR=/app/web \
-    PORT=7020
-
-COPY package.json ./package.json
-COPY --from=server-build /app/apps/server/target/release/geto-server /usr/local/bin/geto-server
-COPY --from=web-build /app/apps/web/build /app/web
-
-RUN printf '#!/bin/sh\nif [ ! -f /root/.routeup/ca.crt ]; then\n  routeup setup --server none --token none --no-start --no-trust\nfi\nexec routeup\n' > /usr/local/bin/entrypoint-routeup.sh && \
-    chmod +x /usr/local/bin/entrypoint-routeup.sh
-
-VOLUME ["/data", "/root/.routeup"]
-EXPOSE 443 7020
-CMD ["/usr/local/bin/entrypoint-routeup.sh"]
-

@@ -33,8 +33,12 @@ impl Config {
             .ok()
             .and_then(|d| {
                 let p = PathBuf::from(&d);
-                if p == PathBuf::from("./data") && PathBuf::from("./apps/server/data").exists() {
-                    Some(PathBuf::from("./apps/server/data"))
+                if p.exists() {
+                    Some(p)
+                } else if PathBuf::from("../../").join(&d).exists() {
+                    Some(PathBuf::from("../../").join(&d))
+                } else if PathBuf::from("../").join(&d).exists() {
+                    Some(PathBuf::from("../").join(&d))
                 } else if !d.trim().is_empty() {
                     Some(p)
                 } else {
@@ -42,14 +46,16 @@ impl Config {
                 }
             })
             .unwrap_or_else(|| {
-                if PathBuf::from("./apps/server/data").exists() {
-                    PathBuf::from("./apps/server/data")
-                } else if PathBuf::from("./data").exists() {
+                if PathBuf::from("./data").exists() {
                     PathBuf::from("./data")
-                } else if PathBuf::from("../server/data").exists() {
-                    PathBuf::from("../server/data")
-                } else {
+                } else if PathBuf::from("../../data").exists() {
+                    PathBuf::from("../../data")
+                } else if PathBuf::from("../data").exists() {
+                    PathBuf::from("../data")
+                } else if PathBuf::from("./apps/server/data").exists() {
                     PathBuf::from("./apps/server/data")
+                } else {
+                    PathBuf::from("./data")
                 }
             });
 

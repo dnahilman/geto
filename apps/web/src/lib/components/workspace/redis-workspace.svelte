@@ -47,7 +47,7 @@
   }
 </script>
 
-<div class="flex h-screen flex-col">
+<div class="flex h-full flex-col">
   <header class="flex h-9 shrink-0 items-center gap-1 border-b bg-background px-2.5">
     <Button
       variant="ghost"

@@ -1,12 +1,7 @@
-use axum::{
-    http::StatusCode,
-    response::{IntoResponse, Response},
-    Json,
-};
-use serde_json::json;
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-#[derive(Debug, Error)]
+#[derive(Debug, Clone, Error, Serialize, Deserialize)]
 pub enum AppError {
     #[error("Unauthorized")]
     Unauthorized,
@@ -14,21 +9,32 @@ pub enum AppError {
     #[error("Invalid password")]
     InvalidPassword,
 
-    #[error("Not found")]
+    #[error("Not found: {0}")]
     NotFound(String),
 
     #[error("Bad request: {0}")]
     BadRequest(String),
 
-    #[error("Internal server error: {0}")]
+    #[error("Internal error: {0}")]
     Internal(String),
 
     #[error("Database error: {0}")]
     Database(String),
 }
 
-impl IntoResponse for AppError {
-    fn into_response(self) -> Response {
+impl From<sqlx::Error> for AppError {
+    fn from(err: sqlx::Error) -> Self {
+        AppError::Database(err.to_string())
+    }
+}
+
+#[cfg(feature = "axum")]
+impl axum::response::IntoResponse for AppError {
+    fn into_response(self) -> axum::response::Response {
+        use axum::http::StatusCode;
+        use axum::Json;
+        use serde_json::json;
+
         let (status, error_message) = match &self {
             AppError::Unauthorized => (StatusCode::UNAUTHORIZED, "Unauthorized".to_string()),
             AppError::InvalidPassword => (StatusCode::UNAUTHORIZED, "Invalid password".to_string()),
@@ -49,11 +55,5 @@ impl IntoResponse for AppError {
         }));
 
         (status, body).into_response()
-    }
-}
-
-impl From<sqlx::Error> for AppError {
-    fn from(err: sqlx::Error) -> Self {
-        AppError::Internal(err.to_string())
     }
 }
