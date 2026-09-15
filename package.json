@@ -5,7 +5,8 @@
   "type": "module",
   "workspaces": [
     "apps/web",
-    "apps/desktop"
+    "apps/desktop",
+    "packages/*"
   ],
   "scripts": {
     "dev": "bun run dev:desktop",
@@ -16,7 +17,7 @@
     "start": "./apps/server/target/release/geto-server",
     "docker:build": "podman build -t geto:latest .",
     "codegen": "cargo run --manifest-path apps/server/Cargo.toml -- export-openapi > openapi.json && bunx openapi-typescript openapi.json -o apps/web/src/lib/types/api.d.ts",
-    "format": "prettier --write \"apps/**/*.{ts,svelte,js,json,css}\"",
+    "format": "prettier --write \"{apps,packages}/**/*.{ts,svelte,js,json,css}\"",
     "lint": "eslint ."
   },
   "devDependencies": {
