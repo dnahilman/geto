@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onDestroy } from 'svelte'
   import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-query'
   import { TriangleAlert, Play, Zap, Loader, Braces, Undo2, Redo2 } from 'lucide-svelte'
   import * as Resizable from '$lib/components/ui/resizable'
@@ -45,12 +46,20 @@
   })
 
   let snapshot = $state<EditorStateSnapshot>(session.getSnapshot())
-  let statementCount = $state(1)
 
   $effect(() => {
     return session.subscribe((s) => {
       snapshot = s
     })
+  })
+
+  onDestroy(() => {
+    results = []
+    views = {}
+    active = 'history'
+    error = null
+    pending = null
+    session.detach()
   })
 
   // 'history' = history tab; number = index into results array.
@@ -279,18 +288,17 @@
               <Redo2 class="size-3.5" />
             </Button>
 
-            <!-- Statement count badge -->
-            {#if statementCount > 1}
-              <span
-                class="rounded bg-muted/70 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground ml-1"
-                title={`${statementCount} top-level SQL statements detected`}
-              >
-                {statementCount} statements
-              </span>
-            {/if}
           </div>
 
-          <span class="text-muted-foreground text-xs pe-1">⌘/Ctrl + Enter</span>
+          <div class="flex items-center gap-2 pe-1">
+            <span
+              class="rounded border border-border/60 bg-muted/30 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground uppercase tracking-wider select-none"
+              title={`Database Dialect: ${provider ?? 'standard'}`}
+            >
+              {provider ?? 'standard'}
+            </span>
+            <span class="text-muted-foreground text-xs">⌘/Ctrl + Enter</span>
+          </div>
         </div>
 
         <!-- CodeMirror Editor -->
@@ -304,7 +312,6 @@
             metadata={completion.data}
             onrun={doRun}
             onrunstatement={doRun}
-            onstatementschange={(cnt) => (statementCount = cnt)}
           />
         </div>
       </Resizable.Pane>
@@ -355,14 +362,6 @@
 
   <!-- ── Fixed Bottom bar: info (left) & toggle sidebar ── -->
   <WorkspaceBottombar {onToggleSidebar} leftContent={bottombarLeft}>
-    <!-- Dialect badge -->
-    <span
-      class="rounded border border-border/60 bg-muted/30 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground uppercase tracking-wider select-none"
-      title={`Database Dialect: ${provider ?? 'standard'}`}
-    >
-      {provider ?? 'standard'}
-    </span>
-
     <span
       class={run.isPending || !activeResult || activeResult.error
         ? 'text-muted-foreground'

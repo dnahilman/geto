@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { onDestroy } from 'svelte'
+  import { useQueryClient } from '@tanstack/svelte-query'
   import { toast } from 'svelte-sonner'
   import { Database, Table2, Users, ChevronDown, Copy } from 'lucide-svelte'
   import * as Resizable from '$lib/components/ui/resizable'
@@ -12,7 +14,7 @@
   import RoleManager from '$lib/components/workspace/role-manager.svelte'
   import WorkspaceTabbar from '$lib/components/workspace/workspace-tabbar.svelte'
   import WorkspaceBottombar from '$lib/components/workspace/workspace-bottombar.svelte'
-  import { getWorkspace } from '$lib/stores/workspace.svelte'
+  import { getWorkspace, removeWorkspace } from '$lib/stores/workspace.svelte'
   import { getConnectionString, type Connection } from '$lib/api/connections'
   import { copyText } from '$lib/clipboard'
 
@@ -25,6 +27,25 @@
 
   // svelte-ignore state_referenced_locally
   const ws = getWorkspace(connId, 'relational')
+  const qc = useQueryClient()
+
+  let lastDb: string | undefined = undefined
+
+  $effect(() => {
+    const currentDb = conn?.database
+    if (lastDb !== undefined && currentDb !== undefined && currentDb !== lastDb) {
+      ws.destroy()
+      qc.removeQueries({ queryKey: ['tree', connId] })
+      qc.removeQueries({ queryKey: ['completion', connId] })
+      qc.removeQueries({ queryKey: ['tables', connId] })
+    }
+    lastDb = currentDb
+  })
+
+  onDestroy(() => {
+    ws.destroy()
+    removeWorkspace(connId)
+  })
 
   $effect(() => {
     function onKeydown(e: KeyboardEvent) {
@@ -56,7 +77,12 @@
     bind:open={dbManagerOpen}
     {connId}
     currentDatabase={conn?.database}
-    onSwitched={() => ws.reset()}
+    onSwitched={() => {
+      ws.destroy()
+      qc.removeQueries({ queryKey: ['tree', connId] })
+      qc.removeQueries({ queryKey: ['completion', connId] })
+      qc.removeQueries({ queryKey: ['tables', connId] })
+    }}
   />
 
   <RoleManager bind:open={roleManagerOpen} {connId} readonly={conn?.readonly ?? false} />

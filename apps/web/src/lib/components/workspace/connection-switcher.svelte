@@ -12,6 +12,7 @@
     getConnectionString,
     type Connection,
   } from '$lib/api/connections'
+  import { removeWorkspace } from '$lib/stores/workspace.svelte'
   import { copyText } from '$lib/clipboard'
 
   interface Props {
@@ -77,7 +78,12 @@
         <div class="max-h-56 overflow-y-auto py-0.5">
           {#each connections.data as c (c.id)}
             <DropdownMenu.Item
-              onSelect={() => goto(`/c/${c.id}`)}
+              onSelect={() => {
+                if (c.id !== connId) {
+                  removeWorkspace(connId)
+                  goto(`/c/${c.id}`)
+                }
+              }}
               class="flex items-center gap-2 cursor-pointer py-1.5 px-2"
             >
               <ProviderIcon provider={c.provider} class="size-3.5 shrink-0" />
@@ -120,7 +126,13 @@
         </DropdownMenu.Item>
       {/if}
       <DropdownMenu.Separator />
-      <DropdownMenu.Item onSelect={() => goto('/')} class="gap-2 cursor-pointer">
+      <DropdownMenu.Item
+        onSelect={() => {
+          removeWorkspace(connId)
+          goto('/')
+        }}
+        class="gap-2 cursor-pointer"
+      >
         <LayoutGrid class="size-3.5 text-muted-foreground" /> All connections dashboard
       </DropdownMenu.Item>
     </DropdownMenu.Group>
@@ -132,6 +144,7 @@
   connection={editing}
   onsaved={(newConn) => {
     if (!editing || editing.id !== newConn.id) {
+      removeWorkspace(connId)
       goto(`/c/${newConn.id}`)
     }
   }}

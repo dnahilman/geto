@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onDestroy } from 'svelte'
   import { toast } from 'svelte-sonner'
   import { KeyRound, PanelLeft, SquareTerminal } from 'lucide-svelte'
   import * as Resizable from '$lib/components/ui/resizable'
@@ -9,7 +10,7 @@
   import RedisConsole from '$lib/components/workspace/redis-console.svelte'
   import RedisKeyView from '$lib/components/workspace/redis-key-view.svelte'
   import WorkspaceTabbar from '$lib/components/workspace/workspace-tabbar.svelte'
-  import { getWorkspace } from '$lib/stores/workspace.svelte'
+  import { getWorkspace, removeWorkspace } from '$lib/stores/workspace.svelte'
   import { getConnectionString, type Connection } from '$lib/api/connections'
   import { copyText } from '$lib/clipboard'
 
@@ -23,8 +24,10 @@
   // svelte-ignore state_referenced_locally
   const ws = getWorkspace(connId, 'keyvalue')
 
-  // Svelte 5 $inspect rune: automatically stripped in production builds
-  $inspect('[Workspace:Redis]', ws.activeId, ws.tabs)
+  onDestroy(() => {
+    ws.destroy()
+    removeWorkspace(connId)
+  })
 
   const readonly = $derived(conn?.readonly ?? false)
 

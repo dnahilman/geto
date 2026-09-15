@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onDestroy } from 'svelte'
   import { createMutation } from '@tanstack/svelte-query'
   import { Play, Loader2, CircleCheck, CircleX } from 'lucide-svelte'
   import type { CompletionContext, CompletionResult } from '@codemirror/autocomplete'
@@ -29,6 +30,13 @@
   let results = $state<StatementResult[]>([])
   let views = $state<Record<number, 'table' | 'json' | 'structure'>>({})
   let log = $state<{ cmd: string; ok: boolean; ms: number }[]>([])
+
+  onDestroy(() => {
+    results = []
+    views = {}
+    log = []
+    active = 'history'
+  })
 
   // Redis command IntelliSense (mirrors the SQL editor's completion).
   const REDIS_COMMANDS = [

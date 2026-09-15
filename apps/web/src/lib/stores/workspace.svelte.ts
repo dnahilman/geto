@@ -168,8 +168,16 @@ export class Workspace {
   }
 
   reset() {
+    this.destroy()
+  }
+
+  /**
+   * Completely destroy all tabs, active selection, and counters.
+   * Unmounts all active TableView and SQLConsole components to free resources.
+   */
+  destroy() {
     if (import.meta.env.DEV) {
-      console.debug(`[Workspace] reset connection: ${this.connId}`)
+      console.debug(`[Workspace] destroy all tabs for connection: ${this.connId}`)
     }
     this.tabs = []
     this.activeId = null
@@ -190,5 +198,16 @@ export function getWorkspace(connId: string, kind: WorkspaceKind = 'relational')
 }
 
 export function removeWorkspace(connId: string) {
-  workspaceStores.delete(connId)
+  const ws = workspaceStores.get(connId)
+  if (ws) {
+    ws.destroy()
+    workspaceStores.delete(connId)
+  }
+}
+
+export function clearAllWorkspaces() {
+  for (const ws of workspaceStores.values()) {
+    ws.destroy()
+  }
+  workspaceStores.clear()
 }
