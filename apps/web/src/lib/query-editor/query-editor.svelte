@@ -12,7 +12,7 @@
     type StatementRange,
   } from '@geto/editor'
   import type { CompletionSource } from '@codemirror/autocomplete'
-  import { setQueryEditorContext } from './context'
+  import { setQueryEditorContext } from './context.svelte'
 
   interface Props {
     /** Document value with two-way binding. */

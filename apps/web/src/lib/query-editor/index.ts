@@ -1,5 +1,5 @@
 export { default as QueryEditor } from './query-editor.svelte'
-export * from './context'
+export * from './context.svelte'
 
 // Re-export core types for easy access from apps/web
 export type {
