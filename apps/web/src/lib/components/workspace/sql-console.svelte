@@ -1,9 +1,11 @@
 <script lang="ts">
   import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-query'
-  import { TriangleAlert } from 'lucide-svelte'
+  import { TriangleAlert, Play, Loader, Braces } from 'lucide-svelte'
   import * as Resizable from '$lib/components/ui/resizable'
   import * as AlertDialog from '$lib/components/ui/alert-dialog'
-  import SqlConsoleEditor from './sql-console-editor.svelte'
+  import { Button } from '$lib/components/ui/button'
+  import SqlEditor from '$lib/editor/sql-editor.svelte'
+  import { formatSql } from '$lib/editor/format'
   import SqlConsoleHistory from './sql-console-history.svelte'
   import SqlConsoleTable from './sql-console-table.svelte'
   import ResultTabs from './result-tabs.svelte'
@@ -17,7 +19,6 @@
     connId: string
     sql?: string
     isActive?: boolean
-    onSqlChange?: (sql: string) => void
     onOpenTable?: (schema: string, table: string, filter?: TabFilter) => void
     onToggleSidebar?: () => void
   }
@@ -26,14 +27,13 @@
     connId,
     sql = $bindable(''),
     isActive = true,
-    onSqlChange,
     onOpenTable,
     onToggleSidebar,
   }: Props = $props()
 
   const qc = useQueryClient()
 
-  let editorRef = $state<ReturnType<typeof SqlConsoleEditor>>()
+  let editorRef = $state<ReturnType<typeof SqlEditor>>()
 
   // 'history' = history tab; number = index into results array.
   let active = $state<'history' | number>('history')
@@ -195,14 +195,50 @@
     <Resizable.PaneGroup direction="vertical" class="h-full">
       <!-- ── Editor pane ── -->
       <Resizable.Pane defaultSize={50} minSize={20} class="flex flex-col">
-        <SqlConsoleEditor
-          bind:this={editorRef}
-          bind:sql
-          {onSqlChange}
-          running={run.isPending}
-          completion={completion.data}
-          onRun={doRun}
-        />
+        <!-- Editor Toolbar (compact, icon-only, matching table-view toolbar height) -->
+        <div
+          class="flex shrink-0 items-center justify-between border-b bg-background px-2 text-xs gap-2 py-0.5"
+        >
+          <div class="flex items-center gap-1 ps-1">
+            <Button
+              size="icon"
+              variant="ghost"
+              class="size-7 text-emerald-600 hover:text-emerald-500 hover:bg-emerald-500/10"
+              title="Run query (⌘/Ctrl + Enter)"
+              disabled={run.isPending}
+              onclick={() => doRun(editorRef?.getSelectedOrAll() ?? sql)}
+            >
+              {#if run.isPending}
+                <Loader class="size-3.5 animate-spin" />
+              {:else}
+                <Play class="size-3.5 fill-current" />
+              {/if}
+            </Button>
+            <Button
+              size="icon"
+              variant="ghost"
+              class="size-7 text-muted-foreground hover:text-foreground"
+              title="Format SQL"
+              onclick={() => editorRef?.setValue(formatSql(sql))}
+            >
+              <Braces class="size-3.5" />
+            </Button>
+          </div>
+
+          <span class="text-muted-foreground text-xs pe-1">⌘/Ctrl + Enter</span>
+        </div>
+
+        <!-- CodeMirror Editor -->
+        <div class="min-h-0 flex-1">
+          <SqlEditor
+            bind:this={editorRef}
+            bind:value={sql}
+            uppercase={true}
+            completion={completion.data}
+            onrun={doRun}
+            onrunstatement={doRun}
+          />
+        </div>
       </Resizable.Pane>
 
       <Resizable.Handle withHandle />

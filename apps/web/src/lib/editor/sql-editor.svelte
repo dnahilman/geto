@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte'
-  import { Loader2 } from 'lucide-svelte'
+  import { Loader } from 'lucide-svelte'
   import {
     EditorView,
     keymap,
@@ -174,7 +174,7 @@
     <div
       class="text-muted-foreground absolute inset-0 flex items-center justify-center gap-2 bg-[#1e1e1e] text-xs"
     >
-      <Loader2 class="size-4 animate-spin" /> Loading editor…
+      <Loader class="size-4 animate-spin" /> Loading editor…
     </div>
   {/if}
 </div>
