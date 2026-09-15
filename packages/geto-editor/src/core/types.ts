@@ -98,6 +98,8 @@ export interface EditorOptions {
   onStatementsChange?: StatementsChangeHandler
   /** Callback fired whenever the document content changes. */
   onChange?: ChangeHandler
+  /** Callback fired whenever the cursor position or selection changes. */
+  onSelectionChange?: () => void
 }
 
 export interface EditorInstance {

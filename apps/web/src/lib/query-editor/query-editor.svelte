@@ -140,6 +140,9 @@
         value = newVal
         activeSession.updateSnapshot()
       },
+      onSelectionChange: () => {
+        activeSession.updateSnapshot()
+      },
     })
 
     activeSession.attach(editor)

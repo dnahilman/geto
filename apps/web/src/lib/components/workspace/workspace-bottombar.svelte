@@ -5,28 +5,30 @@
 
   interface Props {
     onToggleSidebar?: () => void
+    leftContent?: Snippet
     children?: Snippet
   }
 
-  let { onToggleSidebar, children }: Props = $props()
+  let { onToggleSidebar, leftContent, children }: Props = $props()
 </script>
 
 <div
   class="flex shrink-0 items-center justify-between border-t bg-background px-1 py-1 text-xs w-full"
 >
   <!-- Left: Sidebar toggle button + optional left status -->
-  <div class="flex items-center gap-1.5">
+  <div class="flex items-center gap-2 min-w-0">
     {#if onToggleSidebar}
       <Button
         variant="ghost"
         size="icon"
-        class="size-6 text-muted-foreground hover:text-foreground"
+        class="size-6 text-muted-foreground hover:text-foreground shrink-0"
         title="Toggle sidebar"
         onclick={onToggleSidebar}
       >
         <PanelLeft class="size-3.5" />
       </Button>
     {/if}
+    {@render leftContent?.()}
   </div>
 
   <!-- Right: Status info / Pagination / Contextual actions -->

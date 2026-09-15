@@ -64,6 +64,10 @@ export function createBaseExtensions(options: EditorOptions): Extension[] {
           options.onStatementsChange(count)
         }
       }
+
+      if (update.selectionSet) {
+        options.onSelectionChange?.()
+      }
     }),
   )
 

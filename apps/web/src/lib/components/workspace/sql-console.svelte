@@ -1,10 +1,11 @@
 <script lang="ts">
   import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-query'
-  import { TriangleAlert, Play, Loader, Braces } from 'lucide-svelte'
+  import { TriangleAlert, Play, Zap, Loader, Braces, Undo2, Redo2 } from 'lucide-svelte'
   import * as Resizable from '$lib/components/ui/resizable'
   import * as AlertDialog from '$lib/components/ui/alert-dialog'
   import { Button } from '$lib/components/ui/button'
   import { QueryEditor } from '$lib/query-editor'
+  import { EditorSession, resolveDialect, type EditorStateSnapshot } from '@geto/editor'
   import SqlConsoleHistory from './sql-console-history.svelte'
   import SqlConsoleTable from './sql-console-table.svelte'
   import ResultTabs from './result-tabs.svelte'
@@ -35,6 +36,22 @@
   const qc = useQueryClient()
 
   let editorRef = $state<ReturnType<typeof QueryEditor>>()
+
+  // svelte-ignore state_referenced_locally
+  const session = new EditorSession({
+    language: 'sql',
+    dialect: resolveDialect(provider),
+    onRun: (text) => doRun(text),
+  })
+
+  let snapshot = $state<EditorStateSnapshot>(session.getSnapshot())
+  let statementCount = $state(1)
+
+  $effect(() => {
+    return session.subscribe((s) => {
+      snapshot = s
+    })
+  })
 
   // 'history' = history tab; number = index into results array.
   let active = $state<'history' | number>('history')
@@ -201,13 +218,14 @@
           class="flex shrink-0 items-center justify-between border-b bg-background px-2 text-xs gap-2 py-0.5"
         >
           <div class="flex items-center gap-1 ps-1">
+            <!-- Run Selection or All (Cmd+Enter) -->
             <Button
               size="icon"
               variant="ghost"
               class="size-7 text-emerald-600 hover:text-emerald-500 hover:bg-emerald-500/10"
-              title="Run query (⌘/Ctrl + Enter)"
+              title="Run selection or query (⌘/Ctrl + Enter)"
               disabled={run.isPending}
-              onclick={() => doRun(editorRef?.getSelectedOrAll() ?? sql)}
+              onclick={() => session.run('selection')}
             >
               {#if run.isPending}
                 <Loader class="size-3.5 animate-spin" />
@@ -215,15 +233,61 @@
                 <Play class="size-3.5 fill-current" />
               {/if}
             </Button>
+
+            <!-- Run statement under caret (DataGrip style) -->
+            <Button
+              size="icon"
+              variant="ghost"
+              class="size-7 text-amber-500 hover:text-amber-400 hover:bg-amber-500/10"
+              title="Run statement under caret"
+              disabled={run.isPending}
+              onclick={() => session.run('current')}
+            >
+              <Zap class="size-3.5 fill-current" />
+            </Button>
+
+            <div class="mx-0.5 h-3.5 w-px bg-border/60"></div>
+
+            <!-- Format SQL -->
             <Button
               size="icon"
               variant="ghost"
               class="size-7 text-muted-foreground hover:text-foreground"
-              title="Format SQL"
-              onclick={() => editorRef?.format()}
+              title="Format SQL (Shift+Alt+F / Ctrl+Alt+L)"
+              onclick={() => session.format()}
             >
               <Braces class="size-3.5" />
             </Button>
+
+            <!-- Undo & Redo -->
+            <Button
+              size="icon"
+              variant="ghost"
+              class="size-7 text-muted-foreground hover:text-foreground"
+              title="Undo (⌘/Ctrl + Z)"
+              onclick={() => session.undo()}
+            >
+              <Undo2 class="size-3.5" />
+            </Button>
+            <Button
+              size="icon"
+              variant="ghost"
+              class="size-7 text-muted-foreground hover:text-foreground"
+              title="Redo (⌘/Ctrl + Shift + Z)"
+              onclick={() => session.redo()}
+            >
+              <Redo2 class="size-3.5" />
+            </Button>
+
+            <!-- Statement count badge -->
+            {#if statementCount > 1}
+              <span
+                class="rounded bg-muted/70 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground ml-1"
+                title={`${statementCount} top-level SQL statements detected`}
+              >
+                {statementCount} statements
+              </span>
+            {/if}
           </div>
 
           <span class="text-muted-foreground text-xs pe-1">⌘/Ctrl + Enter</span>
@@ -232,6 +296,7 @@
         <!-- CodeMirror Editor -->
         <div class="min-h-0 flex-1">
           <QueryEditor
+            {session}
             bind:this={editorRef}
             bind:value={sql}
             language="sql"
@@ -239,6 +304,7 @@
             metadata={completion.data}
             onrun={doRun}
             onrunstatement={doRun}
+            onstatementschange={(cnt) => (statementCount = cnt)}
           />
         </div>
       </Resizable.Pane>
@@ -262,8 +328,41 @@
     </Resizable.PaneGroup>
   </div>
 
+  {#snippet bottombarLeft()}
+    <!-- Cursor line & col -->
+    <span class="text-muted-foreground font-mono text-[11px] select-none">
+      Ln {snapshot.cursor.line}, Col {snapshot.cursor.col}
+    </span>
+
+    <!-- Selection count if any -->
+    {#if !snapshot.selection.isEmpty}
+      <span class="text-muted-foreground/80 font-mono text-[10px] select-none">
+        ({snapshot.selection.length} selected)
+      </span>
+    {/if}
+
+    <!-- Active Statement snippet preview -->
+    {#if snapshot.activeStatement}
+      <div class="h-3 w-px bg-border/60"></div>
+      <span
+        class="max-w-[240px] truncate font-mono text-[11px] text-muted-foreground/70"
+        title={`Active Statement:\n${snapshot.activeStatement.text}`}
+      >
+        {snapshot.activeStatement.text.replace(/\s+/g, ' ')}
+      </span>
+    {/if}
+  {/snippet}
+
   <!-- ── Fixed Bottom bar: info (left) & toggle sidebar ── -->
-  <WorkspaceBottombar {onToggleSidebar}>
+  <WorkspaceBottombar {onToggleSidebar} leftContent={bottombarLeft}>
+    <!-- Dialect badge -->
+    <span
+      class="rounded border border-border/60 bg-muted/30 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground uppercase tracking-wider select-none"
+      title={`Database Dialect: ${provider ?? 'standard'}`}
+    >
+      {provider ?? 'standard'}
+    </span>
+
     <span
       class={run.isPending || !activeResult || activeResult.error
         ? 'text-muted-foreground'
