@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onDestroy } from 'svelte'
   import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-query'
-  import { TriangleAlert, Play, Zap, Loader, Braces, Undo2, Redo2 } from 'lucide-svelte'
+  import { TriangleAlert, Play, Loader, Braces, Undo2, Redo2 } from 'lucide-svelte'
   import * as Resizable from '$lib/components/ui/resizable'
   import * as AlertDialog from '$lib/components/ui/alert-dialog'
   import { Button } from '$lib/components/ui/button'
@@ -224,7 +224,7 @@
       <Resizable.Pane defaultSize={50} minSize={20} class="flex flex-col">
         <!-- Editor Toolbar (compact, icon-only, matching table-view toolbar height) -->
         <div
-          class="flex shrink-0 items-center justify-between border-b bg-background px-2 text-xs gap-2 py-0.5"
+          class="flex h-8 shrink-0 items-center justify-between border-b bg-background px-2 text-xs gap-2"
         >
           <div class="flex items-center gap-1 ps-1">
             <!-- Run Selection or All (Cmd+Enter) -->
@@ -241,18 +241,6 @@
               {:else}
                 <Play class="size-3.5 fill-current" />
               {/if}
-            </Button>
-
-            <!-- Run statement under caret (DataGrip style) -->
-            <Button
-              size="icon"
-              variant="ghost"
-              class="size-7 text-amber-500 hover:text-amber-400 hover:bg-amber-500/10"
-              title="Run statement under caret"
-              disabled={run.isPending}
-              onclick={() => session.run('current')}
-            >
-              <Zap class="size-3.5 fill-current" />
             </Button>
 
             <div class="mx-0.5 h-3.5 w-px bg-border/60"></div>

@@ -22,9 +22,9 @@
   }: Props = $props()
 </script>
 
-<div class="flex shrink-0 items-center justify-between border-b text-xs bg-background relative">
+<div class="flex h-9 shrink-0 items-center justify-between border-b text-xs bg-background relative overflow-hidden">
   <div
-    class="flex min-w-0 flex-1 overflow-x-auto"
+    class="flex h-full min-w-0 flex-1 items-center overflow-x-auto overflow-y-hidden"
     style="scrollbar-width: thin;"
     role="tablist"
     aria-label="Query results"
@@ -34,7 +34,7 @@
       type="button"
       role="tab"
       aria-selected={active === 'history'}
-      class="-mb-px flex shrink-0 items-center gap-1.5 border-b-2 px-3 py-1.5 transition-colors
+      class="-mb-px flex h-full shrink-0 items-center gap-1.5 border-b-2 px-3 transition-colors
         {active === 'history'
         ? 'border-primary text-foreground'
         : 'border-transparent text-muted-foreground hover:border-border hover:text-foreground'}"
@@ -50,7 +50,7 @@
         type="button"
         role="tab"
         aria-selected={active === i}
-        class="-mb-px flex shrink-0 items-center gap-1.5 border-b-2 px-3 py-1.5 transition-colors
+        class="-mb-px flex h-full shrink-0 items-center gap-1.5 border-b-2 px-3 transition-colors
           {r.error
           ? active === i
             ? 'border-destructive text-destructive'
@@ -78,11 +78,11 @@
 
   <!-- Sticky Right: Clear History (only visible on history tab when history exists) -->
   {#if active === 'history' && onClearHistory && hasHistory}
-    <div class="sticky right-0 z-10 flex shrink-0 items-center border-l bg-background px-1 py-0.5">
+    <div class="sticky right-0 z-10 flex h-full shrink-0 items-center border-l bg-background px-1.5">
       <Button
         variant="ghost"
         size="sm"
-        class="text-muted-foreground hover:text-destructive h-6 px-1.5 text-xs gap-1"
+        class="text-muted-foreground hover:text-destructive h-7 px-2 text-xs gap-1"
         title="clear query history"
         disabled={isClearing}
         onclick={onClearHistory}
