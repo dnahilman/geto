@@ -2,8 +2,8 @@ import { EditorView } from '@codemirror/view'
 import { EditorState, type Extension } from '@codemirror/state'
 import type { SQLDialect } from '@codemirror/lang-sql'
 import { createBaseExtensions } from './extensions'
-import { createCompartments, runStatementHandlerFacet } from './state'
-import type { EditorInstance, EditorMetadata, EditorOptions, SQLMetadata, SupportedLanguage } from './types'
+import { createCompartments, runStatementHandlerFacet, statementSplitterFacet } from './state'
+import type { EditorInstance, EditorMetadata, EditorOptions, SQLMetadata, StatementRange, SupportedLanguage } from './types'
 
 import { createSqlLanguageExtension } from '../languages/sql/language'
 import { formatSql } from '../languages/sql/formatter'
@@ -199,6 +199,53 @@ export function createEditor(container: HTMLElement, options: EditorOptions = {}
           runStatementHandlerFacet.of(handler),
         ),
       })
+    },
+
+    getCursorPosition(): { line: number; col: number; offset: number } {
+      const pos = view.state.selection.main.head
+      const line = view.state.doc.lineAt(pos)
+      return {
+        line: line.number,
+        col: pos - line.from + 1,
+        offset: pos,
+      }
+    },
+
+    getStatementAtCursor(): StatementRange | null {
+      const pos = view.state.selection.main.head
+      const splitter = view.state.facet(statementSplitterFacet)
+      const ranges = splitter ? splitter(view.state) : []
+      for (const r of ranges) {
+        if (pos >= r.from && pos <= r.to) {
+          return r
+        }
+      }
+      return ranges.length > 0 ? ranges[0] : null
+    },
+
+    insertAtCursor(text: string): void {
+      const sel = view.state.selection.main
+      view.dispatch({
+        changes: { from: sel.from, to: sel.to, insert: text },
+        selection: { anchor: sel.from + text.length },
+        userEvent: 'input.insert',
+      })
+      view.focus()
+    },
+
+    wrapSelection(prefix: string, suffix: string): void {
+      const sel = view.state.selection.main
+      const selected = view.state.sliceDoc(sel.from, sel.to)
+      const wrapped = `${prefix}${selected}${suffix}`
+      view.dispatch({
+        changes: { from: sel.from, to: sel.to, insert: wrapped },
+        selection: {
+          anchor: sel.from + prefix.length,
+          head: sel.from + prefix.length + selected.length,
+        },
+        userEvent: 'input.wrap',
+      })
+      view.focus()
     },
 
     dispatch(...tr: Parameters<EditorView['dispatch']>): void {

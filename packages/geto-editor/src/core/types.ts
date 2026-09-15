@@ -123,6 +123,14 @@ export interface EditorInstance {
   setReadOnly(readOnly: boolean): void
   /** Dynamically update the run-statement click handler. */
   setRunStatementHandler(handler: RunStatementHandler | null): void
+  /** Return line, column, and offset for the current primary cursor position. */
+  getCursorPosition(): { line: number; col: number; offset: number }
+  /** Return the SQL statement range currently active under the cursor. */
+  getStatementAtCursor(): StatementRange | null
+  /** Insert text at the current cursor position, replacing any active selection. */
+  insertAtCursor(text: string): void
+  /** Wrap current selection with prefix and suffix strings (e.g. subquery or CTE). */
+  wrapSelection(prefix: string, suffix: string): void
   /** Dispatch transactions to the underlying view. */
   dispatch(...tr: Parameters<EditorView['dispatch']>): void
 }

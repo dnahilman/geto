@@ -1,6 +1,7 @@
 import { describe, it, expect, mock } from 'bun:test'
 import {
   EditorCache,
+  EditorSession,
   resolveDialect,
   StandardSQL,
   PostgreSQL,
@@ -189,6 +190,58 @@ describe('@geto/editor Test Suite', () => {
       expect(whereKw).toBeDefined()
       expect(whereKw?.label).toBe('WHERE')
       expect(typeof whereKw?.apply).toBe('function')
+    })
+  })
+
+  describe('EditorSession (Agnostic Store & Actions)', () => {
+    it('should notify subscribers when attached and updated', () => {
+      const session = new EditorSession({ language: 'sql' })
+      let receivedVal = ''
+      const unsubscribe = session.subscribe((snapshot) => {
+        receivedVal = snapshot.value
+      })
+
+      expect(receivedVal).toBe('')
+
+      const mockEditor = {
+        getValue: () => 'SELECT * FROM test',
+        getSelectedOrAll: () => 'SELECT * FROM test',
+        getCursorPosition: () => ({ line: 1, col: 19, offset: 18 }),
+        getStatementAtCursor: () => ({ from: 0, to: 18, text: 'SELECT * FROM test' }),
+        view: { state: { selection: { main: { empty: true } } } },
+      } as unknown as EditorInstance
+
+      session.attach(mockEditor)
+      expect(session.getSnapshot().isReady).toBe(true)
+      expect(session.getSnapshot().value).toBe('SELECT * FROM test')
+      expect(session.getSnapshot().cursor.line).toBe(1)
+      expect(session.getSnapshot().activeStatement?.text).toBe('SELECT * FROM test')
+
+      unsubscribe()
+    })
+
+    it('should execute run callback with mode selection or current', () => {
+      let executedSql = ''
+      const session = new EditorSession({
+        onRun: (sql) => {
+          executedSql = sql
+        },
+      })
+
+      const mockEditor = {
+        getValue: () => 'SELECT 1; SELECT 2;',
+        getSelectedOrAll: () => 'SELECT 1',
+        getCursorPosition: () => ({ line: 1, col: 5, offset: 4 }),
+        getStatementAtCursor: () => ({ from: 0, to: 8, text: 'SELECT 1' }),
+        view: { state: { selection: { main: { empty: false } } } },
+      } as unknown as EditorInstance
+
+      session.attach(mockEditor)
+      session.run('current')
+      expect(executedSql).toBe('SELECT 1')
+
+      session.run('all')
+      expect(executedSql).toBe('SELECT 1; SELECT 2;')
     })
   })
 })
