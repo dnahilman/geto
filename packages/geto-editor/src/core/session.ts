@@ -162,6 +162,18 @@ export class EditorSession {
     this.updateSnapshot()
   }
 
+  undo = (): boolean => {
+    const res = this.instance?.undo() ?? false
+    this.updateSnapshot()
+    return res
+  }
+
+  redo = (): boolean => {
+    const res = this.instance?.redo() ?? false
+    this.updateSnapshot()
+    return res
+  }
+
   setValue = (text: string): void => {
     this.instance?.setValue(text)
     this.updateSnapshot()

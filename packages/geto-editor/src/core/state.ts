@@ -10,6 +10,7 @@ import type { RunStatementHandler, StatementRange } from './types'
 export interface EditorCompartments {
   lang: Compartment
   meta: Compartment
+  lint: Compartment
   theme: Compartment
   readOnly: Compartment
   runGutter: Compartment
@@ -19,6 +20,7 @@ export function createCompartments(): EditorCompartments {
   return {
     lang: new Compartment(),
     meta: new Compartment(),
+    lint: new Compartment(),
     theme: new Compartment(),
     readOnly: new Compartment(),
     runGutter: new Compartment(),

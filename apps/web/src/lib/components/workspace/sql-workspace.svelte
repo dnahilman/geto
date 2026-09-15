@@ -177,6 +177,7 @@
             {:else if tab.kind === 'console'}
               <SQLConsole
                 {connId}
+                provider={conn?.provider}
                 bind:sql={tab.sql}
                 isActive={ws.activeId === tab.id}
                 onOpenTable={(s, t, f) => ws.openTable(s, t, f)}

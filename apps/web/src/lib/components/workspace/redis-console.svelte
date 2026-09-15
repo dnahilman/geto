@@ -4,7 +4,7 @@
   import type { CompletionContext, CompletionResult } from '@codemirror/autocomplete'
   import * as Resizable from '$lib/components/ui/resizable'
   import { Button } from '$lib/components/ui/button'
-  import SqlEditor from '$lib/editor/sql-editor.svelte'
+  import { QueryEditor } from '$lib/query-editor'
   import ResultTable from './result-table.svelte'
   import ResultTabs from './result-tabs.svelte'
   import { runCommand, type CommandResult } from '$lib/api/keys'
@@ -22,7 +22,7 @@
   // svelte-ignore state_referenced_locally
   let cmd = $state(initialCmd)
   $effect(() => onCmdChange(cmd))
-  let editorRef = $state<ReturnType<typeof SqlEditor>>()
+  let editorRef = $state<ReturnType<typeof QueryEditor>>()
 
   // 'history' = command log; number = index into results.
   let active = $state<'history' | number>('history')
@@ -172,7 +172,7 @@
       <span class="text-muted-foreground ml-auto text-xs">⌘/Ctrl + Enter to run</span>
     </div>
     <div class="min-h-0 flex-1">
-      <SqlEditor
+      <QueryEditor
         bind:this={editorRef}
         bind:value={cmd}
         language="plain"

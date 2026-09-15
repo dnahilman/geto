@@ -131,6 +131,10 @@ export interface EditorInstance {
   insertAtCursor(text: string): void
   /** Wrap current selection with prefix and suffix strings (e.g. subquery or CTE). */
   wrapSelection(prefix: string, suffix: string): void
+  /** Undo the last edit action. Returns true if an action was undone. */
+  undo(): boolean
+  /** Redo the last undone edit action. Returns true if an action was redone. */
+  redo(): boolean
   /** Dispatch transactions to the underlying view. */
   dispatch(...tr: Parameters<EditorView['dispatch']>): void
 }

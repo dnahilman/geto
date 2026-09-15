@@ -13,6 +13,7 @@ import { createMongoLanguageExtension } from '../languages/mongodb/language'
 import { formatMongoQuery } from '../languages/mongodb/formatter'
 import { createSqlCompletionExtension } from '../autocomplete/completion'
 import { createSqlLinter } from '../lint/lint'
+import { undo, redo } from '@codemirror/commands'
 import { createShortcutsKeymap } from '../plugins/shortcuts'
 
 export type LanguageExtensionFactory = (
@@ -76,6 +77,13 @@ export function createEditor(container: HTMLElement, options: EditorOptions = {}
     return []
   }
 
+  const resolveLinterExtension = (): Extension => {
+    if (currentLanguage === 'sql') {
+      return createSqlLinter()
+    }
+    return []
+  }
+
   const shortcuts = createShortcutsKeymap({
     onRun: () => {
       if (!options.onRun) return false
@@ -95,7 +103,7 @@ export function createEditor(container: HTMLElement, options: EditorOptions = {}
     ...createBaseExtensions(options),
     compartments.lang.of(resolveLanguageExtension()),
     compartments.meta.of(resolveMetadataExtension()),
-    createSqlLinter(),
+    compartments.lint.of(resolveLinterExtension()),
     compartments.readOnly.of(options.readOnly ? EditorState.readOnly.of(true) : []),
   ]
 
@@ -158,7 +166,10 @@ export function createEditor(container: HTMLElement, options: EditorOptions = {}
       }
 
       if (formatted && formatted !== current) {
-        instance.setValue(formatted)
+        view.dispatch({
+          changes: { from: 0, to: view.state.doc.length, insert: formatted },
+          userEvent: 'format',
+        })
       }
     },
 
@@ -173,6 +184,7 @@ export function createEditor(container: HTMLElement, options: EditorOptions = {}
         effects: [
           compartments.lang.reconfigure(resolveLanguageExtension()),
           compartments.meta.reconfigure(resolveMetadataExtension()),
+          compartments.lint.reconfigure(resolveLinterExtension()),
         ],
       })
     },
@@ -246,6 +258,14 @@ export function createEditor(container: HTMLElement, options: EditorOptions = {}
         userEvent: 'input.wrap',
       })
       view.focus()
+    },
+
+    undo(): boolean {
+      return undo(view)
+    },
+
+    redo(): boolean {
+      return redo(view)
     },
 
     dispatch(...tr: Parameters<EditorView['dispatch']>): void {

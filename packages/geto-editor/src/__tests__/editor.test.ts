@@ -243,5 +243,32 @@ describe('@geto/editor Test Suite', () => {
       session.run('all')
       expect(executedSql).toBe('SELECT 1; SELECT 2;')
     })
+
+    it('should delegate undo and redo to the attached instance', () => {
+      let undoCalled = false
+      let redoCalled = false
+      const session = new EditorSession()
+      const mockEditor = {
+        getValue: () => '',
+        getSelectedOrAll: () => '',
+        getCursorPosition: () => ({ line: 1, col: 1, offset: 0 }),
+        getStatementAtCursor: () => null,
+        view: { state: { selection: { main: { empty: true } } } },
+        undo: () => {
+          undoCalled = true
+          return true
+        },
+        redo: () => {
+          redoCalled = true
+          return true
+        },
+      } as unknown as EditorInstance
+
+      session.attach(mockEditor)
+      expect(session.undo()).toBe(true)
+      expect(undoCalled).toBe(true)
+      expect(session.redo()).toBe(true)
+      expect(redoCalled).toBe(true)
+    })
   })
 })

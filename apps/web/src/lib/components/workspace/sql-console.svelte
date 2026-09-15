@@ -4,8 +4,7 @@
   import * as Resizable from '$lib/components/ui/resizable'
   import * as AlertDialog from '$lib/components/ui/alert-dialog'
   import { Button } from '$lib/components/ui/button'
-  import SqlEditor from '$lib/editor/sql-editor.svelte'
-  import { formatSql } from '$lib/editor/format'
+  import { QueryEditor } from '$lib/query-editor'
   import SqlConsoleHistory from './sql-console-history.svelte'
   import SqlConsoleTable from './sql-console-table.svelte'
   import ResultTabs from './result-tabs.svelte'
@@ -17,6 +16,7 @@
 
   interface Props {
     connId: string
+    provider?: string
     sql?: string
     isActive?: boolean
     onOpenTable?: (schema: string, table: string, filter?: TabFilter) => void
@@ -25,6 +25,7 @@
 
   let {
     connId,
+    provider = undefined,
     sql = $bindable(''),
     isActive = true,
     onOpenTable,
@@ -33,7 +34,7 @@
 
   const qc = useQueryClient()
 
-  let editorRef = $state<ReturnType<typeof SqlEditor>>()
+  let editorRef = $state<ReturnType<typeof QueryEditor>>()
 
   // 'history' = history tab; number = index into results array.
   let active = $state<'history' | number>('history')
@@ -219,7 +220,7 @@
               variant="ghost"
               class="size-7 text-muted-foreground hover:text-foreground"
               title="Format SQL"
-              onclick={() => editorRef?.setValue(formatSql(sql))}
+              onclick={() => editorRef?.format()}
             >
               <Braces class="size-3.5" />
             </Button>
@@ -230,11 +231,12 @@
 
         <!-- CodeMirror Editor -->
         <div class="min-h-0 flex-1">
-          <SqlEditor
+          <QueryEditor
             bind:this={editorRef}
             bind:value={sql}
-            uppercase={true}
-            completion={completion.data}
+            language="sql"
+            dialect={provider ?? 'standard'}
+            metadata={completion.data}
             onrun={doRun}
             onrunstatement={doRun}
           />

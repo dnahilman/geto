@@ -109,6 +109,14 @@
     editor?.focus()
   }
 
+  export function undo(): boolean {
+    return editor?.undo() ?? false
+  }
+
+  export function redo(): boolean {
+    return editor?.redo() ?? false
+  }
+
   export function getSession(): EditorSession {
     return activeSession
   }

@@ -26,6 +26,10 @@ export interface QueryEditorContextValue {
   setValue: (text: string) => void
   /** Focus the editor. */
   focus: () => void
+  /** Undo the last edit action. */
+  undo: () => boolean
+  /** Redo the last undone edit action. */
+  redo: () => boolean
 }
 
 /**
@@ -50,6 +54,8 @@ export function setQueryEditorContext(session: EditorSession): QueryEditorContex
     getStatementAtCursor: () => session.getSnapshot().activeStatement,
     setValue: (text) => session.setValue(text),
     focus: () => session.focus(),
+    undo: () => session.undo(),
+    redo: () => session.redo(),
   }
 
   setContext(QUERY_EDITOR_CONTEXT_KEY, context)
