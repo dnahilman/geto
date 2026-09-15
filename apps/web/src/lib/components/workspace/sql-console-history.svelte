@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { CircleCheck, CircleX } from 'lucide-svelte'
+  import { CircleCheck, CircleX, History } from 'lucide-svelte'
   import { createQuery } from '@tanstack/svelte-query'
   import { consoleQueries } from '$lib/queries'
 
@@ -37,6 +37,18 @@
       {/each}
     </ul>
   {:else}
-    <p class="text-muted-foreground p-3 text-sm">No queries yet.</p>
+    <div
+      class="flex h-full flex-col items-center justify-center gap-2 p-6 text-center text-muted-foreground select-none"
+    >
+      <div class="rounded-full bg-muted/50 p-3 border border-border/50 shadow-xs">
+        <History class="size-4 opacity-70" />
+      </div>
+      <div class="space-y-0.5">
+        <p class="text-xs font-medium text-foreground">No query history</p>
+        <p class="text-[11px] text-muted-foreground/80">
+          Queries you execute in this console will be recorded here.
+        </p>
+      </div>
+    </div>
   {/if}
 </div>

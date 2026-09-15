@@ -88,6 +88,8 @@ export interface EditorOptions {
   tabSize?: number
   /** Custom autocomplete completion source (used in plain/redis or custom modes). */
   completionSource?: CompletionSource
+  /** Optional placeholder text displayed when editor is empty. */
+  placeholder?: string
   /** Theme extension or preset. If omitted, built-in VS Code Dark theme is used. */
   theme?: Extension
   /** Callback fired when user runs selected query or whole document (Mod-Enter). */

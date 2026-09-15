@@ -33,6 +33,8 @@
     runGutter?: boolean
     /** Optional existing EditorSession to bind to. If omitted, creates an internal session. */
     session?: EditorSession
+    /** Placeholder text displayed when editor is empty. */
+    placeholder?: string
     /** Callback when user executes query (Mod-Enter). */
     onrun?: (text: string) => void
     /** Callback when user clicks the gutter ▶ on a single statement. */
@@ -51,6 +53,7 @@
     lineNumbers = true,
     runGutter = true,
     session = undefined,
+    placeholder = '-- Type a SQL query or pick a template above...',
     onrun,
     onrunstatement,
     onstatementschange,
@@ -133,6 +136,7 @@
       readOnly,
       lineNumbers,
       runGutter,
+      placeholder,
       onRun: (text) => onrun?.(text),
       onRunStatement: (sql) => onrunstatement?.(sql),
       onStatementsChange: (count) => onstatementschange?.(count),
@@ -185,7 +189,7 @@
   <div bind:this={container} class="h-full w-full overflow-hidden"></div>
   {#if !ready}
     <div
-      class="text-muted-foreground absolute inset-0 flex items-center justify-center gap-2 bg-[#1e1e1e] text-xs"
+      class="text-muted-foreground absolute inset-0 flex items-center justify-center gap-2 bg-background/80 backdrop-blur-xs text-xs"
     >
       <Loader class="size-4 animate-spin" /> Loading query editor…
     </div>

@@ -1,9 +1,20 @@
 <script lang="ts">
   import { onDestroy } from 'svelte'
   import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-query'
-  import { TriangleAlert, Play, Loader, Braces, Undo2, Redo2 } from 'lucide-svelte'
+  import {
+    TriangleAlert,
+    Play,
+    Loader,
+    Braces,
+    Undo2,
+    Redo2,
+    Sparkles,
+    Eraser,
+    ChevronDown,
+  } from 'lucide-svelte'
   import * as Resizable from '$lib/components/ui/resizable'
   import * as AlertDialog from '$lib/components/ui/alert-dialog'
+  import * as DropdownMenu from '$lib/components/ui/dropdown-menu'
   import { Button } from '$lib/components/ui/button'
   import { QueryEditor } from '$lib/query-editor'
   import { EditorSession, resolveDialect, type EditorStateSnapshot } from '@geto/editor'
@@ -37,6 +48,53 @@
   const qc = useQueryClient()
 
   let editorRef = $state<ReturnType<typeof QueryEditor>>()
+
+  const SQL_TEMPLATES = [
+    {
+      label: 'Select with Limit',
+      description: 'Retrieve first 50 rows from table',
+      sql: 'SELECT * FROM table_name LIMIT 50;',
+    },
+    {
+      label: 'Count Records',
+      description: 'Count total rows matching condition',
+      sql: 'SELECT COUNT(*) AS total FROM table_name;',
+    },
+    {
+      label: 'Filter & Sort',
+      description: 'WHERE condition with ORDER BY and LIMIT',
+      sql: 'SELECT * FROM table_name WHERE condition ORDER BY id DESC LIMIT 50;',
+    },
+    {
+      label: 'Group & Aggregate',
+      description: 'GROUP BY column with aggregate metric',
+      sql: 'SELECT category, COUNT(*) AS count FROM table_name GROUP BY category;',
+    },
+    {
+      label: 'Insert Row',
+      description: 'Insert new row template',
+      sql: "INSERT INTO table_name (column1, column2)\nVALUES ('value1', 'value2');",
+    },
+    {
+      label: 'Update Rows',
+      description: 'Update records with WHERE guard',
+      sql: "UPDATE table_name\nSET column1 = 'new_value'\nWHERE id = 1;",
+    },
+    {
+      label: 'Explain Query Plan',
+      description: 'Inspect query execution plan and performance',
+      sql: 'EXPLAIN ANALYZE\nSELECT * FROM table_name;',
+    },
+  ]
+
+  function applyTemplate(tplSql: string) {
+    if (!sql.trim()) {
+      editorRef?.setValue(tplSql)
+    } else {
+      editorRef?.insertAtCursor('\n\n' + tplSql)
+    }
+    editorRef?.focus()
+  }
 
   // svelte-ignore state_referenced_locally
   const session = new EditorSession({
@@ -168,7 +226,23 @@
 {/snippet}
 
 {#snippet emptyResultsView()}
-  <p class="text-muted-foreground p-3 text-sm">Run a query to see results.</p>
+  <div
+    class="flex h-full flex-col items-center justify-center gap-3 p-6 text-center text-muted-foreground select-none"
+  >
+    <div class="rounded-full bg-muted/50 p-3.5 border border-border/50 shadow-xs">
+      <Play class="size-5 text-emerald-500/80 fill-current translate-x-0.5" />
+    </div>
+    <div class="space-y-1.5 max-w-sm">
+      <p class="text-sm font-medium text-foreground">No query executed yet</p>
+      <p class="text-xs text-muted-foreground/80 leading-relaxed">
+        Write a SQL query above and click <span class="text-emerald-500 font-medium">Run</span> or
+        press
+        <kbd class="px-1.5 py-0.5 rounded bg-muted font-mono text-[10px] text-foreground border border-border/60"
+          >⌘ + Enter</kbd
+        > to view records, output tables, and execution metrics here.
+      </p>
+    </div>
+  </div>
 {/snippet}
 
 {#snippet commandResultView(result: StatementResult)}
@@ -222,26 +296,64 @@
     <Resizable.PaneGroup direction="vertical" class="h-full">
       <!-- ── Editor pane ── -->
       <Resizable.Pane defaultSize={50} minSize={20} class="flex flex-col">
-        <!-- Editor Toolbar (compact, icon-only, matching table-view toolbar height) -->
+        <!-- Editor Toolbar (modern, action-driven, prominent run button & templates) -->
         <div
           class="flex h-8 shrink-0 items-center justify-between border-b bg-background px-2 text-xs gap-2"
         >
-          <div class="flex items-center gap-1 ps-1">
+          <div class="flex items-center gap-1 ps-0.5">
             <!-- Run Selection or All (Cmd+Enter) -->
             <Button
-              size="icon"
-              variant="ghost"
-              class="size-7 text-emerald-600 hover:text-emerald-500 hover:bg-emerald-500/10"
+              size="sm"
+              class="h-6.5 px-2.5 bg-emerald-600 hover:bg-emerald-500 text-white gap-1.5 font-medium text-xs shadow-xs transition-colors cursor-pointer"
               title="Run selection or query (⌘/Ctrl + Enter)"
               disabled={run.isPending}
               onclick={() => session.run('selection')}
             >
               {#if run.isPending}
-                <Loader class="size-3.5 animate-spin" />
+                <Loader class="size-3 animate-spin" />
+                <span>Running…</span>
               {:else}
-                <Play class="size-3.5 fill-current" />
+                <Play class="size-3 fill-current" />
+                <span>Run</span>
               {/if}
             </Button>
+
+            <!-- Templates dropdown -->
+            <DropdownMenu.Root>
+              <DropdownMenu.Trigger>
+                {#snippet child({ props })}
+                  <Button
+                    {...props}
+                    size="sm"
+                    variant="ghost"
+                    class="h-6.5 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground font-normal cursor-pointer"
+                    title="Query templates & snippets"
+                  >
+                    <Sparkles class="size-3 text-amber-400" />
+                    <span class="hidden sm:inline">Templates</span>
+                    <ChevronDown class="size-3 opacity-60" />
+                  </Button>
+                {/snippet}
+              </DropdownMenu.Trigger>
+              <DropdownMenu.Content align="start" class="w-60 text-xs">
+                <DropdownMenu.Group>
+                  <DropdownMenu.GroupHeading
+                    class="text-[10px] uppercase text-muted-foreground font-semibold px-2 py-1"
+                  >
+                    SQL Starter Templates
+                  </DropdownMenu.GroupHeading>
+                  {#each SQL_TEMPLATES as tpl (tpl.label)}
+                    <DropdownMenu.Item
+                      class="cursor-pointer flex flex-col items-start gap-0.5 py-1.5 px-2"
+                      onSelect={() => applyTemplate(tpl.sql)}
+                    >
+                      <span class="font-medium text-foreground">{tpl.label}</span>
+                      <span class="text-[10px] text-muted-foreground">{tpl.description}</span>
+                    </DropdownMenu.Item>
+                  {/each}
+                </DropdownMenu.Group>
+              </DropdownMenu.Content>
+            </DropdownMenu.Root>
 
             <div class="mx-0.5 h-3.5 w-px bg-border/60"></div>
 
@@ -276,11 +388,25 @@
               <Redo2 class="size-3.5" />
             </Button>
 
+            <!-- Clear Editor -->
+            <Button
+              size="icon"
+              variant="ghost"
+              class="size-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+              title="Clear editor text"
+              onclick={() => {
+                editorRef?.setValue('')
+                editorRef?.focus()
+              }}
+              disabled={!sql.trim()}
+            >
+              <Eraser class="size-3.5" />
+            </Button>
           </div>
 
           <div class="flex items-center gap-2 pe-1">
             <span
-              class="rounded border border-border/60 bg-muted/30 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground uppercase tracking-wider select-none"
+              class="rounded-full border border-border/80 bg-muted/40 px-2 py-0.5 font-mono text-[10px] font-semibold text-muted-foreground uppercase tracking-wider select-none"
               title={`Database Dialect: ${provider ?? 'standard'}`}
             >
               {provider ?? 'standard'}

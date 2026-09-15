@@ -5,6 +5,7 @@ import {
   highlightActiveLine,
   highlightActiveLineGutter,
   drawSelection,
+  placeholder,
 } from '@codemirror/view'
 import { EditorState, type Extension } from '@codemirror/state'
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands'
@@ -43,6 +44,10 @@ export function createBaseExtensions(options: EditorOptions): Extension[] {
     options.theme ?? vscodeDarkTheme,
     syntaxHighlighting(vscodeHighlight),
   ]
+
+  if (options.placeholder) {
+    extensions.push(placeholder(options.placeholder))
+  }
 
   if (options.lineNumbers !== false) {
     extensions.unshift(cmLineNumbers(), highlightActiveLineGutter())
