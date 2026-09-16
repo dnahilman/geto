@@ -74,58 +74,67 @@ export const runQuery = (
   confirmDangerous = false,
   opts: { limit?: number; offset?: number } = {},
 ): Promise<RunResponse> =>
-  execute('execute_query', {
-    connectionId: id,
-    body: { sql, confirmDangerous, limit: opts.limit, offset: opts.offset },
-  }, () =>
-    unwrap(
-      client.POST('/api/connections/{id}/query', {
-        params: { path: { id } },
-        body: { sql, confirmDangerous, limit: opts.limit, offset: opts.offset },
-      }),
-    ) as Promise<RunResponse>,
+  execute(
+    'execute_query',
+    {
+      connectionId: id,
+      body: { sql, confirmDangerous, limit: opts.limit, offset: opts.offset },
+    },
+    () =>
+      unwrap(
+        client.POST('/api/connections/{id}/query', {
+          params: { path: { id } },
+          body: { sql, confirmDangerous, limit: opts.limit, offset: opts.offset },
+        }),
+      ) as Promise<RunResponse>,
   )
 
 export const analyzeQuery = (id: string, sql: string): Promise<SafetyReport> =>
-  execute('analyze_query', { sql }, () =>
-    unwrap(
-      client.POST('/api/connections/{id}/query/analyze', {
-        params: { path: { id } },
-        body: { sql },
-      }),
-    ) as Promise<SafetyReport>,
+  execute(
+    'analyze_query',
+    { sql },
+    () =>
+      unwrap(
+        client.POST('/api/connections/{id}/query/analyze', {
+          params: { path: { id } },
+          body: { sql },
+        }),
+      ) as Promise<SafetyReport>,
   )
 
 export const completionKey = (id: string) => ['completion', id] as const
 export const getCompletion = (id: string): Promise<CompletionData> =>
-  execute('get_completion', { connectionId: id }, () =>
-    unwrap(
-      client.GET('/api/connections/{id}/completion', {
-        params: { path: { id } },
-      }),
-    ) as Promise<CompletionData>,
+  execute(
+    'get_completion',
+    { connectionId: id },
+    () =>
+      unwrap(
+        client.GET('/api/connections/{id}/completion', {
+          params: { path: { id } },
+        }),
+      ) as Promise<CompletionData>,
   )
 
 export const historyKey = (id: string) => ['history', id] as const
 export const getHistory = (id: string): Promise<HistoryEntry[]> =>
-  execute('list_query_history', { connectionId: id }, () =>
-    unwrap(
-      client.GET('/api/connections/{id}/history', {
-        params: { path: { id } },
-      }),
-    ) as Promise<HistoryEntry[]>,
-  )
-
-export const clearHistory = async (id: string): Promise<{ deleted: number }> => {
-  const deleted = await execute<number>(
-    'clear_query_history',
+  execute(
+    'list_query_history',
     { connectionId: id },
     () =>
       unwrap(
-        client.DELETE('/api/connections/{id}/history', {
+        client.GET('/api/connections/{id}/history', {
           params: { path: { id } },
         }),
-      ).then((r) => r.deleted),
+      ) as Promise<HistoryEntry[]>,
+  )
+
+export const clearHistory = async (id: string): Promise<{ deleted: number }> => {
+  const deleted = await execute<number>('clear_query_history', { connectionId: id }, () =>
+    unwrap(
+      client.DELETE('/api/connections/{id}/history', {
+        params: { path: { id } },
+      }),
+    ).then((r) => r.deleted),
   )
   return { deleted: Number(deleted) }
 }

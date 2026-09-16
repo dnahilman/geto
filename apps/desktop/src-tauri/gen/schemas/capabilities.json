@@ -1,1 +1,22 @@
-{"default":{"identifier":"default","description":"Default capabilities for Geto desktop main window","local":true,"windows":["main"],"permissions":["core:default","core:window:allow-close","core:window:allow-minimize","core:window:allow-maximize","core:window:allow-unmaximize","core:window:allow-toggle-maximize","core:window:allow-start-dragging","core:window:allow-start-resize-dragging","dialog:default","fs:default","fs:allow-write-text-file",{"identifier":"fs:scope","allow":["**"]}]}}
+{
+  "default": {
+    "identifier": "default",
+    "description": "Default capabilities for Geto desktop main window",
+    "local": true,
+    "windows": ["main"],
+    "permissions": [
+      "core:default",
+      "core:window:allow-close",
+      "core:window:allow-minimize",
+      "core:window:allow-maximize",
+      "core:window:allow-unmaximize",
+      "core:window:allow-toggle-maximize",
+      "core:window:allow-start-dragging",
+      "core:window:allow-start-resize-dragging",
+      "dialog:default",
+      "fs:default",
+      "fs:allow-write-text-file",
+      { "identifier": "fs:scope", "allow": ["**"] }
+    ]
+  }
+}

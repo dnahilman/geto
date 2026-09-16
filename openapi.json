@@ -935,6 +935,14 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "filters",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -2461,6 +2469,16 @@
               "null"
             ]
           },
+          "filterGroup": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TableFilterGroup"
+              }
+            ]
+          },
           "filterValue": {
             "type": [
               "string",
@@ -2530,6 +2548,41 @@
             "items": {
               "type": "string"
             }
+          }
+        }
+      },
+      "TableFilterGroup": {
+        "type": "object",
+        "properties": {
+          "conjunction": {
+            "type": "string"
+          },
+          "rules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TableFilterRule"
+            }
+          }
+        }
+      },
+      "TableFilterRule": {
+        "type": "object",
+        "required": [
+          "column",
+          "operator"
+        ],
+        "properties": {
+          "column": {
+            "type": "string"
+          },
+          "operator": {
+            "type": "string"
+          },
+          "value": {
+            "type": [
+              "string",
+              "null"
+            ]
           }
         }
       },

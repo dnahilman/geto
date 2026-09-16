@@ -43,7 +43,9 @@ export function resolveDialect(provider?: string | SQLDialect): SQLDialect {
 /**
  * Return a standardized language identifier for formatters or logging.
  */
-export function getDialectFormatterLanguage(dialect?: SQLDialect | string): 'postgresql' | 'mysql' | 'sqlite' | 'sql' {
+export function getDialectFormatterLanguage(
+  dialect?: SQLDialect | string,
+): 'postgresql' | 'mysql' | 'sqlite' | 'sql' {
   if (typeof dialect === 'string') {
     const s = dialect.toLowerCase()
     if (s.includes('postgres')) return 'postgresql'

@@ -29,10 +29,7 @@ export function applyWithTrailingSpace(
 /**
  * Higher-order helper to attach DataGrip trailing space behavior to a Completion item.
  */
-export function withTrailingSpace(
-  completion: Completion,
-  customInsert?: string,
-): Completion {
+export function withTrailingSpace(completion: Completion, customInsert?: string): Completion {
   return {
     ...completion,
     apply: (view: EditorView, c: Completion, from: number, to: number) => {

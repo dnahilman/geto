@@ -33,6 +33,10 @@
   import WorkspaceSkeletons from './workspace-skeletons.svelte'
   import type { TabFilter } from '$lib/stores/workspace.svelte'
   import type { RelationsConfig } from '../data-grid/data-grid-context'
+  import {
+    type TableFilterGroup,
+    getActiveFilterGroup,
+  } from '$lib/components/data-grid/types/filter.js'
 
   interface Props {
     connId: string
@@ -62,7 +66,17 @@
   let sorting = $state<SortingState>([])
   let rowSelection = $state<RowSelectionState>({})
   let columnSizing = $state<ColumnSizingState>({})
+  let filterGroup = $state<TableFilterGroup>({
+    conjunction: 'AND',
+    rules: [],
+  })
+  let appliedFilterGroup = $state<TableFilterGroup>({
+    conjunction: 'AND',
+    rules: [],
+  })
   const qc = useQueryClient()
+
+  const activeFilters = $derived(getActiveFilterGroup(appliedFilterGroup))
 
   const currentQueryOpts = $derived(
     tableQueries.rows(connId, schema, tableName, {
@@ -71,6 +85,7 @@
       orderBy: sorting[0]?.id,
       orderDir: sorting[0]?.desc ? 'DESC' : 'ASC',
       filter: filter ? { column: filter.column, value: filter.value } : undefined,
+      filters: activeFilters,
     }),
   )
   const rowsKey = $derived(
@@ -79,8 +94,15 @@
       schema,
       tableName,
       filter ? { column: filter.column, value: filter.value } : null,
+      activeFilters,
     ),
   )
+
+  function handleFilterChange(newGroup: TableFilterGroup) {
+    appliedFilterGroup = JSON.parse(JSON.stringify(newGroup))
+    pagination.pageIndex = 0
+    qc.invalidateQueries({ queryKey: rowsKey })
+  }
 
   const rows = createQuery(() => currentQueryOpts)
   const detail = createQuery(() => tableQueries.detail(connId, schema, tableName))
@@ -487,11 +509,19 @@
   <form.AppForm>
     <div class="flex h-full flex-col">
       <!-- Sub-Header DataGrid Toolbar -->
-      {#if tableRows.length > 0}
+      {#if view === 'table' && !rows.isError}
         <table.Toolbar
           onRefresh={refresh}
           onDeleteSelected={handleDeleteSelected}
           isDeleting={deleteMutation.isPending}
+          columns={cols.map((c) => ({
+            name: c.name,
+            typeName: c.typeName,
+            isPrimaryKey: pk.includes(c.name),
+          }))}
+          bind:filterGroup
+          {appliedFilterGroup}
+          onFilterChange={handleFilterChange}
         />
       {/if}
 
@@ -596,9 +626,25 @@
               <div class="space-y-1">
                 <p class="text-sm font-medium text-foreground">No records found</p>
                 <p class="text-xs text-muted-foreground">
-                  {filter ? 'No records match the active filter' : 'This table is currently empty'}
+                  {#if activeFilters}
+                    No records match your filters
+                  {:else if filter}
+                    No records match the active filter
+                  {:else}
+                    This table is currently empty
+                  {/if}
                 </p>
               </div>
+              {#if activeFilters}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  class="mt-1 h-7 text-xs"
+                  onclick={() => handleFilterChange({ conjunction: 'AND', rules: [] })}
+                >
+                  Clear filters
+                </Button>
+              {/if}
             </div>
           </div>
         {:else}
@@ -671,8 +717,8 @@
               {lastMutation.count.toLocaleString()} row{lastMutation.count === 1 ? '' : 's'} affected
               · {lastMutation.durationMs}ms
             {:else}
-              {data.length.toLocaleString()} row{data.length === 1 ? '' : 's'} · {rows.data
-                ?.durationMs ?? 0}ms
+              {data.length.toLocaleString()} row{data.length === 1 ? '' : 's'}
+              {activeFilters ? ' (filtered)' : ''} · {rows.data?.durationMs ?? 0}ms
             {/if}
           </span>
         {/if}

@@ -89,10 +89,7 @@ export function buildSqlNamespace(
     const insertName = needsQuoting(tbl.name) ? `"${tbl.name}"` : tbl.name
 
     schemaObj[tbl.name] = {
-      self: withTrailingSpace(
-        { label: tbl.name, type: 'type', detail: tbl.type },
-        insertName,
-      ),
+      self: withTrailingSpace({ label: tbl.name, type: 'type', detail: tbl.type }, insertName),
       children: cols,
     }
   }

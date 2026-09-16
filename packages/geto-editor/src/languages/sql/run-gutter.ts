@@ -1,11 +1,7 @@
 import { GutterMarker, gutter } from '@codemirror/view'
 import type { EditorView } from '@codemirror/view'
 import type { Extension } from '@codemirror/state'
-import {
-  runGutterState,
-  runStatementHandlerFacet,
-  statementSplitterFacet,
-} from '../../core/state'
+import { runGutterState, runStatementHandlerFacet, statementSplitterFacet } from '../../core/state'
 import { statementRanges } from './statements'
 import { checkSqlSyntax } from '../../lint/lint'
 

@@ -69,11 +69,13 @@
 
   // Initialize or bind EditorSession
   // svelte-ignore state_referenced_locally
-  const activeSession = session ?? new EditorSession({
-    language,
-    dialect: resolveDialect(dialect),
-    onRun: (text) => onrun?.(text),
-  })
+  const activeSession =
+    session ??
+    new EditorSession({
+      language,
+      dialect: resolveDialect(dialect),
+      onRun: (text) => onrun?.(text),
+    })
 
   // Expose reactive context to child components (e.g. toolbars, status bars)
   setQueryEditorContext(activeSession)

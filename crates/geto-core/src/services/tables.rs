@@ -3,7 +3,7 @@ use chrono::Utc;
 use serde::{Deserialize, Serialize};
 
 use crate::db::shared::QueryResult;
-use crate::db::types::{ColumnSpec, TableDataOptions};
+use crate::db::types::{ColumnSpec, TableDataOptions, TableFilterGroup, TableFilterRule};
 use crate::db::DriverRegistry;
 use crate::error::AppError;
 use crate::state::CoreState;
@@ -22,6 +22,8 @@ pub struct RowsQueryParams {
     pub filter_column: Option<String>,
     #[serde(default, alias = "filterValue")]
     pub filter_value: Option<String>,
+    #[serde(default)]
+    pub filters: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
@@ -89,6 +91,26 @@ pub async fn get_rows(
         .get_driver(state, connection_id)
         .await?;
 
+    let filter_group = if let Some(filters_raw) = &params.filters {
+        let trimmed = filters_raw.trim();
+        if trimmed.is_empty() {
+            None
+        } else {
+            serde_json::from_str::<TableFilterGroup>(trimmed)
+                .ok()
+                .or_else(|| {
+                    serde_json::from_str::<Vec<TableFilterRule>>(trimmed)
+                        .ok()
+                        .map(|rules| TableFilterGroup {
+                            conjunction: "AND".to_string(),
+                            rules,
+                        })
+                })
+        }
+    } else {
+        None
+    };
+
     let opts = TableDataOptions {
         limit: params.limit.unwrap_or(500).min(10000),
         offset: params.offset.unwrap_or(0),
@@ -96,6 +118,7 @@ pub async fn get_rows(
         order_dir: params.order_dir,
         filter_column: params.filter_column,
         filter_value: params.filter_value,
+        filter_group,
     };
 
     let result = driver.get_table_data(Some(schema), table, opts).await?;

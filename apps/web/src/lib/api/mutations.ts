@@ -5,33 +5,42 @@ import type { QueryResult } from '$lib/types/server'
 export type Row = Record<string, unknown>
 
 export const insertRow = (id: string, schema: string, table: string, values: Row) =>
-  execute('insert_table_row', { connectionId: id, schema, table, values }, () =>
-    unwrap(
-      client.POST('/api/connections/{id}/tables/{schema}/{table}/rows', {
-        params: { path: { id, schema, table } },
-        body: { values },
-      }),
-    ) as Promise<QueryResult>,
+  execute(
+    'insert_table_row',
+    { connectionId: id, schema, table, values },
+    () =>
+      unwrap(
+        client.POST('/api/connections/{id}/tables/{schema}/{table}/rows', {
+          params: { path: { id, schema, table } },
+          body: { values },
+        }),
+      ) as Promise<QueryResult>,
   )
 
 export const updateRow = (id: string, schema: string, table: string, pk: Row, values: Row) =>
-  execute('update_table_row', { connectionId: id, schema, table, pk, values }, () =>
-    unwrap(
-      client.PATCH('/api/connections/{id}/tables/{schema}/{table}/rows', {
-        params: { path: { id, schema, table } },
-        body: { pk, values },
-      }),
-    ) as Promise<QueryResult>,
+  execute(
+    'update_table_row',
+    { connectionId: id, schema, table, pk, values },
+    () =>
+      unwrap(
+        client.PATCH('/api/connections/{id}/tables/{schema}/{table}/rows', {
+          params: { path: { id, schema, table } },
+          body: { pk, values },
+        }),
+      ) as Promise<QueryResult>,
   )
 
 export const deleteRow = (id: string, schema: string, table: string, pk: Row) =>
-  execute('delete_table_row', { connectionId: id, schema, table, pk }, () =>
-    unwrap(
-      client.DELETE('/api/connections/{id}/tables/{schema}/{table}/rows', {
-        params: { path: { id, schema, table } },
-        body: { pk },
-      }),
-    ) as Promise<QueryResult>,
+  execute(
+    'delete_table_row',
+    { connectionId: id, schema, table, pk },
+    () =>
+      unwrap(
+        client.DELETE('/api/connections/{id}/tables/{schema}/{table}/rows', {
+          params: { path: { id, schema, table } },
+          body: { pk },
+        }),
+      ) as Promise<QueryResult>,
   )
 
 export interface ColumnSpec {

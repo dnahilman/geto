@@ -31,7 +31,10 @@ export function createCompartments(): EditorCompartments {
  * Instance-scoped Facet for the run-statement click handler.
  * Avoids module-level globals so multiple editor tabs never conflict.
  */
-export const runStatementHandlerFacet = Facet.define<RunStatementHandler | null, RunStatementHandler | null>({
+export const runStatementHandlerFacet = Facet.define<
+  RunStatementHandler | null,
+  RunStatementHandler | null
+>({
   combine: (values) => values[values.length - 1] ?? null,
 })
 
@@ -45,7 +48,10 @@ export interface RunGutterState {
 
 export type StatementSplitterFn = (state: EditorState) => StatementRange[]
 
-export const statementSplitterFacet = Facet.define<StatementSplitterFn | null, StatementSplitterFn | null>({
+export const statementSplitterFacet = Facet.define<
+  StatementSplitterFn | null,
+  StatementSplitterFn | null
+>({
   combine: (values) => values[values.length - 1] ?? null,
 })
 

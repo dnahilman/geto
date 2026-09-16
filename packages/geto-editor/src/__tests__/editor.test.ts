@@ -131,7 +131,8 @@ describe('@geto/editor Test Suite', () => {
 
   describe('Local Syntax Linter (checkSqlSyntax)', () => {
     it('should report zero diagnostics for valid SQL queries', () => {
-      const valid = "SELECT id, name FROM users WHERE role = 'admin' AND (status = 'active' OR age > 18);"
+      const valid =
+        "SELECT id, name FROM users WHERE role = 'admin' AND (status = 'active' OR age > 18);"
       const diagnostics = checkSqlSyntax(valid)
       expect(diagnostics.length).toBe(0)
     })

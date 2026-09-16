@@ -4,1664 +4,1667 @@
  */
 
 export interface paths {
-    "/api/auth/login": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["login"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/auth/logout": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["logout"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/auth/me": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["me"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/connections": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["list_handler"];
-        put?: never;
-        post: operations["create_handler"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/connections/test": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["test_unsaved_handler"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/connections/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["get_handler"];
-        put?: never;
-        post?: never;
-        delete: operations["delete_handler"];
-        options?: never;
-        head?: never;
-        patch: operations["update_handler"];
-        trace?: never;
-    };
-    "/api/connections/{id}/completion": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["get_completion_handler"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/connections/{id}/connection-string": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["connection_string_handler"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/connections/{id}/database": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["set_database_handler"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/connections/{id}/databases": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["list_databases_handler"];
-        put?: never;
-        post: operations["create_database_handler"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/connections/{id}/databases/{name}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete: operations["drop_database_handler"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/connections/{id}/history": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["list_history_handler"];
-        put?: never;
-        post?: never;
-        delete: operations["clear_history_handler"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/connections/{id}/query": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["query_handler"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/connections/{id}/query/analyze": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["analyze_handler"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/connections/{id}/schemas": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["list_schemas_handler"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/connections/{id}/tables": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["create_table_handler"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/connections/{id}/tables/{schema}/{table}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["get_table_detail_handler"];
-        put?: never;
-        post?: never;
-        delete: operations["drop_table_handler"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/connections/{id}/tables/{schema}/{table}/rows": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["get_rows_handler"];
-        put?: never;
-        post: operations["insert_row_handler"];
-        delete: operations["delete_row_handler"];
-        options?: never;
-        head?: never;
-        patch: operations["update_row_handler"];
-        trace?: never;
-    };
-    "/api/connections/{id}/tables/{schema}/{table}/truncate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["truncate_table_handler"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/connections/{id}/test": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["test_saved_handler"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/connections/{id}/tree": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["get_tree_handler"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/health": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["health"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/providers": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["get_providers"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
+  '/api/auth/login': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post: operations['login']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/auth/logout': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post: operations['logout']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/auth/me': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['me']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/connections': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['list_handler']
+    put?: never
+    post: operations['create_handler']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/connections/test': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post: operations['test_unsaved_handler']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/connections/{id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['get_handler']
+    put?: never
+    post?: never
+    delete: operations['delete_handler']
+    options?: never
+    head?: never
+    patch: operations['update_handler']
+    trace?: never
+  }
+  '/api/connections/{id}/completion': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['get_completion_handler']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/connections/{id}/connection-string': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['connection_string_handler']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/connections/{id}/database': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post: operations['set_database_handler']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/connections/{id}/databases': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['list_databases_handler']
+    put?: never
+    post: operations['create_database_handler']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/connections/{id}/databases/{name}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    delete: operations['drop_database_handler']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/connections/{id}/history': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['list_history_handler']
+    put?: never
+    post?: never
+    delete: operations['clear_history_handler']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/connections/{id}/query': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post: operations['query_handler']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/connections/{id}/query/analyze': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post: operations['analyze_handler']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/connections/{id}/schemas': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['list_schemas_handler']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/connections/{id}/tables': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post: operations['create_table_handler']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/connections/{id}/tables/{schema}/{table}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['get_table_detail_handler']
+    put?: never
+    post?: never
+    delete: operations['drop_table_handler']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/connections/{id}/tables/{schema}/{table}/rows': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['get_rows_handler']
+    put?: never
+    post: operations['insert_row_handler']
+    delete: operations['delete_row_handler']
+    options?: never
+    head?: never
+    patch: operations['update_row_handler']
+    trace?: never
+  }
+  '/api/connections/{id}/tables/{schema}/{table}/truncate': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post: operations['truncate_table_handler']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/connections/{id}/test': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post: operations['test_saved_handler']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/connections/{id}/tree': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['get_tree_handler']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/health': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['health']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/providers': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: operations['get_providers']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
 }
-export type webhooks = Record<string, never>;
+export type webhooks = Record<string, never>
 export interface components {
-    schemas: {
-        AnalyzeBody: {
-            sql: string;
-        };
-        AuthStatus: {
-            authenticated: boolean;
-        };
-        ClearHistoryResponse: {
-            /** Format: int64 */
-            deleted: number;
-        };
-        ColumnInfo: {
-            default?: string | null;
-            enumValues?: string[] | null;
-            isPrimaryKey: boolean;
-            name: string;
-            notNull: boolean;
-            /** Format: int32 */
-            ordinal: number;
-            type: string;
-        };
-        ColumnMeta: {
-            /** Format: int32 */
-            dataTypeID: number;
-            name: string;
-            /** Format: int32 */
-            sourceColumn?: number | null;
-            /** Format: int32 */
-            sourceTable?: number | null;
-            typeName: string;
-        };
-        ColumnSpec: {
-            default?: string | null;
-            name: string;
-            notNull?: boolean | null;
-            primaryKey?: boolean | null;
-            type: string;
-        };
-        CompletionColumn: {
-            name: string;
-            schema: string;
-            table: string;
-            type: string;
-        };
-        CompletionForeignKey: {
-            columns: string[];
-            refColumns: string[];
-            refSchema: string;
-            refTable: string;
-            schema: string;
-            table: string;
-        };
-        CompletionFunction: {
-            args: string;
-            kind: string;
-            name: string;
-            returns: string;
-            schema: string;
-        };
-        CompletionResponse: {
-            columns: components["schemas"]["CompletionColumn"][];
-            foreignKeys: components["schemas"]["CompletionForeignKey"][];
-            functions: components["schemas"]["CompletionFunction"][];
-            tables: components["schemas"]["CompletionTable"][];
-        };
-        CompletionTable: {
-            name: string;
-            schema: string;
-            type: components["schemas"]["RelationType"];
-        };
-        Connection: {
-            color?: string | null;
-            createdAt: string;
-            database: string;
-            hasPassword: boolean;
-            host: string;
-            id: string;
-            name: string;
-            /** Format: int32 */
-            port: number;
-            provider: string;
-            readonly: boolean;
-            ssh?: null | components["schemas"]["SshConfig"];
-            sslMode: components["schemas"]["SslMode"];
-            updatedAt: string;
-            username: string;
-        };
-        ConnectionInput: {
-            color?: string | null;
-            database: string;
-            host: string;
-            name: string;
-            password?: string | null;
-            /** Format: int32 */
-            port: number;
-            provider?: string;
-            readonly?: boolean;
-            ssh?: null | components["schemas"]["SshInput"];
-            sslMode?: components["schemas"]["SslMode"];
-            username: string;
-        };
-        ConnectionStringResponse: {
-            connectionString: string;
-        };
-        ConstraintInfo: {
-            definition: string;
-            name: string;
-            type: string;
-        };
-        CreateDatabaseRequest: {
-            name: string;
-        };
-        CreateDatabaseResponse: {
-            created: boolean;
-            name: string;
-        };
-        CreateTableBody: {
-            columns: components["schemas"]["ColumnSpec"][];
-            name: string;
-            schema: string;
-        };
-        CreateTableResponse: {
-            created: boolean;
-            name: string;
-            schema: string;
-        };
-        DatabaseInfo: {
-            name: string;
-            owner: string;
-            size: string;
-        };
-        DeleteResponse: {
-            deleted: boolean;
-        };
-        DeleteRowBody: {
-            pk: {
-                [key: string]: unknown;
-            };
-        };
-        DropDatabaseResponse: {
-            dropped: boolean;
-        };
-        DropTableResponse: {
-            dropped: boolean;
-        };
-        HealthResponse: {
-            name: string;
-            ok: boolean;
-            version: string;
-        };
-        HistoryEntry: {
-            connectionId: string;
-            /** Format: int64 */
-            durationMs?: number | null;
-            error?: string | null;
-            id: string;
-            /** Format: int64 */
-            rowCount?: number | null;
-            sql: string;
-            startedAt: string;
-            status: string;
-        };
-        IndexInfo: {
-            definition: string;
-            isPrimary: boolean;
-            isUnique: boolean;
-            name: string;
-        };
-        InsertRowBody: {
-            values: {
-                [key: string]: unknown;
-            };
-        };
-        LoginInput: {
-            password: string;
-        };
-        ProviderMeta: {
-            /** Format: int32 */
-            defaultPort: number;
-            id: string;
-            kind: string;
-            label: string;
-            urlSchemes: string[];
-        };
-        QueryBody: {
-            confirmDangerous?: boolean | null;
-            /** Format: int32 */
-            limit?: number | null;
-            /** Format: int32 */
-            offset?: number | null;
-            sql: string;
-        };
-        QueryResponse: {
-            report: components["schemas"]["SafetyReport"];
-            requiresConfirmation: boolean;
-        } | {
-            requiresConfirmation: boolean;
-            results: components["schemas"]["StatementResult"][];
-        };
-        QueryResult: {
-            columns: components["schemas"]["ColumnMeta"][];
-            command?: string | null;
-            rowCount: number;
-            rows: Record<string, never>[][];
-        };
-        RelationEntry: {
-            name: string;
-            type: components["schemas"]["RelationType"];
-        };
-        /** @enum {string} */
-        RelationType: "table" | "view" | "matview";
-        RowsResponse: {
-            /** Format: int64 */
-            durationMs: number;
-            result: components["schemas"]["QueryResult"];
-        };
-        SafetyReport: {
-            dangerous: boolean;
-            parseError?: string | null;
-            reasons: string[];
-            statements: components["schemas"]["StatementRisk"][];
-        };
-        SchemaTree: {
-            relations: components["schemas"]["RelationEntry"][];
-            schema: string;
-        };
-        SetDatabaseInput: {
-            name: string;
-        };
-        /** @enum {string} */
-        SshAuthMethod: "password" | "key";
-        SshConfig: {
-            authMethod: components["schemas"]["SshAuthMethod"];
-            enabled: boolean;
-            hasPassphrase: boolean;
-            hasPassword: boolean;
-            hasPrivateKey: boolean;
-            host: string;
-            /** Format: int32 */
-            port: number;
-            username: string;
-        };
-        SshInput: {
-            authMethod: components["schemas"]["SshAuthMethod"];
-            enabled: boolean;
-            host: string;
-            passphrase?: string | null;
-            password?: string | null;
-            /** Format: int32 */
-            port: number;
-            privateKey?: string | null;
-            username: string;
-        };
-        /** @enum {string} */
-        SslMode: "disable" | "allow" | "prefer" | "require" | "verify-ca" | "verify-full";
-        StatementResult: {
-            columns: components["schemas"]["ColumnMeta"][];
-            command?: string | null;
-            /** Format: int64 */
-            durationMs: number;
-            error?: string | null;
-            index: number;
-            /** Format: int32 */
-            limit: number;
-            /** Format: int32 */
-            offset: number;
-            paginated: boolean;
-            rowCount: number;
-            rows: Record<string, never>[][];
-            source?: Record<string, never> | null;
-            sql: string;
-        };
-        StatementRisk: {
-            command: string;
-            dangerous: boolean;
-            reasons: string[];
-        };
-        TableDataOptions: {
-            filterColumn?: string | null;
-            filterValue?: string | null;
-            /** Format: int32 */
-            limit: number;
-            /** Format: int32 */
-            offset: number;
-            orderBy?: string | null;
-            orderDir?: string | null;
-        };
-        TableDetailResponse: {
-            columns: components["schemas"]["ColumnInfo"][];
-            constraints: components["schemas"]["ConstraintInfo"][];
-            foreignKeys: components["schemas"]["CompletionForeignKey"][];
-            indexes: components["schemas"]["IndexInfo"][];
-            primaryKey: string[];
-        };
-        TestResult: {
-            error?: string | null;
-            /** Format: int64 */
-            latencyMs?: number | null;
-            version?: string | null;
-        };
-        TruncateTableResponse: {
-            truncated: boolean;
-        };
-        UpdateRowBody: {
-            pk: {
-                [key: string]: unknown;
-            };
-            values: {
-                [key: string]: unknown;
-            };
-        };
-    };
-    responses: never;
-    parameters: never;
-    requestBodies: never;
-    headers: never;
-    pathItems: never;
+  schemas: {
+    AnalyzeBody: {
+      sql: string
+    }
+    AuthStatus: {
+      authenticated: boolean
+    }
+    ClearHistoryResponse: {
+      /** Format: int64 */
+      deleted: number
+    }
+    ColumnInfo: {
+      default?: string | null
+      enumValues?: string[] | null
+      isPrimaryKey: boolean
+      name: string
+      notNull: boolean
+      /** Format: int32 */
+      ordinal: number
+      type: string
+    }
+    ColumnMeta: {
+      /** Format: int32 */
+      dataTypeID: number
+      name: string
+      /** Format: int32 */
+      sourceColumn?: number | null
+      /** Format: int32 */
+      sourceTable?: number | null
+      typeName: string
+    }
+    ColumnSpec: {
+      default?: string | null
+      name: string
+      notNull?: boolean | null
+      primaryKey?: boolean | null
+      type: string
+    }
+    CompletionColumn: {
+      name: string
+      schema: string
+      table: string
+      type: string
+    }
+    CompletionForeignKey: {
+      columns: string[]
+      refColumns: string[]
+      refSchema: string
+      refTable: string
+      schema: string
+      table: string
+    }
+    CompletionFunction: {
+      args: string
+      kind: string
+      name: string
+      returns: string
+      schema: string
+    }
+    CompletionResponse: {
+      columns: components['schemas']['CompletionColumn'][]
+      foreignKeys: components['schemas']['CompletionForeignKey'][]
+      functions: components['schemas']['CompletionFunction'][]
+      tables: components['schemas']['CompletionTable'][]
+    }
+    CompletionTable: {
+      name: string
+      schema: string
+      type: components['schemas']['RelationType']
+    }
+    Connection: {
+      color?: string | null
+      createdAt: string
+      database: string
+      hasPassword: boolean
+      host: string
+      id: string
+      name: string
+      /** Format: int32 */
+      port: number
+      provider: string
+      readonly: boolean
+      ssh?: null | components['schemas']['SshConfig']
+      sslMode: components['schemas']['SslMode']
+      updatedAt: string
+      username: string
+    }
+    ConnectionInput: {
+      color?: string | null
+      database: string
+      host: string
+      name: string
+      password?: string | null
+      /** Format: int32 */
+      port: number
+      provider?: string
+      readonly?: boolean
+      ssh?: null | components['schemas']['SshInput']
+      sslMode?: components['schemas']['SslMode']
+      username: string
+    }
+    ConnectionStringResponse: {
+      connectionString: string
+    }
+    ConstraintInfo: {
+      definition: string
+      name: string
+      type: string
+    }
+    CreateDatabaseRequest: {
+      name: string
+    }
+    CreateDatabaseResponse: {
+      created: boolean
+      name: string
+    }
+    CreateTableBody: {
+      columns: components['schemas']['ColumnSpec'][]
+      name: string
+      schema: string
+    }
+    CreateTableResponse: {
+      created: boolean
+      name: string
+      schema: string
+    }
+    DatabaseInfo: {
+      name: string
+      owner: string
+      size: string
+    }
+    DeleteResponse: {
+      deleted: boolean
+    }
+    DeleteRowBody: {
+      pk: {
+        [key: string]: unknown
+      }
+    }
+    DropDatabaseResponse: {
+      dropped: boolean
+    }
+    DropTableResponse: {
+      dropped: boolean
+    }
+    HealthResponse: {
+      name: string
+      ok: boolean
+      version: string
+    }
+    HistoryEntry: {
+      connectionId: string
+      /** Format: int64 */
+      durationMs?: number | null
+      error?: string | null
+      id: string
+      /** Format: int64 */
+      rowCount?: number | null
+      sql: string
+      startedAt: string
+      status: string
+    }
+    IndexInfo: {
+      definition: string
+      isPrimary: boolean
+      isUnique: boolean
+      name: string
+    }
+    InsertRowBody: {
+      values: {
+        [key: string]: unknown
+      }
+    }
+    LoginInput: {
+      password: string
+    }
+    ProviderMeta: {
+      /** Format: int32 */
+      defaultPort: number
+      id: string
+      kind: string
+      label: string
+      urlSchemes: string[]
+    }
+    QueryBody: {
+      confirmDangerous?: boolean | null
+      /** Format: int32 */
+      limit?: number | null
+      /** Format: int32 */
+      offset?: number | null
+      sql: string
+    }
+    QueryResponse:
+      | {
+          report: components['schemas']['SafetyReport']
+          requiresConfirmation: boolean
+        }
+      | {
+          requiresConfirmation: boolean
+          results: components['schemas']['StatementResult'][]
+        }
+    QueryResult: {
+      columns: components['schemas']['ColumnMeta'][]
+      command?: string | null
+      rowCount: number
+      rows: Record<string, never>[][]
+    }
+    RelationEntry: {
+      name: string
+      type: components['schemas']['RelationType']
+    }
+    /** @enum {string} */
+    RelationType: 'table' | 'view' | 'matview'
+    RowsResponse: {
+      /** Format: int64 */
+      durationMs: number
+      result: components['schemas']['QueryResult']
+    }
+    SafetyReport: {
+      dangerous: boolean
+      parseError?: string | null
+      reasons: string[]
+      statements: components['schemas']['StatementRisk'][]
+    }
+    SchemaTree: {
+      relations: components['schemas']['RelationEntry'][]
+      schema: string
+    }
+    SetDatabaseInput: {
+      name: string
+    }
+    /** @enum {string} */
+    SshAuthMethod: 'password' | 'key'
+    SshConfig: {
+      authMethod: components['schemas']['SshAuthMethod']
+      enabled: boolean
+      hasPassphrase: boolean
+      hasPassword: boolean
+      hasPrivateKey: boolean
+      host: string
+      /** Format: int32 */
+      port: number
+      username: string
+    }
+    SshInput: {
+      authMethod: components['schemas']['SshAuthMethod']
+      enabled: boolean
+      host: string
+      passphrase?: string | null
+      password?: string | null
+      /** Format: int32 */
+      port: number
+      privateKey?: string | null
+      username: string
+    }
+    /** @enum {string} */
+    SslMode: 'disable' | 'allow' | 'prefer' | 'require' | 'verify-ca' | 'verify-full'
+    StatementResult: {
+      columns: components['schemas']['ColumnMeta'][]
+      command?: string | null
+      /** Format: int64 */
+      durationMs: number
+      error?: string | null
+      index: number
+      /** Format: int32 */
+      limit: number
+      /** Format: int32 */
+      offset: number
+      paginated: boolean
+      rowCount: number
+      rows: Record<string, never>[][]
+      source?: Record<string, never> | null
+      sql: string
+    }
+    StatementRisk: {
+      command: string
+      dangerous: boolean
+      reasons: string[]
+    }
+    TableDataOptions: {
+      filterColumn?: string | null
+      filterValue?: string | null
+      /** Format: int32 */
+      limit: number
+      /** Format: int32 */
+      offset: number
+      orderBy?: string | null
+      orderDir?: string | null
+    }
+    TableDetailResponse: {
+      columns: components['schemas']['ColumnInfo'][]
+      constraints: components['schemas']['ConstraintInfo'][]
+      foreignKeys: components['schemas']['CompletionForeignKey'][]
+      indexes: components['schemas']['IndexInfo'][]
+      primaryKey: string[]
+    }
+    TestResult: {
+      error?: string | null
+      /** Format: int64 */
+      latencyMs?: number | null
+      version?: string | null
+    }
+    TruncateTableResponse: {
+      truncated: boolean
+    }
+    UpdateRowBody: {
+      pk: {
+        [key: string]: unknown
+      }
+      values: {
+        [key: string]: unknown
+      }
+    }
+  }
+  responses: never
+  parameters: never
+  requestBodies: never
+  headers: never
+  pathItems: never
 }
-export type $defs = Record<string, never>;
+export type $defs = Record<string, never>
 export interface operations {
-    login: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["LoginInput"];
-            };
-        };
-        responses: {
-            /** @description Login successful */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AuthStatus"];
-                };
-            };
-            /** @description Invalid password */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    logout: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Logout successful */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AuthStatus"];
-                };
-            };
-        };
-    };
-    me: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Session auth status */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AuthStatus"];
-                };
-            };
-        };
-    };
-    list_handler: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List all connections */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Connection"][];
-                };
-            };
-        };
-    };
-    create_handler: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ConnectionInput"];
-            };
-        };
-        responses: {
-            /** @description Create connection */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Connection"];
-                };
-            };
-        };
-    };
-    test_unsaved_handler: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ConnectionInput"];
-            };
-        };
-        responses: {
-            /** @description Test unsaved connection parameters */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TestResult"];
-                };
-            };
-        };
-    };
-    get_handler: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Connection ID */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Get connection by ID */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Connection"];
-                };
-            };
-            /** @description Connection not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    delete_handler: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Connection ID */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Delete connection */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DeleteResponse"];
-                };
-            };
-            /** @description Connection not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    update_handler: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Connection ID */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ConnectionInput"];
-            };
-        };
-        responses: {
-            /** @description Update connection */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Connection"];
-                };
-            };
-            /** @description Connection not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    get_completion_handler: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Connection ID */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Get auto-completion metadata */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CompletionResponse"];
-                };
-            };
-            /** @description Connection not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    connection_string_handler: {
-        parameters: {
-            query?: {
-                withPassword?: string;
-            };
-            header?: never;
-            path: {
-                /** @description Connection ID */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Get formatted connection URL string */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ConnectionStringResponse"];
-                };
-            };
-            /** @description Connection not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    set_database_handler: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Connection ID */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SetDatabaseInput"];
-            };
-        };
-        responses: {
-            /** @description Switch default database */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Connection"];
-                };
-            };
-            /** @description Connection not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    list_databases_handler: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Connection ID */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List databases in connection */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DatabaseInfo"][];
-                };
-            };
-            /** @description Connection not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    create_database_handler: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Connection ID */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateDatabaseRequest"];
-            };
-        };
-        responses: {
-            /** @description Create new database */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreateDatabaseResponse"];
-                };
-            };
-            /** @description Invalid database name */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    drop_database_handler: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Connection ID */
-                id: string;
-                /** @description Database name */
-                name: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Drop database */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DropDatabaseResponse"];
-                };
-            };
-            /** @description Invalid database name */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    list_history_handler: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Connection ID */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List query execution history */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HistoryEntry"][];
-                };
-            };
-            /** @description Connection not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    clear_history_handler: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Connection ID */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Clear query history */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ClearHistoryResponse"];
-                };
-            };
-            /** @description Connection not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    query_handler: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Connection ID */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["QueryBody"];
-            };
-        };
-        responses: {
-            /** @description Execute SQL query */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["QueryResponse"];
-                };
-            };
-            /** @description Query execution error */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    analyze_handler: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Connection ID */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AnalyzeBody"];
-            };
-        };
-        responses: {
-            /** @description Analyze SQL safety */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SafetyReport"];
-                };
-            };
-        };
-    };
-    list_schemas_handler: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Connection ID */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List schemas in connection */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string[];
-                };
-            };
-            /** @description Connection not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    create_table_handler: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Connection ID */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateTableBody"];
-            };
-        };
-        responses: {
-            /** @description Create new table */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreateTableResponse"];
-                };
-            };
-            /** @description Execution error */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    get_table_detail_handler: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Connection ID */
-                id: string;
-                /** @description Schema name */
-                schema: string;
-                /** @description Table name */
-                table: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Get table details (columns, indexes, constraints) */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TableDetailResponse"];
-                };
-            };
-            /** @description Table or connection not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    drop_table_handler: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Connection ID */
-                id: string;
-                /** @description Schema name */
-                schema: string;
-                /** @description Table name */
-                table: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Drop table */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DropTableResponse"];
-                };
-            };
-            /** @description Execution error */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    get_rows_handler: {
-        parameters: {
-            query?: {
-                limit?: number;
-                offset?: number;
-                order_by?: string;
-                order_dir?: string;
-                filter_column?: string;
-                filter_value?: string;
-            };
-            header?: never;
-            path: {
-                /** @description Connection ID */
-                id: string;
-                /** @description Schema name */
-                schema: string;
-                /** @description Table name */
-                table: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Fetch rows from table */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RowsResponse"];
-                };
-            };
-            /** @description Table not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    insert_row_handler: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Connection ID */
-                id: string;
-                /** @description Schema name */
-                schema: string;
-                /** @description Table name */
-                table: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["InsertRowBody"];
-            };
-        };
-        responses: {
-            /** @description Insert row into table */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["QueryResult"];
-                };
-            };
-            /** @description Execution error */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    delete_row_handler: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Connection ID */
-                id: string;
-                /** @description Schema name */
-                schema: string;
-                /** @description Table name */
-                table: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DeleteRowBody"];
-            };
-        };
-        responses: {
-            /** @description Delete row from table */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["QueryResult"];
-                };
-            };
-            /** @description Execution error */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    update_row_handler: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Connection ID */
-                id: string;
-                /** @description Schema name */
-                schema: string;
-                /** @description Table name */
-                table: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateRowBody"];
-            };
-        };
-        responses: {
-            /** @description Update row in table */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["QueryResult"];
-                };
-            };
-            /** @description Execution error */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    truncate_table_handler: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Connection ID */
-                id: string;
-                /** @description Schema name */
-                schema: string;
-                /** @description Table name */
-                table: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Truncate table */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TruncateTableResponse"];
-                };
-            };
-            /** @description Execution error */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    test_saved_handler: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Connection ID */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Test saved connection */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TestResult"];
-                };
-            };
-            /** @description Connection not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    get_tree_handler: {
-        parameters: {
-            query?: {
-                search?: string;
-            };
-            header?: never;
-            path: {
-                /** @description Connection ID */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Get database schema tree */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SchemaTree"][];
-                };
-            };
-            /** @description Connection not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    health: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Server health check */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HealthResponse"];
-                };
-            };
-        };
-    };
-    get_providers: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List supported database providers */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProviderMeta"][];
-                };
-            };
-        };
-    };
+  login: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['LoginInput']
+      }
+    }
+    responses: {
+      /** @description Login successful */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['AuthStatus']
+        }
+      }
+      /** @description Invalid password */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  logout: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Logout successful */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['AuthStatus']
+        }
+      }
+    }
+  }
+  me: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Session auth status */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['AuthStatus']
+        }
+      }
+    }
+  }
+  list_handler: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description List all connections */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Connection'][]
+        }
+      }
+    }
+  }
+  create_handler: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ConnectionInput']
+      }
+    }
+    responses: {
+      /** @description Create connection */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Connection']
+        }
+      }
+    }
+  }
+  test_unsaved_handler: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ConnectionInput']
+      }
+    }
+    responses: {
+      /** @description Test unsaved connection parameters */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['TestResult']
+        }
+      }
+    }
+  }
+  get_handler: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Connection ID */
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Get connection by ID */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Connection']
+        }
+      }
+      /** @description Connection not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  delete_handler: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Connection ID */
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Delete connection */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['DeleteResponse']
+        }
+      }
+      /** @description Connection not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  update_handler: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Connection ID */
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ConnectionInput']
+      }
+    }
+    responses: {
+      /** @description Update connection */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Connection']
+        }
+      }
+      /** @description Connection not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  get_completion_handler: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Connection ID */
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Get auto-completion metadata */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CompletionResponse']
+        }
+      }
+      /** @description Connection not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  connection_string_handler: {
+    parameters: {
+      query?: {
+        withPassword?: string
+      }
+      header?: never
+      path: {
+        /** @description Connection ID */
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Get formatted connection URL string */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ConnectionStringResponse']
+        }
+      }
+      /** @description Connection not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  set_database_handler: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Connection ID */
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['SetDatabaseInput']
+      }
+    }
+    responses: {
+      /** @description Switch default database */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Connection']
+        }
+      }
+      /** @description Connection not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  list_databases_handler: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Connection ID */
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description List databases in connection */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['DatabaseInfo'][]
+        }
+      }
+      /** @description Connection not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  create_database_handler: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Connection ID */
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CreateDatabaseRequest']
+      }
+    }
+    responses: {
+      /** @description Create new database */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CreateDatabaseResponse']
+        }
+      }
+      /** @description Invalid database name */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  drop_database_handler: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Connection ID */
+        id: string
+        /** @description Database name */
+        name: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Drop database */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['DropDatabaseResponse']
+        }
+      }
+      /** @description Invalid database name */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  list_history_handler: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Connection ID */
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description List query execution history */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HistoryEntry'][]
+        }
+      }
+      /** @description Connection not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  clear_history_handler: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Connection ID */
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Clear query history */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ClearHistoryResponse']
+        }
+      }
+      /** @description Connection not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  query_handler: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Connection ID */
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['QueryBody']
+      }
+    }
+    responses: {
+      /** @description Execute SQL query */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['QueryResponse']
+        }
+      }
+      /** @description Query execution error */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  analyze_handler: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Connection ID */
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AnalyzeBody']
+      }
+    }
+    responses: {
+      /** @description Analyze SQL safety */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SafetyReport']
+        }
+      }
+    }
+  }
+  list_schemas_handler: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Connection ID */
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description List schemas in connection */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': string[]
+        }
+      }
+      /** @description Connection not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  create_table_handler: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Connection ID */
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CreateTableBody']
+      }
+    }
+    responses: {
+      /** @description Create new table */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CreateTableResponse']
+        }
+      }
+      /** @description Execution error */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  get_table_detail_handler: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Connection ID */
+        id: string
+        /** @description Schema name */
+        schema: string
+        /** @description Table name */
+        table: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Get table details (columns, indexes, constraints) */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['TableDetailResponse']
+        }
+      }
+      /** @description Table or connection not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  drop_table_handler: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Connection ID */
+        id: string
+        /** @description Schema name */
+        schema: string
+        /** @description Table name */
+        table: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Drop table */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['DropTableResponse']
+        }
+      }
+      /** @description Execution error */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  get_rows_handler: {
+    parameters: {
+      query?: {
+        limit?: number
+        offset?: number
+        order_by?: string
+        order_dir?: string
+        filter_column?: string
+        filter_value?: string
+        filters?: string
+      }
+      header?: never
+      path: {
+        /** @description Connection ID */
+        id: string
+        /** @description Schema name */
+        schema: string
+        /** @description Table name */
+        table: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Fetch rows from table */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['RowsResponse']
+        }
+      }
+      /** @description Table not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  insert_row_handler: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Connection ID */
+        id: string
+        /** @description Schema name */
+        schema: string
+        /** @description Table name */
+        table: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['InsertRowBody']
+      }
+    }
+    responses: {
+      /** @description Insert row into table */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['QueryResult']
+        }
+      }
+      /** @description Execution error */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  delete_row_handler: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Connection ID */
+        id: string
+        /** @description Schema name */
+        schema: string
+        /** @description Table name */
+        table: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['DeleteRowBody']
+      }
+    }
+    responses: {
+      /** @description Delete row from table */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['QueryResult']
+        }
+      }
+      /** @description Execution error */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  update_row_handler: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Connection ID */
+        id: string
+        /** @description Schema name */
+        schema: string
+        /** @description Table name */
+        table: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UpdateRowBody']
+      }
+    }
+    responses: {
+      /** @description Update row in table */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['QueryResult']
+        }
+      }
+      /** @description Execution error */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  truncate_table_handler: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Connection ID */
+        id: string
+        /** @description Schema name */
+        schema: string
+        /** @description Table name */
+        table: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Truncate table */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['TruncateTableResponse']
+        }
+      }
+      /** @description Execution error */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  test_saved_handler: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description Connection ID */
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Test saved connection */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['TestResult']
+        }
+      }
+      /** @description Connection not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  get_tree_handler: {
+    parameters: {
+      query?: {
+        search?: string
+      }
+      header?: never
+      path: {
+        /** @description Connection ID */
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Get database schema tree */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['SchemaTree'][]
+        }
+      }
+      /** @description Connection not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  health: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Server health check */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HealthResponse']
+        }
+      }
+    }
+  }
+  get_providers: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description List supported database providers */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['ProviderMeta'][]
+        }
+      }
+    }
+  }
 }

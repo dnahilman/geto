@@ -107,4 +107,3 @@ export interface PrivilegeChange {
   grant: boolean
   withGrantOption?: boolean
 }
-

@@ -6,10 +6,7 @@ import {
   type CompletionResult,
 } from '@codemirror/autocomplete'
 import type { Extension } from '@codemirror/state'
-import {
-  schemaCompletionSource,
-  type SQLDialect,
-} from '@codemirror/lang-sql'
+import { schemaCompletionSource, type SQLDialect } from '@codemirror/lang-sql'
 import type { SQLMetadata, SQLMetadataFunction } from '../core/types'
 import { buildCompletionIndex, buildSqlNamespace, type CompletionIndex } from './schema'
 import { needsQuoting, STANDARD_SQL_KEYWORDS } from './keywords'

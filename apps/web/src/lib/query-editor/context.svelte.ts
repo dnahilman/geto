@@ -1,9 +1,5 @@
 import { getContext, setContext } from 'svelte'
-import {
-  EditorSession,
-  type EditorStateSnapshot,
-  type StatementRange,
-} from '@geto/editor'
+import { EditorSession, type EditorStateSnapshot, type StatementRange } from '@geto/editor'
 
 const QUERY_EDITOR_CONTEXT_KEY = Symbol('QUERY_EDITOR_CONTEXT')
 

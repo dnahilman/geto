@@ -279,7 +279,8 @@
       <p class="text-xs text-muted-foreground/80 leading-relaxed">
         Write a SQL query above and click <span class="text-emerald-500 font-medium">Run</span> or
         press
-        <kbd class="px-1.5 py-0.5 rounded bg-muted font-mono text-[10px] text-foreground border border-border/60"
+        <kbd
+          class="px-1.5 py-0.5 rounded bg-muted font-mono text-[10px] text-foreground border border-border/60"
           >⌘ + Enter</kbd
         > to view records, output tables, and execution metrics here.
       </p>

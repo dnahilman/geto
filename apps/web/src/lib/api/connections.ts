@@ -1,6 +1,12 @@
 import { client, unwrap } from '$lib/api/client'
 import { execute } from '$lib/api/transport'
-import type { Connection, ConnectionInput, ProviderMeta, SslMode, TestResult } from '$lib/types/server'
+import type {
+  Connection,
+  ConnectionInput,
+  ProviderMeta,
+  SslMode,
+  TestResult,
+} from '$lib/types/server'
 
 export type { Connection, ConnectionInput, ProviderMeta, SslMode, TestResult }
 
@@ -24,10 +30,10 @@ export const updateConnection = (id: string, input: ConnectionInput): Promise<Co
   )
 
 export const deleteConnection = async (id: string): Promise<{ deleted: boolean }> => {
-  const deleted = await execute<boolean>(
-    'delete_connection',
-    { id },
-    () => unwrap(client.DELETE('/api/connections/{id}', { params: { path: { id } } })).then((r) => r.deleted),
+  const deleted = await execute<boolean>('delete_connection', { id }, () =>
+    unwrap(client.DELETE('/api/connections/{id}', { params: { path: { id } } })).then(
+      (r) => r.deleted,
+    ),
   )
   return { deleted: Boolean(deleted) }
 }

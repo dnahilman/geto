@@ -478,7 +478,9 @@ export function createSqlLinter(options: SqlLinterOptions = {}): Extension[] {
 
       try {
         const externalDiagnostics = await options.externalLinter(code, view)
-        const combined = [...localDiagnostics, ...externalDiagnostics].sort((a, b) => a.from - b.from)
+        const combined = [...localDiagnostics, ...externalDiagnostics].sort(
+          (a, b) => a.from - b.from,
+        )
         options.onDiagnosticsChange?.(combined)
         return combined
       } catch {

@@ -15,11 +15,7 @@ import {
   bracketMatching,
   syntaxHighlighting,
 } from '@codemirror/language'
-import {
-  closeBrackets,
-  closeBracketsKeymap,
-  completionKeymap,
-} from '@codemirror/autocomplete'
+import { closeBrackets, closeBracketsKeymap, completionKeymap } from '@codemirror/autocomplete'
 import { vscodeDarkTheme, vscodeHighlight } from './theme'
 import { runGutterState, runStatementHandlerFacet } from './state'
 import type { EditorOptions } from './types'

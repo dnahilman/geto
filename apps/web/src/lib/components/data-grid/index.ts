@@ -1,5 +1,6 @@
 // Types
 export * from './types.js'
+export * from './types/filter.js'
 export * from './data-grid-context.js'
 
 // Hooks
@@ -48,3 +49,4 @@ export { default as ExportMenu } from './toolbar/export-menu.svelte'
 export { default as DataGridToolbar } from './toolbar/data-grid-toolbar.svelte'
 export { default as DataGridConsoleToolbar } from './toolbar/data-grid-console-toolbar.svelte'
 export { default as GridToolbar } from './toolbar/grid-toolbar.svelte'
+export { default as GridFilterBuilder } from './toolbar/grid-filter-builder.svelte'

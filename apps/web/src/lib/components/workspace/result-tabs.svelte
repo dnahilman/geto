@@ -22,7 +22,9 @@
   }: Props = $props()
 </script>
 
-<div class="flex h-9 shrink-0 items-center justify-between border-b text-xs bg-background relative overflow-hidden">
+<div
+  class="flex h-9 shrink-0 items-center justify-between border-b text-xs bg-background relative overflow-hidden"
+>
   <div
     class="flex h-full min-w-0 flex-1 items-center overflow-x-auto overflow-y-hidden"
     style="scrollbar-width: thin;"
@@ -78,7 +80,9 @@
 
   <!-- Sticky Right: Clear History (only visible on history tab when history exists) -->
   {#if active === 'history' && onClearHistory && hasHistory}
-    <div class="sticky right-0 z-10 flex h-full shrink-0 items-center border-l bg-background px-1.5">
+    <div
+      class="sticky right-0 z-10 flex h-full shrink-0 items-center border-l bg-background px-1.5"
+    >
       <Button
         variant="ghost"
         size="sm"

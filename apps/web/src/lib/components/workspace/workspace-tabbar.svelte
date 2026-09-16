@@ -98,7 +98,8 @@
           </ContextMenu.Trigger>
           <ContextMenu.Content class="w-44">
             <ContextMenu.Item onSelect={() => ws.close(tab.id)}>Close</ContextMenu.Item>
-            <ContextMenu.Item onSelect={() => ws.closeOthers(tab.id)}>Close Others</ContextMenu.Item>
+            <ContextMenu.Item onSelect={() => ws.closeOthers(tab.id)}>Close Others</ContextMenu.Item
+            >
             <ContextMenu.Item onSelect={() => ws.closeAll()}>Close All</ContextMenu.Item>
             <ContextMenu.Separator />
             <ContextMenu.Item onSelect={() => ws.togglePin(tab.id)}>

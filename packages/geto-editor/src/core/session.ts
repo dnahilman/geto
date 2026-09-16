@@ -143,9 +143,7 @@ export class EditorSession {
    * Update active diagnostics and recompute hasError/hasWarning flags.
    */
   setDiagnostics = (diagnostics: Diagnostic[]): void => {
-    const errorMessages = diagnostics
-      .filter((d) => d.severity === 'error')
-      .map((d) => d.message)
+    const errorMessages = diagnostics.filter((d) => d.severity === 'error').map((d) => d.message)
     const warningMessages = diagnostics
       .filter((d) => d.severity === 'warning')
       .map((d) => d.message)

@@ -3,7 +3,7 @@ use sqlx::MySqlPool;
 
 use crate::db::driver::{Capabilities, DbDriver};
 use crate::db::drivers::mysql::{dml, introspect};
-use crate::db::shared::{marshal, QueryResult};
+use crate::db::shared::{build_where_clause, marshal, FilterDialect, QueryResult};
 use crate::db::types::{
     ColumnInfo, ColumnSpec, CompletionColumn, CompletionForeignKey, CompletionFunction,
     CompletionResponse, CompletionTable, ConstraintInfo, DatabaseInfo, IndexInfo, SchemaTree,
@@ -204,9 +204,14 @@ impl DbDriver for MySqlDriver {
         let mut sql = format!("SELECT * FROM {}", target);
         let mut params = Vec::new();
 
-        if let (Some(col), Some(val)) = (&opts.filter_column, &opts.filter_value) {
-            sql.push_str(&format!(" WHERE {} = ?", dml::quote_ident(col)));
-            params.push(serde_json::Value::String(val.clone()));
+        if let Some(where_clause) = build_where_clause(
+            FilterDialect::Mysql,
+            opts.filter_column.as_deref(),
+            opts.filter_value.as_deref(),
+            opts.filter_group.as_ref(),
+            &mut params,
+        ) {
+            sql.push_str(&format!(" WHERE {}", where_clause));
         }
 
         if let Some(order_by) = &opts.order_by {

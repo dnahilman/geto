@@ -1,9 +1,15 @@
 import { queryOptions, keepPreviousData } from '@tanstack/svelte-query'
 import { getTableRows, getTableDetail, type RowFilter } from '$lib/api/introspect'
+import type { TableFilterGroup } from '$lib/components/data-grid/types/filter.js'
 
 export const tableQueries = {
-  rowsRootKey: (connId: string, schema: string, tableName: string, filter?: RowFilter | null) =>
-    ['table-rows', connId, schema, tableName, filter ?? null] as const,
+  rowsRootKey: (
+    connId: string,
+    schema: string,
+    tableName: string,
+    filter?: RowFilter | null,
+    filters?: TableFilterGroup | null,
+  ) => ['table-rows', connId, schema, tableName, filter ?? null, filters ?? null] as const,
 
   rows: (
     connId: string,
@@ -15,11 +21,12 @@ export const tableQueries = {
       orderBy?: string
       orderDir?: 'ASC' | 'DESC'
       filter?: RowFilter
+      filters?: TableFilterGroup | null
     },
   ) =>
     queryOptions({
       queryKey: [
-        ...tableQueries.rowsRootKey(connId, schema, tableName, opts.filter),
+        ...tableQueries.rowsRootKey(connId, schema, tableName, opts.filter, opts.filters),
         Math.floor(opts.offset / opts.limit),
         opts.limit,
         opts.orderBy,

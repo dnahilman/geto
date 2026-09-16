@@ -128,6 +128,37 @@ pub struct ColumnSpec {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default, utoipa::ToSchema)]
 #[serde(rename_all = "camelCase")]
+pub struct TableFilterRule {
+    pub column: String,
+    pub operator: String,
+    #[serde(default)]
+    pub value: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct TableFilterGroup {
+    #[serde(default = "default_conjunction")]
+    pub conjunction: String,
+    #[serde(default)]
+    pub rules: Vec<TableFilterRule>,
+}
+
+fn default_conjunction() -> String {
+    "AND".to_string()
+}
+
+impl Default for TableFilterGroup {
+    fn default() -> Self {
+        Self {
+            conjunction: "AND".to_string(),
+            rules: Vec::new(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default, utoipa::ToSchema)]
+#[serde(rename_all = "camelCase")]
 pub struct TableDataOptions {
     pub limit: u32,
     pub offset: u32,
@@ -135,4 +166,5 @@ pub struct TableDataOptions {
     pub order_dir: Option<String>,
     pub filter_column: Option<String>,
     pub filter_value: Option<String>,
+    pub filter_group: Option<TableFilterGroup>,
 }

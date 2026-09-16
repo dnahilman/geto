@@ -3,7 +3,15 @@ import { EditorState, type Extension } from '@codemirror/state'
 import type { SQLDialect } from '@codemirror/lang-sql'
 import { createBaseExtensions } from './extensions'
 import { createCompartments, runStatementHandlerFacet, statementSplitterFacet } from './state'
-import type { Diagnostic, EditorInstance, EditorMetadata, EditorOptions, SQLMetadata, StatementRange, SupportedLanguage } from './types'
+import type {
+  Diagnostic,
+  EditorInstance,
+  EditorMetadata,
+  EditorOptions,
+  SQLMetadata,
+  StatementRange,
+  SupportedLanguage,
+} from './types'
 
 import { createSqlLanguageExtension } from '../languages/sql/language'
 import { formatSql } from '../languages/sql/formatter'
@@ -23,7 +31,11 @@ export type LanguageExtensionFactory = (
   completionSource?: EditorOptions['completionSource'],
 ) => Extension
 
-export type FormatterFunction = (text: string, dialect?: SQLDialect, language?: SupportedLanguage) => string
+export type FormatterFunction = (
+  text: string,
+  dialect?: SQLDialect,
+  language?: SupportedLanguage,
+) => string
 
 export interface EditorProviderRegistry {
   createLanguageExtension?: LanguageExtensionFactory
@@ -208,18 +220,14 @@ export function createEditor(container: HTMLElement, options: EditorOptions = {}
 
     setReadOnly(readOnly: boolean): void {
       view.dispatch({
-        effects: compartments.readOnly.reconfigure(
-          readOnly ? EditorState.readOnly.of(true) : [],
-        ),
+        effects: compartments.readOnly.reconfigure(readOnly ? EditorState.readOnly.of(true) : []),
       })
     },
 
     setRunStatementHandler(handler: ((sql: string) => void) | null): void {
       // In-place reconfiguration without destroying extensions
       view.dispatch({
-        effects: compartments.runGutter.reconfigure(
-          runStatementHandlerFacet.of(handler),
-        ),
+        effects: compartments.runGutter.reconfigure(runStatementHandlerFacet.of(handler)),
       })
     },
 
