@@ -6,6 +6,15 @@ import type { Extension } from '@codemirror/state'
 const FONT =
   "'JetBrains Mono', 'Cascadia Code', 'Fira Code', Menlo, Monaco, Consolas, 'Courier New', monospace"
 
+// Lucide Icon vector data URIs for lint gutter markers
+const LUCIDE_ERROR_SVG = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ef4444' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='m15 9-6 6'/%3E%3Cpath d='m9 9 6 6'/%3E%3C/svg%3E")`
+
+const LUCIDE_WARNING_SVG = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f59e0b' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z'/%3E%3Cpath d='M12 9v4'/%3E%3Cpath d='M12 17h.01'/%3E%3C/svg%3E")`
+
+const LUCIDE_INFO_SVG = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2338bdf8' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M12 16v-4'/%3E%3Cpath d='M12 8h.01'/%3E%3C/svg%3E")`
+
+const LUCIDE_HINT_SVG = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23c084fc' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5'/%3E%3Cpath d='M9 18h6'/%3E%3Cpath d='M10 22h4'/%3E%3C/svg%3E")`
+
 export const vscodeDarkTheme = EditorView.theme(
   {
     '&': {
@@ -111,8 +120,43 @@ export const vscodeDarkTheme = EditorView.theme(
       background: '#10b981',
       borderColor: '#059669',
       color: '#ffffff',
-      transform: 'scale(1.08)',
       boxShadow: '0 2px 8px rgba(16, 185, 129, 0.4)',
+    },
+    // Lint gutter — elegant Lucide icon indicators
+    '.cm-gutter-lint': {
+      width: '20px',
+      flexShrink: '0',
+    },
+    '.cm-gutter-lint .cm-gutterElement': {
+      padding: '0',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    '.cm-lint-marker': {
+      width: '14px',
+      height: '14px',
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      cursor: 'pointer',
+      opacity: '0.85',
+      transition: 'opacity 0.15s ease-in-out',
+      '&:hover': {
+        opacity: '1',
+      },
+    },
+    '.cm-lint-marker-error': {
+      content: LUCIDE_ERROR_SVG,
+    },
+    '.cm-lint-marker-warning': {
+      content: LUCIDE_WARNING_SVG,
+    },
+    '.cm-lint-marker-info': {
+      content: LUCIDE_INFO_SVG,
+    },
+    '.cm-lint-marker-hint': {
+      content: LUCIDE_HINT_SVG,
     },
     '.cm-matchingBracket, &.cm-focused .cm-matchingBracket': {
       backgroundColor: 'rgba(56, 189, 248, 0.18)',
@@ -203,13 +247,52 @@ export const vscodeDarkTheme = EditorView.theme(
     },
     // Diagnostics / Linting styling
     '.cm-diagnostic': {
-      padding: '4px 8px',
+      padding: '6px 10px',
       fontFamily: FONT,
       fontSize: '12px',
+      borderRadius: '4px',
     },
-    '.cm-diagnostic-error': { borderLeft: '3px solid #ef4444' },
-    '.cm-diagnostic-warning': { borderLeft: '3px solid #f59e0b' },
-    '.cm-diagnostic-info': { borderLeft: '3px solid #38bdf8' },
+    '.cm-diagnostic-error': {
+      borderLeft: '3px solid #ef4444',
+      backgroundColor: 'rgba(239, 68, 68, 0.08)',
+    },
+    '.cm-diagnostic-warning': {
+      borderLeft: '3px solid #f59e0b',
+      backgroundColor: 'rgba(245, 158, 11, 0.08)',
+    },
+    '.cm-diagnostic-info': {
+      borderLeft: '3px solid #38bdf8',
+      backgroundColor: 'rgba(56, 189, 248, 0.08)',
+    },
+    '.cm-diagnostic-hint': {
+      borderLeft: '3px solid #c084fc',
+      backgroundColor: 'rgba(192, 132, 252, 0.08)',
+    },
+    // Wavy underline decorations
+    '.cm-lintRange-error': {
+      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='3'%3E%3Cpath d='M0 2.5 Q 1.5 0.5 3 2.5 T 6 2.5' fill='none' stroke='%23ef4444' stroke-width='1.2'/%3E%3C/svg%3E")`,
+      backgroundPosition: 'left bottom',
+      backgroundRepeat: 'repeat-x',
+      paddingBottom: '1px',
+    },
+    '.cm-lintRange-warning': {
+      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='3'%3E%3Cpath d='M0 2.5 Q 1.5 0.5 3 2.5 T 6 2.5' fill='none' stroke='%23f59e0b' stroke-width='1.2'/%3E%3C/svg%3E")`,
+      backgroundPosition: 'left bottom',
+      backgroundRepeat: 'repeat-x',
+      paddingBottom: '1px',
+    },
+    '.cm-lintRange-info': {
+      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='3'%3E%3Cpath d='M0 2.5 Q 1.5 0.5 3 2.5 T 6 2.5' fill='none' stroke='%2338bdf8' stroke-width='1.2'/%3E%3C/svg%3E")`,
+      backgroundPosition: 'left bottom',
+      backgroundRepeat: 'repeat-x',
+      paddingBottom: '1px',
+    },
+    '.cm-lintRange-hint': {
+      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='3'%3E%3Cpath d='M0 2.5 Q 1.5 0.5 3 2.5 T 6 2.5' fill='none' stroke='%23c084fc' stroke-width='1.2'/%3E%3C/svg%3E")`,
+      backgroundPosition: 'left bottom',
+      backgroundRepeat: 'repeat-x',
+      paddingBottom: '1px',
+    },
   },
   { dark: true },
 )
@@ -235,6 +318,4 @@ export const vscodeHighlight = HighlightStyle.define([
   { tag: t.invalid, color: '#ef4444' },
 ])
 
-export const defaultEditorTheme: Extension = [
-  vscodeDarkTheme,
-]
+export const defaultEditorTheme: Extension = [vscodeDarkTheme]

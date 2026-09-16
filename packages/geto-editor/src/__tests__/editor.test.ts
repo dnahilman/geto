@@ -9,10 +9,13 @@ import {
   SQLite,
   formatSql,
   checkSqlSyntax,
+  runClientSideSqlLint,
   buildCompletionIndex,
   STANDARD_SQL_KEYWORDS,
   type EditorInstance,
 } from '../index'
+import { EditorState } from '@codemirror/state'
+import { statementRanges } from '../languages/sql/statements'
 
 describe('@geto/editor Test Suite', () => {
   describe('EditorCache & Memory Leak Prevention', () => {
@@ -269,6 +272,170 @@ describe('@geto/editor Test Suite', () => {
       expect(undoCalled).toBe(true)
       expect(session.redo()).toBe(true)
       expect(redoCalled).toBe(true)
+    })
+
+    it('should track diagnostics state and block run on error', () => {
+      let executed = false
+      const session = new EditorSession({
+        onRun: () => {
+          executed = true
+        },
+      })
+      const mockEditor = {
+        getValue: () => 'SELECT *',
+        getSelectedOrAll: () => 'SELECT *',
+        getCursorPosition: () => ({ line: 1, col: 1, offset: 0 }),
+        getStatementAtCursor: () => null,
+        view: { state: { selection: { main: { empty: true } } } },
+      } as unknown as EditorInstance
+
+      session.attach(mockEditor)
+
+      // Initially no errors
+      expect(session.getSnapshot().hasError).toBe(false)
+      expect(session.getSnapshot().hasWarning).toBe(false)
+
+      // Set a warning diagnostic
+      session.setDiagnostics([
+        {
+          from: 0,
+          to: 6,
+          severity: 'warning',
+          message: 'UPDATE statement without WHERE clause will modify all rows',
+        },
+      ])
+      expect(session.getSnapshot().hasWarning).toBe(true)
+      expect(session.getSnapshot().hasError).toBe(false)
+      expect(session.getSnapshot().warningMessages.length).toBe(1)
+
+      // Running with warning is allowed
+      expect(session.run('all')).toBe(true)
+      expect(executed).toBe(true)
+
+      // Now set an error diagnostic
+      executed = false
+      session.setDiagnostics([
+        {
+          from: 0,
+          to: 1,
+          severity: 'error',
+          message: 'Unclosed parenthesis "("',
+        },
+      ])
+      expect(session.getSnapshot().hasError).toBe(true)
+      expect(session.getSnapshot().errorMessages.length).toBe(1)
+
+      // Running with error must be blocked!
+      expect(session.run('all')).toBe(false)
+      expect(executed).toBe(false)
+    })
+  })
+
+  describe('Multi-Severity Client-Side Linter (runClientSideSqlLint)', () => {
+    it('should detect UPDATE without WHERE as a warning', () => {
+      const sql = 'UPDATE users SET status = "active";'
+      const diags = runClientSideSqlLint(sql)
+      const warning = diags.find((d) => d.severity === 'warning')
+      expect(warning).toBeDefined()
+      expect(warning?.message).toContain('UPDATE statement without WHERE clause')
+    })
+
+    it('should not warn on UPDATE with valid WHERE clause', () => {
+      const sql = "UPDATE users SET status = 'active' WHERE id = 1;"
+      const diags = runClientSideSqlLint(sql)
+      const updateWarning = diags.find((d) => d.message.includes('UPDATE statement without WHERE'))
+      expect(updateWarning).toBeUndefined()
+    })
+
+    it('should detect DELETE without WHERE as a warning', () => {
+      const sql = 'DELETE FROM sessions;'
+      const diags = runClientSideSqlLint(sql)
+      const warning = diags.find((d) => d.severity === 'warning')
+      expect(warning).toBeDefined()
+      expect(warning?.message).toContain('DELETE statement without WHERE clause')
+    })
+
+    it('should detect DROP TABLE without IF EXISTS as a warning', () => {
+      const sql = 'DROP TABLE old_records;'
+      const diags = runClientSideSqlLint(sql)
+      const warning = diags.find((d) => d.message.includes('DROP TABLE without IF EXISTS'))
+      expect(warning).toBeDefined()
+    })
+
+    it('should detect TRUNCATE as a warning', () => {
+      const sql = 'TRUNCATE audit_logs;'
+      const diags = runClientSideSqlLint(sql)
+      const warning = diags.find((d) => d.message.includes('TRUNCATE'))
+      expect(warning).toBeDefined()
+    })
+
+    it('should detect SELECT * without LIMIT as info', () => {
+      const sql = 'SELECT * FROM users WHERE id > 10;'
+      const diags = runClientSideSqlLint(sql)
+      const info = diags.find((d) => d.severity === 'info' && d.message.includes('LIMIT'))
+      expect(info).toBeDefined()
+    })
+
+    it('should not suggest LIMIT if LIMIT clause is already present', () => {
+      const sql = 'SELECT * FROM users LIMIT 50;'
+      const diags = runClientSideSqlLint(sql)
+      const info = diags.find((d) => d.message.includes('LIMIT'))
+      expect(info).toBeUndefined()
+    })
+
+    it('should detect redundant INNER JOIN as hint', () => {
+      const sql = 'SELECT u.id FROM users u INNER JOIN accounts a ON u.id = a.user_id;'
+      const diags = runClientSideSqlLint(sql)
+      const hint = diags.find((d) => d.severity === 'hint' && d.message.includes('INNER'))
+      expect(hint).toBeDefined()
+    })
+
+    it('should detect redundant ASC in ORDER BY as hint', () => {
+      const sql = 'SELECT id FROM users ORDER BY created_at ASC;'
+      const diags = runClientSideSqlLint(sql)
+      const hint = diags.find((d) => d.severity === 'hint' && d.message.includes('ASC'))
+      expect(hint).toBeDefined()
+    })
+
+    it('should apply fail-fast rule: fatal syntax errors prevent spurious warnings', () => {
+      // Unclosed quote on an UPDATE statement
+      const sql = "UPDATE users SET status = 'active"
+      const diags = runClientSideSqlLint(sql)
+      // Must only report error, no warning
+      expect(diags.every((d) => d.severity === 'error')).toBe(true)
+    })
+  })
+
+  describe('StatementRanges & Comment Handling', () => {
+    it('should not treat leading comments as statements and place range on query start', () => {
+      const doc = EditorState.create({
+        doc: '-- 1. Info: SELECT * tanpa LIMIT\nSELECT * FROM users;',
+      })
+      const ranges = statementRanges(doc)
+      expect(ranges.length).toBe(1)
+      expect(ranges[0].text).toBe('SELECT * FROM users;')
+      // Line of statement must be line 2, NOT line 1
+      expect(doc.doc.lineAt(ranges[0].from).number).toBe(2)
+    })
+
+    it('should return empty ranges when document contains only comments', () => {
+      const doc = EditorState.create({
+        doc: '-- Just a comment\n/* block comment */\n-- another comment',
+      })
+      const ranges = statementRanges(doc)
+      expect(ranges.length).toBe(0)
+    })
+
+    it('should correctly position multiple statements separated by comments', () => {
+      const doc = EditorState.create({
+        doc: 'SELECT 1;\n\n-- Comment line\nSELECT 2;',
+      })
+      const ranges = statementRanges(doc)
+      expect(ranges.length).toBe(2)
+      expect(ranges[0].text).toBe('SELECT 1;')
+      expect(doc.doc.lineAt(ranges[0].from).number).toBe(1)
+      expect(ranges[1].text).toBe('SELECT 2;')
+      expect(doc.doc.lineAt(ranges[1].from).number).toBe(4)
     })
   })
 })

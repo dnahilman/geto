@@ -1,4 +1,5 @@
 import type { SQLDialect } from '@codemirror/lang-sql'
+import type { Diagnostic } from '@codemirror/lint'
 import type { EditorInstance, EditorMetadata, StatementRange, SupportedLanguage } from './types'
 
 export interface EditorStateSnapshot {
@@ -20,6 +21,16 @@ export interface EditorStateSnapshot {
   isReady: boolean
   /** Whether the document is currently in read-only mode. */
   readOnly: boolean
+  /** Current active diagnostics (errors, warnings, info, hints). */
+  diagnostics: Diagnostic[]
+  /** Whether there are any active fatal syntax errors. */
+  hasError: boolean
+  /** Whether there are any active warnings. */
+  hasWarning: boolean
+  /** List of fatal error messages. */
+  errorMessages: string[]
+  /** List of warning messages. */
+  warningMessages: string[]
 }
 
 export type SessionListener = (snapshot: EditorStateSnapshot) => void
@@ -42,6 +53,11 @@ export class EditorSession {
     language: 'sql',
     isReady: false,
     readOnly: false,
+    diagnostics: [],
+    hasError: false,
+    hasWarning: false,
+    errorMessages: [],
+    warningMessages: [],
   }
 
   constructor(options?: {
@@ -123,6 +139,28 @@ export class EditorSession {
     }
   }
 
+  /**
+   * Update active diagnostics and recompute hasError/hasWarning flags.
+   */
+  setDiagnostics = (diagnostics: Diagnostic[]): void => {
+    const errorMessages = diagnostics
+      .filter((d) => d.severity === 'error')
+      .map((d) => d.message)
+    const warningMessages = diagnostics
+      .filter((d) => d.severity === 'warning')
+      .map((d) => d.message)
+
+    this.snapshot = {
+      ...this.snapshot,
+      diagnostics,
+      hasError: errorMessages.length > 0,
+      hasWarning: warningMessages.length > 0,
+      errorMessages,
+      warningMessages,
+    }
+    this.notify()
+  }
+
   // --- High-Level Actions ---
 
   /**
@@ -130,9 +168,13 @@ export class EditorSession {
    *  - 'current': Run statement under caret (DataGrip behavior)
    *  - 'selection': Run selected query if any, else whole document
    *  - 'all': Run entire document
+   *
+   * Returns false if execution is blocked due to fatal syntax errors.
    */
-  run = (mode: 'all' | 'selection' | 'current' = 'selection'): void => {
-    if (!this.instance) return
+  run = (mode: 'all' | 'selection' | 'current' = 'selection'): boolean => {
+    if (!this.instance) return false
+    // Guard: Block execution if document has fatal syntax errors
+    if (this.snapshot.hasError) return false
 
     const textToRun =
       mode === 'current'
@@ -144,7 +186,9 @@ export class EditorSession {
     const trimmed = textToRun.trim()
     if (trimmed && this.onRunHandler) {
       this.onRunHandler(trimmed)
+      return true
     }
+    return false
   }
 
   format = (): void => {

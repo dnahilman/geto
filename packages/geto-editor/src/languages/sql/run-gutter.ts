@@ -7,6 +7,7 @@ import {
   statementSplitterFacet,
 } from '../../core/state'
 import { statementRanges } from './statements'
+import { checkSqlSyntax } from '../../lint/lint'
 
 const PLAY_ICON_SVG =
   '<svg width="10" height="10" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor">' +
@@ -22,14 +23,24 @@ class RunMarker extends GutterMarker {
     const btn = document.createElement('button')
     btn.type = 'button'
     btn.className = 'cm-run-marker'
-    btn.title = 'Run this statement'
-    btn.setAttribute('aria-label', 'Run this statement')
-    btn.innerHTML = PLAY_ICON_SVG
-    btn.addEventListener('mousedown', (e) => {
-      e.preventDefault()
-      const handler = view.state.facet(runStatementHandlerFacet)
-      handler?.(this.sql)
-    })
+
+    // If this statement has fatal syntax errors, hide/disable the run button
+    const hasSyntaxError = checkSqlSyntax(this.sql).length > 0
+    if (hasSyntaxError) {
+      btn.disabled = true
+      btn.style.visibility = 'hidden'
+      btn.style.pointerEvents = 'none'
+      btn.setAttribute('aria-hidden', 'true')
+    } else {
+      btn.title = 'Run this statement'
+      btn.setAttribute('aria-label', 'Run this statement')
+      btn.innerHTML = PLAY_ICON_SVG
+      btn.addEventListener('mousedown', (e) => {
+        e.preventDefault()
+        const handler = view.state.facet(runStatementHandlerFacet)
+        handler?.(this.sql)
+      })
+    }
     return btn
   }
 

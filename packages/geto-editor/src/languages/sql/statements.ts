@@ -27,6 +27,8 @@ function isIdentPart(ch: string): boolean {
  *  - parenthesis depth `(...)`
  *
  * Splits on `;` at depth 0 AND on line-starting top-level keywords.
+ * Pure comments are never classified as statements.
+ * The starting position (`from`) points directly to the first real SQL token.
  */
 export function statementRanges(state: EditorState): StatementRange[] {
   const text = state.doc.toString()
@@ -34,23 +36,25 @@ export function statementRanges(state: EditorState): StatementRange[] {
 
   const len = text.length
   let i = 0
-  let stmtStart = 0
   let depth = 0 // paren depth
 
   // Last non-whitespace, non-comment token text (upper-cased for comparisons).
   let lastToken = ''
   // Position where the current line started.
   let lineStart = 0
+  // Position of the first non-comment, non-whitespace token in current statement
+  let currentStmtFrom = -1
 
   const ranges: StatementRange[] = []
 
   function flush(end: number) {
-    const chunk = text.slice(stmtStart, end)
-    const trimmed = chunk.trim()
-    if (trimmed) {
-      ranges.push({ from: stmtStart, to: end, text: trimmed })
+    if (currentStmtFrom !== -1) {
+      const chunk = text.slice(currentStmtFrom, end).trim()
+      if (chunk) {
+        ranges.push({ from: currentStmtFrom, to: end, text: chunk })
+      }
+      currentStmtFrom = -1
     }
-    stmtStart = end
     lastToken = ''
   }
 
@@ -80,6 +84,7 @@ export function statementRanges(state: EditorState): StatementRange[] {
 
     // --- Single-quoted string ---
     if (ch === "'") {
+      if (currentStmtFrom === -1) currentStmtFrom = i
       i++
       while (i < len) {
         if (text[i] === "'") {
@@ -99,6 +104,7 @@ export function statementRanges(state: EditorState): StatementRange[] {
 
     // --- Double-quoted identifier ---
     if (ch === '"') {
+      if (currentStmtFrom === -1) currentStmtFrom = i
       i++
       while (i < len && text[i] !== '"') i++
       i++
@@ -112,6 +118,7 @@ export function statementRanges(state: EditorState): StatementRange[] {
       while (tagEnd < len && text[tagEnd] !== '$' && text[tagEnd] !== '\n') tagEnd++
       if (tagEnd < len && text[tagEnd] === '$') {
         const tag = text.slice(i, tagEnd + 1)
+        if (currentStmtFrom === -1) currentStmtFrom = i
         i = tagEnd + 1
         const closingTag = tag
         const closeIdx = text.indexOf(closingTag, i)
@@ -127,6 +134,7 @@ export function statementRanges(state: EditorState): StatementRange[] {
 
     // --- Paren depth ---
     if (ch === '(') {
+      if (currentStmtFrom === -1) currentStmtFrom = i
       depth++
       lastToken = '('
       i++
@@ -167,7 +175,8 @@ export function statementRanges(state: EditorState): StatementRange[] {
 
       if (
         depth === 0 &&
-        stmtStart < wordStart &&
+        currentStmtFrom !== -1 &&
+        currentStmtFrom < wordStart &&
         STMT_START.test(upper) &&
         !CONTINUATION.test(lastToken) &&
         lastToken !== '(' &&
@@ -179,19 +188,28 @@ export function statementRanges(state: EditorState): StatementRange[] {
         }
       }
 
+      if (currentStmtFrom === -1) {
+        currentStmtFrom = wordStart
+      }
+
       lastToken = upper
       continue
     }
 
+    if (currentStmtFrom === -1) {
+      currentStmtFrom = i
+    }
     lastToken = ch
     i++
   }
 
   // Flush trailing statement
-  const trailing = text.slice(stmtStart).trim()
-  if (trailing) {
-    ranges.push({ from: stmtStart, to: len, text: trailing })
+  if (currentStmtFrom !== -1) {
+    const trailing = text.slice(currentStmtFrom).trim()
+    if (trailing) {
+      ranges.push({ from: currentStmtFrom, to: len, text: trailing })
+    }
   }
 
-  return ranges.length ? ranges : [{ from: 0, to: len, text: text.trim() }]
+  return ranges
 }

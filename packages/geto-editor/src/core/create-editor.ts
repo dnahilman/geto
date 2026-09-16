@@ -3,7 +3,7 @@ import { EditorState, type Extension } from '@codemirror/state'
 import type { SQLDialect } from '@codemirror/lang-sql'
 import { createBaseExtensions } from './extensions'
 import { createCompartments, runStatementHandlerFacet, statementSplitterFacet } from './state'
-import type { EditorInstance, EditorMetadata, EditorOptions, SQLMetadata, StatementRange, SupportedLanguage } from './types'
+import type { Diagnostic, EditorInstance, EditorMetadata, EditorOptions, SQLMetadata, StatementRange, SupportedLanguage } from './types'
 
 import { createSqlLanguageExtension } from '../languages/sql/language'
 import { formatSql } from '../languages/sql/formatter'
@@ -41,6 +41,7 @@ export function createEditor(container: HTMLElement, options: EditorOptions = {}
   let currentLanguage: SupportedLanguage = options.language ?? 'sql'
   let currentDialect: SQLDialect | undefined = options.dialect
   let currentMetadata: EditorMetadata = options.metadata ?? {}
+  let currentDiagnostics: Diagnostic[] = []
 
   const resolveLanguageExtension = (): Extension => {
     if (providerRegistry.createLanguageExtension) {
@@ -79,7 +80,12 @@ export function createEditor(container: HTMLElement, options: EditorOptions = {}
 
   const resolveLinterExtension = (): Extension => {
     if (currentLanguage === 'sql') {
-      return createSqlLinter()
+      return createSqlLinter({
+        onDiagnosticsChange: (diagnostics) => {
+          currentDiagnostics = diagnostics
+          options.onDiagnosticsChange?.(diagnostics)
+        },
+      })
     }
     return []
   }
@@ -87,6 +93,10 @@ export function createEditor(container: HTMLElement, options: EditorOptions = {}
   const shortcuts = createShortcutsKeymap({
     onRun: () => {
       if (!options.onRun) return false
+      // Guard: Block Mod-Enter execution if there are active fatal syntax errors
+      if (currentDiagnostics.some((d) => d.severity === 'error')) {
+        return false
+      }
       const sel = view.state.selection.main
       const text = !sel.empty ? view.state.sliceDoc(sel.from, sel.to) : view.state.doc.toString()
       options.onRun(text)
@@ -266,6 +276,10 @@ export function createEditor(container: HTMLElement, options: EditorOptions = {}
 
     redo(): boolean {
       return redo(view)
+    },
+
+    getDiagnostics(): Diagnostic[] {
+      return [...currentDiagnostics]
     },
 
     dispatch(...tr: Parameters<EditorView['dispatch']>): void {

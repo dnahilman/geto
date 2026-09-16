@@ -2,6 +2,9 @@ import type { EditorView } from '@codemirror/view'
 import type { Extension } from '@codemirror/state'
 import type { CompletionSource } from '@codemirror/autocomplete'
 import type { SQLDialect } from '@codemirror/lang-sql'
+import type { Diagnostic } from '@codemirror/lint'
+
+export type { Diagnostic }
 
 export type SupportedLanguage = 'sql' | 'mongodb' | 'redis' | 'plain'
 
@@ -102,6 +105,8 @@ export interface EditorOptions {
   onChange?: ChangeHandler
   /** Callback fired whenever the cursor position or selection changes. */
   onSelectionChange?: () => void
+  /** Callback fired whenever the diagnostics (errors, warnings, info, hints) update. */
+  onDiagnosticsChange?: (diagnostics: Diagnostic[]) => void
 }
 
 export interface EditorInstance {
@@ -139,6 +144,8 @@ export interface EditorInstance {
   undo(): boolean
   /** Redo the last undone edit action. Returns true if an action was redone. */
   redo(): boolean
+  /** Get current active diagnostics from the linter. */
+  getDiagnostics(): Diagnostic[]
   /** Dispatch transactions to the underlying view. */
   dispatch(...tr: Parameters<EditorView['dispatch']>): void
 }

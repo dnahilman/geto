@@ -3,6 +3,7 @@
   import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-query'
   import {
     TriangleAlert,
+    CircleX,
     Play,
     Loader,
     Braces,
@@ -17,7 +18,13 @@
   import * as DropdownMenu from '$lib/components/ui/dropdown-menu'
   import { Button } from '$lib/components/ui/button'
   import { QueryEditor } from '$lib/query-editor'
-  import { EditorSession, resolveDialect, type EditorStateSnapshot } from '@geto/editor'
+  import {
+    EditorSession,
+    resolveDialect,
+    checkSqlSyntax,
+    runClientSideSqlLint,
+    type EditorStateSnapshot,
+  } from '@geto/editor'
   import SqlConsoleHistory from './sql-console-history.svelte'
   import SqlConsoleTable from './sql-console-table.svelte'
   import ResultTabs from './result-tabs.svelte'
@@ -100,7 +107,7 @@
   const session = new EditorSession({
     language: 'sql',
     dialect: resolveDialect(provider),
-    onRun: (text) => doRun(text),
+    onRun: (text) => handleRunRequest(text),
   })
 
   let snapshot = $state<EditorStateSnapshot>(session.getSnapshot())
@@ -117,6 +124,7 @@
     active = 'history'
     error = null
     pending = null
+    clientWarning = null
     session.detach()
   })
 
@@ -178,6 +186,40 @@
   }))
 
   let pendingSql = ''
+  let clientWarning = $state<{ sql: string; warnings: string[] } | null>(null)
+
+  function handleRunRequest(text: string) {
+    const trimmed = text.trim()
+    if (!trimmed) return
+
+    // 1. Guard: Block execution if the requested statement/query has fatal syntax errors
+    const syntaxErrors = checkSqlSyntax(trimmed)
+    if (syntaxErrors.length > 0) return
+
+    // 2. Guard: Prompt confirmation dialog if the requested statement/query has warnings
+    const warnings = runClientSideSqlLint(trimmed)
+      .filter((d) => d.severity === 'warning')
+      .map((d) => d.message)
+
+    if (warnings.length > 0) {
+      clientWarning = {
+        sql: trimmed,
+        warnings,
+      }
+      return
+    }
+
+    // 3. Clean execution
+    doRun(trimmed)
+  }
+
+  function confirmClientWarning() {
+    if (clientWarning) {
+      doRun(clientWarning.sql)
+    }
+    clientWarning = null
+  }
+
   function doRun(text: string) {
     const trimmed = text.trim()
     if (!trimmed) return
@@ -304,17 +346,23 @@
             <!-- Run Selection or All (Cmd+Enter) -->
             <Button
               size="sm"
-              class="h-6.5 px-2.5 bg-emerald-600 hover:bg-emerald-500 text-white gap-1.5 font-medium text-xs shadow-xs transition-colors cursor-pointer"
-              title="Run selection or query (⌘/Ctrl + Enter)"
-              disabled={run.isPending}
+              class="h-6.5 px-2.5 bg-emerald-600 hover:bg-emerald-500 text-white gap-1.5 font-medium text-xs shadow-xs transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              title={snapshot.hasError
+                ? 'Cannot run query: syntax errors detected'
+                : snapshot.hasWarning
+                  ? 'Run query (warning detected - click to confirm)'
+                  : 'Run selection or query (⌘/Ctrl + Enter)'}
+              disabled={run.isPending || snapshot.hasError}
               onclick={() => session.run('selection')}
             >
               {#if run.isPending}
                 <Loader class="size-3 animate-spin" />
-                <span>Running…</span>
+              {:else if snapshot.hasError}
+                <CircleX class="size-3 text-red-300" />
+              {:else if snapshot.hasWarning}
+                <TriangleAlert class="size-3 text-amber-300" />
               {:else}
                 <Play class="size-3 fill-current" />
-                <span>Run</span>
               {/if}
             </Button>
 
@@ -424,8 +472,8 @@
             language="sql"
             dialect={provider ?? 'standard'}
             metadata={completion.data}
-            onrun={doRun}
-            onrunstatement={doRun}
+            onrun={handleRunRequest}
+            onrunstatement={handleRunRequest}
           />
         </div>
       </Resizable.Pane>
@@ -508,6 +556,33 @@
       <AlertDialog.Action
         class="bg-destructive text-destructive-foreground hover:bg-destructive/90"
         onclick={confirmRun}
+      >
+        Run anyway
+      </AlertDialog.Action>
+    </AlertDialog.Footer>
+  </AlertDialog.Content>
+</AlertDialog.Root>
+
+<AlertDialog.Root open={clientWarning !== null} onOpenChange={(o) => !o && (clientWarning = null)}>
+  <AlertDialog.Content>
+    <AlertDialog.Header>
+      <AlertDialog.Title class="flex items-center gap-2">
+        <TriangleAlert class="text-amber-500 size-5" /> Risky query detected
+      </AlertDialog.Title>
+      <AlertDialog.Description>
+        The editor detected potential risks in this query before execution:
+      </AlertDialog.Description>
+    </AlertDialog.Header>
+    <ul class="text-amber-500/90 list-disc space-y-1 pl-5 text-sm">
+      {#each clientWarning?.warnings ?? [] as warning (warning)}
+        <li>{warning}</li>
+      {/each}
+    </ul>
+    <AlertDialog.Footer>
+      <AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
+      <AlertDialog.Action
+        class="bg-amber-600 text-white hover:bg-amber-700"
+        onclick={confirmClientWarning}
       >
         Run anyway
       </AlertDialog.Action>

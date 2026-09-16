@@ -10,6 +10,7 @@
     type SQLDialect,
     type SupportedLanguage,
     type StatementRange,
+    type Diagnostic,
   } from '@geto/editor'
   import type { CompletionSource } from '@codemirror/autocomplete'
   import { setQueryEditorContext } from './context.svelte'
@@ -41,6 +42,8 @@
     onrunstatement?: (sql: string) => void
     /** Callback when the number of parsed statements changes. */
     onstatementschange?: (count: number) => void
+    /** Callback when diagnostics (errors, warnings, info, hints) update. */
+    ondiagnosticschange?: (diagnostics: Diagnostic[]) => void
   }
 
   let {
@@ -57,6 +60,7 @@
     onrun,
     onrunstatement,
     onstatementschange,
+    ondiagnosticschange,
   }: Props = $props()
 
   let container: HTMLDivElement
@@ -140,6 +144,10 @@
       onRun: (text) => onrun?.(text),
       onRunStatement: (sql) => onrunstatement?.(sql),
       onStatementsChange: (count) => onstatementschange?.(count),
+      onDiagnosticsChange: (diagnostics) => {
+        activeSession.setDiagnostics(diagnostics)
+        ondiagnosticschange?.(diagnostics)
+      },
       onChange: (newVal) => {
         value = newVal
         activeSession.updateSnapshot()
