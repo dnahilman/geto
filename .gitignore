@@ -28,3 +28,6 @@ docs/
 
 # editors
 .temp
+
+# local personal skills
+.agents/skills/wsl-disk-cleaner
