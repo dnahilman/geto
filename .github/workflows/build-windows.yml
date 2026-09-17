@@ -29,8 +29,6 @@ jobs:
 
       - name: Rust Cache
         uses: swatinem/rust-cache@v2
-        with:
-          workspaces: './apps/desktop/src-tauri -> target'
 
       - name: Install dependencies
         run: bun install
@@ -38,14 +36,26 @@ jobs:
       - name: Build Windows Desktop App
         run: bun run build:desktop
 
+      - name: List build outputs
+        run: |
+          Get-ChildItem -Path target -Recurse -Filter *.exe -ErrorAction SilentlyContinue | Select-Object FullName
+          Get-ChildItem -Path target -Recurse -Filter *.msi -ErrorAction SilentlyContinue | Select-Object FullName
+          Get-ChildItem -Path apps/desktop -Recurse -Filter *.exe -ErrorAction SilentlyContinue | Select-Object FullName
+        shell: pwsh
+
       - name: Upload Windows Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: geto-windows-x64
           path: |
-            apps/desktop/src-tauri/target/release/Geto.exe
+            target/release/bundle/nsis/*.exe
+            target/release/bundle/msi/*.msi
+            target/release/Geto.exe
+            target/release/geto-desktop.exe
             apps/desktop/src-tauri/target/release/bundle/nsis/*.exe
             apps/desktop/src-tauri/target/release/bundle/msi/*.msi
+            apps/desktop/src-tauri/target/release/Geto.exe
+            apps/desktop/src-tauri/target/release/geto-desktop.exe
           if-no-files-found: warn
 
       - name: Create GitHub Release
@@ -53,8 +63,13 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            apps/desktop/src-tauri/target/release/Geto.exe
+            target/release/bundle/nsis/*.exe
+            target/release/bundle/msi/*.msi
+            target/release/Geto.exe
+            target/release/geto-desktop.exe
             apps/desktop/src-tauri/target/release/bundle/nsis/*.exe
             apps/desktop/src-tauri/target/release/bundle/msi/*.msi
+            apps/desktop/src-tauri/target/release/Geto.exe
+            apps/desktop/src-tauri/target/release/geto-desktop.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

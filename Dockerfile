@@ -2,7 +2,9 @@
 FROM oven/bun:alpine AS web-build
 WORKDIR /app
 COPY package.json bunfig.toml bun.lock* ./
+COPY packages ./packages
 COPY apps/web/package.json apps/web/
+COPY apps/desktop/package.json apps/desktop/
 RUN bun install --frozen-lockfile
 COPY apps/web apps/web
 RUN bun run --filter @geto/web build
@@ -12,8 +14,10 @@ FROM rust:slim-bookworm AS server-build
 WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends pkg-config && rm -rf /var/lib/apt/lists/*
 COPY Cargo.toml Cargo.lock* ./
+COPY .cargo ./.cargo
 COPY crates/geto-core ./crates/geto-core
 COPY apps/server ./apps/server
+COPY apps/desktop/src-tauri ./apps/desktop/src-tauri
 RUN cargo build --release --package geto-server
 
 # ---- stage 3: minimal runtime (Google Distroless) ----
