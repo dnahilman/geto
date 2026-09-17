@@ -5,3 +5,8 @@ members = [
     "apps/desktop/src-tauri",
 ]
 resolver = "2"
+
+[profile.dev]
+# Keep line tables for panic backtraces while saving ~75% disk space from full DWARF debuginfo
+debug = 1
+

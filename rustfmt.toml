@@ -1,0 +1,11 @@
+# rustfmt configuration
+# Ignore web, node_modules, and generated directories from formatting scans
+ignore = [
+    "node_modules",
+    "target",
+    "apps/web",
+    "packages",
+    ".svelte-kit",
+    "apps/desktop/src-tauri/gen",
+    "data",
+]

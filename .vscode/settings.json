@@ -1,8 +1,19 @@
 {
-  "editor.formatOnSave": true,
-  "editor.defaultFormatter": "esbenp.prettier-vscode",
-  "files.associations": {
-    "*.svelte": "svelte"
-  },
-  "svelte.plugin.typescript.enable": true
+  "rust-analyzer.files.excludeDirs": [
+    "node_modules",
+    "apps/web/node_modules",
+    "apps/desktop/node_modules",
+    "apps/web/.svelte-kit",
+    "apps/web/build",
+    "target",
+    "apps/desktop/src-tauri/target",
+    "apps/desktop/src-tauri/gen",
+    "data"
+  ],
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/.svelte-kit/**": true,
+    "**/target/**": true,
+    "**/data/**": true
+  }
 }

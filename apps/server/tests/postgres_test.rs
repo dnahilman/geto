@@ -164,9 +164,7 @@ async fn test_postgres_temporary_table_crud_lifecycle() {
         offset: 0,
         order_by: Some("id".to_string()),
         order_dir: Some("ASC".to_string()),
-        filter_column: None,
-        filter_value: None,
-        filter_group: None,
+        ..Default::default()
     }).await.expect("get_table_data failed");
     assert_eq!(rows_res.rows.len(), 1);
     assert_eq!(rows_res.rows[0][1], json!("Task 1"));
@@ -188,11 +186,7 @@ async fn test_postgres_temporary_table_crud_lifecycle() {
     let empty_res = driver.get_table_data(Some("public"), &tmp_table, TableDataOptions {
         limit: 10,
         offset: 0,
-        order_by: None,
-        order_dir: None,
-        filter_column: None,
-        filter_value: None,
-        filter_group: None,
+        ..Default::default()
     }).await.expect("get_table_data failed");
     assert_eq!(empty_res.rows.len(), 0);
 

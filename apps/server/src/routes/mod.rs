@@ -37,7 +37,7 @@ pub async fn health() -> Json<HealthResponse> {
     Json(HealthResponse {
         ok: true,
         name: "geto".to_string(),
-        version: "0.4.0".to_string(),
+        version: "0.5.0".to_string(),
     })
 }
 

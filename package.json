@@ -1,6 +1,6 @@
 {
   "name": "geto",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "private": true,
   "type": "module",
   "workspaces": [
@@ -11,12 +11,12 @@
   "scripts": {
     "dev": "bun run dev:desktop",
     "dev:desktop": "bun run --filter @geto/desktop dev",
-    "dev:web": "bun run --filter @geto/web dev & cargo run --manifest-path apps/server/Cargo.toml",
+    "dev:web": "bun run --filter @geto/web dev & cargo run -p geto-server",
     "build:desktop": "bun run --filter @geto/desktop build",
-    "build": "bun run --filter @geto/web build && cargo build --release --manifest-path apps/server/Cargo.toml",
-    "start": "./apps/server/target/release/geto-server",
+    "build": "bun run --filter @geto/web build && cargo build --release -p geto-server",
+    "start": "./target/release/geto-server",
     "docker:build": "podman build -t geto:latest .",
-    "codegen": "cargo run --manifest-path apps/server/Cargo.toml -- export-openapi > openapi.json && bunx openapi-typescript openapi.json -o apps/web/src/lib/types/api.d.ts",
+    "codegen": "cargo run -p geto-server -- export-openapi > openapi.json && bunx openapi-typescript openapi.json -o apps/web/src/lib/types/api.d.ts",
     "format": "prettier --write \"{apps,packages}/**/*.{ts,svelte,js,json,css}\"",
     "lint": "eslint ."
   },

@@ -1,8 +1,27 @@
-node_modules
-dist
-build
-.svelte-kit
-data
-.agents
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build outputs
+dist/
+**/dist/
+build/
+**/build/
+.svelte-kit/
+**/.svelte-kit/
+target/
+**/target/
+apps/desktop/src-tauri/gen/
+apps/desktop/src-tauri/target/
+
+# Data and databases
+data/
+*.sqlite*
+*.log
+
+# Lock files and generated schemas
 bun.lock
-*.sh
+openapi.json
+.git/
+.agents/
+.vite/

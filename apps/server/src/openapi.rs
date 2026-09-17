@@ -8,7 +8,7 @@ use crate::state::AppState;
 #[openapi(
     info(
         title = "Geto API",
-        version = "0.4.0",
+        version = "0.5.0",
         description = "Geto Database Management Tool API"
     ),
     paths(

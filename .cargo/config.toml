@@ -1,0 +1,3 @@
+[build]
+# Enforce a single target directory in workspace root to prevent duplicate builds in subdirectories
+target-dir = "target"
