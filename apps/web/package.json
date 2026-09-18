@@ -46,6 +46,6 @@
     "cn": "^0.3.0",
     "lucide-svelte": "^1.0.1",
     "openapi-fetch": "^0.17.0",
-    "tailwind-variants": "^3.2.2"
+    "tailwind-variants": "^3.3.1"
   }
 }
