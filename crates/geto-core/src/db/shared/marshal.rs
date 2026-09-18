@@ -366,6 +366,307 @@ pub fn marshal_pg_rows(rows: &[sqlx::postgres::PgRow], sql: &str) -> QueryResult
     }
 }
 
+pub fn map_sqlite_type(tname: &str) -> (i32, &'static str) {
+    let upper = tname.to_uppercase();
+    if upper.contains("INT") {
+        (1, "integer")
+    } else if upper.contains("CHAR")
+        || upper.contains("CLOB")
+        || upper.contains("TEXT")
+        || upper.is_empty()
+    {
+        (3, "text")
+    } else if upper.contains("BLOB") {
+        (4, "blob")
+    } else if upper.contains("REAL") || upper.contains("FLOA") || upper.contains("DOUB") {
+        (2, "real")
+    } else if upper.contains("BOOL") {
+        (6, "boolean")
+    } else if upper.contains("DATE") || upper.contains("TIME") {
+        (7, "datetime")
+    } else if upper.contains("NUMERIC") || upper.contains("DECIMAL") {
+        (246, "numeric")
+    } else if upper.contains("JSON") {
+        (245, "json")
+    } else {
+        (3, "text")
+    }
+}
+
+pub fn marshal_sqlite_row(row: &sqlx::sqlite::SqliteRow) -> Vec<serde_json::Value> {
+    use sqlx::ValueRef;
+    let mut row_vals = Vec::with_capacity(row.columns().len());
+    for (i, col) in row.columns().iter().enumerate() {
+        if let Ok(raw) = row.try_get_raw(i) {
+            if raw.is_null() {
+                row_vals.push(serde_json::Value::Null);
+                continue;
+            }
+        }
+
+        let tname = col.type_info().name().to_uppercase();
+        let val = if tname == "BOOLEAN" || tname == "BOOL" {
+            row.try_get::<bool, _>(i)
+                .map(serde_json::Value::Bool)
+                .or_else(|_| row.try_get::<i64, _>(i).map(|n| serde_json::Value::Bool(n != 0)))
+                .unwrap_or(serde_json::Value::Null)
+        } else if tname.contains("INT") {
+            row.try_get::<i64, _>(i)
+                .map(|n| serde_json::Value::Number(n.into()))
+                .unwrap_or(serde_json::Value::Null)
+        } else if tname.contains("REAL") || tname.contains("FLOA") || tname.contains("DOUB") {
+            row.try_get::<f64, _>(i)
+                .ok()
+                .and_then(serde_json::Number::from_f64)
+                .map(serde_json::Value::Number)
+                .unwrap_or(serde_json::Value::Null)
+        } else if tname.contains("BLOB") {
+            row.try_get::<Vec<u8>, _>(i)
+                .map(|b| serde_json::Value::String(format!("\\x{}", hex::encode(b))))
+                .unwrap_or(serde_json::Value::Null)
+        } else if tname.contains("JSON") {
+            if let Ok(v) = row.try_get::<serde_json::Value, _>(i) {
+                v
+            } else if let Ok(s) = row.try_get::<String, _>(i) {
+                serde_json::from_str(&s).unwrap_or(serde_json::Value::String(s))
+            } else {
+                serde_json::Value::Null
+            }
+        } else if tname.contains("TEXT") || tname.contains("CHAR") || tname.contains("CLOB") {
+            row.try_get::<String, _>(i)
+                .map(serde_json::Value::String)
+                .unwrap_or(serde_json::Value::Null)
+        } else {
+            // Dynamic typing fallback
+            if let Ok(n) = row.try_get::<i64, _>(i) {
+                serde_json::Value::Number(n.into())
+            } else if let Ok(f) = row.try_get::<f64, _>(i) {
+                serde_json::Number::from_f64(f)
+                    .map(serde_json::Value::Number)
+                    .unwrap_or(serde_json::Value::Null)
+            } else if let Ok(s) = row.try_get::<String, _>(i) {
+                serde_json::Value::String(s)
+            } else if let Ok(b) = row.try_get::<Vec<u8>, _>(i) {
+                serde_json::Value::String(format!("\\x{}", hex::encode(b)))
+            } else {
+                serde_json::Value::Null
+            }
+        };
+        row_vals.push(val);
+    }
+    row_vals
+}
+
+pub fn marshal_sqlite_rows(rows: &[sqlx::sqlite::SqliteRow], sql: &str) -> QueryResult {
+    let columns: Vec<ColumnMeta> = if let Some(first) = rows.first() {
+        first
+            .columns()
+            .iter()
+            .enumerate()
+            .map(|(i, c)| {
+                let (type_id, type_name) = map_sqlite_type(c.type_info().name());
+                ColumnMeta {
+                    name: c.name().to_string(),
+                    data_type_id: type_id,
+                    type_name: type_name.to_string(),
+                    source_table: Some(1),
+                    source_column: Some((i + 1) as i32),
+                }
+            })
+            .collect()
+    } else {
+        Vec::new()
+    };
+
+    let mut json_rows = Vec::with_capacity(rows.len());
+    for row in rows {
+        json_rows.push(marshal_sqlite_row(row));
+    }
+
+    let command = detect_command(sql);
+    let row_count = json_rows.len();
+
+    QueryResult {
+        columns,
+        rows: json_rows,
+        row_count,
+        command,
+    }
+}
+
+pub fn map_oracle_type(t: oracle_rs::OracleType) -> (i32, &'static str) {
+    match t {
+        oracle_rs::OracleType::Varchar => (253, "varchar2"),
+        oracle_rs::OracleType::Number => (246, "number"),
+        oracle_rs::OracleType::Date => (10, "date"),
+        oracle_rs::OracleType::Timestamp
+        | oracle_rs::OracleType::TimestampTz
+        | oracle_rs::OracleType::TimestampLtz => (7, "timestamp"),
+        oracle_rs::OracleType::Raw | oracle_rs::OracleType::LongRaw => (251, "raw"),
+        oracle_rs::OracleType::Clob => (252, "clob"),
+        oracle_rs::OracleType::Blob => (252, "blob"),
+        oracle_rs::OracleType::Boolean => (1, "boolean"),
+        oracle_rs::OracleType::Json => (245, "json"),
+        oracle_rs::OracleType::Rowid | oracle_rs::OracleType::Urowid => (11, "rowid"),
+        oracle_rs::OracleType::BinaryFloat => (4, "binary_float"),
+        oracle_rs::OracleType::BinaryDouble => (5, "binary_double"),
+        _ => (253, "varchar2"),
+    }
+}
+
+pub fn marshal_oracle_value(val: &oracle_rs::Value) -> serde_json::Value {
+    match val {
+        oracle_rs::Value::Null => serde_json::Value::Null,
+        oracle_rs::Value::String(s) => serde_json::Value::String(s.clone()),
+        oracle_rs::Value::Bytes(b) => serde_json::Value::String(format!("\\x{}", hex::encode(b))),
+        oracle_rs::Value::Integer(i) => serde_json::Value::Number((*i).into()),
+        oracle_rs::Value::Float(f) => serde_json::Number::from_f64(*f)
+            .map(serde_json::Value::Number)
+            .unwrap_or(serde_json::Value::Null),
+        oracle_rs::Value::Number(num) => {
+            let s = num.as_str();
+            if let Ok(i) = s.parse::<i64>() {
+                serde_json::Value::Number(i.into())
+            } else if let Ok(f) = s.parse::<f64>() {
+                serde_json::Number::from_f64(f)
+                    .map(serde_json::Value::Number)
+                    .unwrap_or_else(|| serde_json::Value::String(s.to_string()))
+            } else {
+                serde_json::Value::String(s.to_string())
+            }
+        }
+        oracle_rs::Value::Date(d) => serde_json::Value::String(format!(
+            "{:04}-{:02}-{:02} {:02}:{:02}:{:02}",
+            d.year, d.month, d.day, d.hour, d.minute, d.second
+        )),
+        oracle_rs::Value::Timestamp(t) => {
+            if t.has_timezone() {
+                serde_json::Value::String(format!(
+                    "{:04}-{:02}-{:02}T{:02}:{:02}:{:02}.{:06}{:+03}:{:02}",
+                    t.year,
+                    t.month,
+                    t.day,
+                    t.hour,
+                    t.minute,
+                    t.second,
+                    t.microsecond,
+                    t.tz_hour_offset,
+                    t.tz_minute_offset.abs()
+                ))
+            } else {
+                serde_json::Value::String(format!(
+                    "{:04}-{:02}-{:02}T{:02}:{:02}:{:02}.{:06}",
+                    t.year, t.month, t.day, t.hour, t.minute, t.second, t.microsecond
+                ))
+            }
+        }
+        oracle_rs::Value::RowId(r) => {
+            if let Some(s) = r.to_string() {
+                serde_json::Value::String(s)
+            } else {
+                serde_json::Value::String(format!("{}:{}:{}:{}", r.rba, r.partition_id, r.block_num, r.slot_num))
+            }
+        }
+        oracle_rs::Value::Boolean(b) => serde_json::Value::Bool(*b),
+        oracle_rs::Value::Lob(lob) => match lob {
+            oracle_rs::LobValue::Inline(bytes) => {
+                if let Ok(s) = std::str::from_utf8(bytes) {
+                    serde_json::Value::String(s.to_string())
+                } else {
+                    serde_json::Value::String(format!("\\x{}", hex::encode(bytes)))
+                }
+            }
+            oracle_rs::LobValue::Locator(_) => serde_json::Value::String("[LOB Locator]".to_string()),
+            oracle_rs::LobValue::Empty => serde_json::Value::String(String::new()),
+            oracle_rs::LobValue::Null => serde_json::Value::Null,
+        },
+        oracle_rs::Value::Json(j) => j.clone(),
+        oracle_rs::Value::Vector(v) => match v {
+            oracle_rs::OracleVector::Dense(data) => match data {
+                oracle_rs::VectorData::Float32(f) => {
+                    let items: Vec<serde_json::Value> = f
+                        .iter()
+                        .map(|&val| {
+                            serde_json::Number::from_f64(val as f64)
+                                .map(serde_json::Value::Number)
+                                .unwrap_or(serde_json::Value::Null)
+                        })
+                        .collect();
+                    serde_json::Value::Array(items)
+                }
+                oracle_rs::VectorData::Float64(f) => {
+                    let items: Vec<serde_json::Value> = f
+                        .iter()
+                        .map(|&val| {
+                            serde_json::Number::from_f64(val)
+                                .map(serde_json::Value::Number)
+                                .unwrap_or(serde_json::Value::Null)
+                        })
+                        .collect();
+                    serde_json::Value::Array(items)
+                }
+                oracle_rs::VectorData::Int8(i) => {
+                    let items: Vec<serde_json::Value> = i
+                        .iter()
+                        .map(|&val| serde_json::Value::Number(val.into()))
+                        .collect();
+                    serde_json::Value::Array(items)
+                }
+                oracle_rs::VectorData::Binary(b) => {
+                    serde_json::Value::String(format!("\\x{}", hex::encode(b)))
+                }
+            },
+            oracle_rs::OracleVector::Sparse(_) => {
+                serde_json::Value::String("[Sparse Vector]".to_string())
+            }
+        },
+        oracle_rs::Value::Cursor(c) => {
+            serde_json::Value::String(format!("[Cursor ID: {}]", c.cursor_id()))
+        }
+        oracle_rs::Value::Collection(col) => {
+            serde_json::Value::String(format!("[Collection: {}]", col.type_name))
+        }
+    }
+}
+
+pub fn marshal_oracle_rows(qr: oracle_rs::QueryResult, sql: &str) -> QueryResult {
+    let columns: Vec<ColumnMeta> = qr
+        .columns
+        .iter()
+        .enumerate()
+        .map(|(i, c)| {
+            let (type_id, type_name) = map_oracle_type(c.oracle_type);
+            ColumnMeta {
+                name: c.name.clone(),
+                data_type_id: type_id,
+                type_name: type_name.to_string(),
+                source_table: Some(1),
+                source_column: Some((i + 1) as i32),
+            }
+        })
+        .collect();
+
+    let mut json_rows = Vec::with_capacity(qr.rows.len());
+    for row in qr.rows {
+        let row_vals = row
+            .values()
+            .iter()
+            .map(marshal_oracle_value)
+            .collect::<Vec<serde_json::Value>>();
+        json_rows.push(row_vals);
+    }
+
+    let command = detect_command(sql);
+    let row_count = json_rows.len();
+
+    QueryResult {
+        columns,
+        rows: json_rows,
+        row_count,
+        command,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

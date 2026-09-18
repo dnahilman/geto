@@ -5,7 +5,7 @@ name: release
 #   - run manually (workflow_dispatch from main) -> tags latest + sha-<sha>
 on:
   push:
-    tags: ['v*.*.*']
+    tags: ['v*']
   workflow_dispatch:
 
 permissions:

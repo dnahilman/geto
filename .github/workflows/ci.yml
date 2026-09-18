@@ -1,55 +1,46 @@
 name: ci
 
-# Runs on PRs into main (the branch-protection status check) and on pushes to
-# any non-main branch. Pushes to main itself skip CI — main is protected, so
-# code only lands there via a PR that already ran this workflow.
 on:
   pull_request:
     branches: [main]
   push:
     branches-ignore: [main]
+  workflow_dispatch:
 
 jobs:
-  ci:
+  test:
+    name: Unit Tests & Typechecks
     runs-on: ubuntu-latest
 
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: postgres
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 2s
-          --health-timeout 3s
-          --health-retries 20
-
-    env:
-      # Integration tests connect to the service Postgres above; unit tests
-      # ignore it. GETO_AUTH_PASSWORD is required by the env schema.
-      TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
-      GETO_AUTH_PASSWORD: test
-
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - uses: oven-sh/setup-bun@v2
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          bun-version: '1'
+          bun-version: latest
 
-      - run: bun install --frozen-lockfile
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
 
-      - name: Typecheck server
-        run: bun run --filter @geto/server typecheck
+      - name: Rust Cache
+        uses: swatinem/rust-cache@v2
 
-      - name: Typecheck web
+      - name: Install JS/TS dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Typecheck web SPA
         run: bun run --filter @geto/web check
 
-      - name: Build SPA
+      - name: Test editor package
+        run: bun test packages/geto-editor
+
+      - name: Build web SPA
         run: bun run --filter @geto/web build
 
-      - name: Test server
-        run: bun run --filter @geto/server test
+      - name: Test core Rust library (50 mock unit tests)
+        run: cargo test -p geto-core
+
+      - name: Check Rust server
+        run: cargo check -p geto-server

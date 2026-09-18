@@ -6,6 +6,37 @@ members = [
 ]
 resolver = "2"
 
+[workspace.package]
+version = "0.5.0"
+edition = "2021"
+
+[workspace.dependencies]
+geto-core = { path = "crates/geto-core" }
+axum = "0.8"
+tokio = { version = "1", features = ["full"] }
+sqlx = { version = "0.8", features = ["runtime-tokio", "sqlite", "mysql", "postgres", "tls-rustls", "chrono", "uuid", "json", "rust_decimal"] }
+utoipa = { version = "5", features = ["chrono", "uuid"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+chrono = { version = "0.4", features = ["serde"] }
+rust_decimal = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+dotenvy = "0.15"
+thiserror = "2.0"
+uuid = { version = "1", features = ["v4", "serde"] }
+hmac = "0.12"
+sha2 = "0.10"
+subtle = "2.6"
+hex = "0.4"
+tower = "0.5"
+tauri = { version = "2", features = [] }
+tauri-build = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
+tauri-plugin-fs = "2"
+tauri-plugin-updater = "2"
+tauri-plugin-process = "2"
+
 [profile.dev]
 # Keep line tables for panic backtraces while saving ~75% disk space from full DWARF debuginfo
 debug = 1

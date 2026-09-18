@@ -5,6 +5,8 @@ use crate::db::types::{TableFilterGroup, TableFilterRule};
 pub enum FilterDialect {
     Postgres,
     Mysql,
+    Sqlite,
+    Oracle,
 }
 
 /// Builds a parameterized WHERE clause from legacy single-column filter and multi-rule TableFilterGroup.
@@ -23,14 +25,17 @@ pub fn build_where_clause(
     if let (Some(col), Some(val)) = (legacy_col, legacy_val) {
         if !col.trim().is_empty() {
             let quoted = match dialect {
-                FilterDialect::Postgres => quote_ident_pg(col),
+                FilterDialect::Postgres | FilterDialect::Sqlite | FilterDialect::Oracle => {
+                    quote_ident_pg(col)
+                }
                 FilterDialect::Mysql => quote_ident_mysql(col),
             };
 
             params.push(serde_json::Value::String(val.to_string()));
             let placeholder = match dialect {
                 FilterDialect::Postgres => format!("${}", params.len()),
-                FilterDialect::Mysql => "?".to_string(),
+                FilterDialect::Oracle => format!(":{}", params.len()),
+                FilterDialect::Mysql | FilterDialect::Sqlite => "?".to_string(),
             };
             parts.push(format!("{} = {}", quoted, placeholder));
         }
@@ -80,7 +85,9 @@ fn build_single_rule_condition(
 
     let op = rule.operator.trim().to_lowercase();
     let quoted = match dialect {
-        FilterDialect::Postgres => quote_ident_pg(col),
+        FilterDialect::Postgres | FilterDialect::Sqlite | FilterDialect::Oracle => {
+            quote_ident_pg(col)
+        }
         FilterDialect::Mysql => quote_ident_mysql(col),
     };
 
@@ -90,21 +97,27 @@ fn build_single_rule_condition(
         "is_not_null" => return Some(format!("{} IS NOT NULL", quoted)),
         "is_empty" => {
             return match dialect {
-                FilterDialect::Postgres => {
+                FilterDialect::Postgres | FilterDialect::Sqlite => {
                     Some(format!("({} IS NULL OR CAST({} AS TEXT) = '')", quoted, quoted))
                 }
                 FilterDialect::Mysql => {
                     Some(format!("({} IS NULL OR CAST({} AS CHAR) = '')", quoted, quoted))
                 }
+                FilterDialect::Oracle => {
+                    Some(format!("({} IS NULL OR TO_CHAR({}) = '')", quoted, quoted))
+                }
             };
         }
         "is_not_empty" => {
             return match dialect {
-                FilterDialect::Postgres => {
+                FilterDialect::Postgres | FilterDialect::Sqlite => {
                     Some(format!("({} IS NOT NULL AND CAST({} AS TEXT) != '')", quoted, quoted))
                 }
                 FilterDialect::Mysql => {
                     Some(format!("({} IS NOT NULL AND CAST({} AS CHAR) != '')", quoted, quoted))
+                }
+                FilterDialect::Oracle => {
+                    Some(format!("({} IS NOT NULL AND TO_CHAR({}) != '')", quoted, quoted))
                 }
             };
         }
@@ -130,8 +143,11 @@ fn build_single_rule_condition(
                 push_param(raw_val, false, params);
                 let ph = placeholder(dialect, params.len());
                 match dialect {
-                    FilterDialect::Postgres => Some(format!("CAST({} AS TEXT) = {}", quoted, ph)),
+                    FilterDialect::Postgres | FilterDialect::Sqlite => {
+                        Some(format!("CAST({} AS TEXT) = {}", quoted, ph))
+                    }
                     FilterDialect::Mysql => Some(format!("CAST({} AS CHAR) = {}", quoted, ph)),
+                    FilterDialect::Oracle => Some(format!("TO_CHAR({}) = {}", quoted, ph)),
                 }
             }
         }
@@ -144,8 +160,11 @@ fn build_single_rule_condition(
                 push_param(raw_val, false, params);
                 let ph = placeholder(dialect, params.len());
                 match dialect {
-                    FilterDialect::Postgres => Some(format!("CAST({} AS TEXT) != {}", quoted, ph)),
+                    FilterDialect::Postgres | FilterDialect::Sqlite => {
+                        Some(format!("CAST({} AS TEXT) != {}", quoted, ph))
+                    }
                     FilterDialect::Mysql => Some(format!("CAST({} AS CHAR) != {}", quoted, ph)),
+                    FilterDialect::Oracle => Some(format!("TO_CHAR({}) != {}", quoted, ph)),
                 }
             }
         }
@@ -154,7 +173,11 @@ fn build_single_rule_condition(
             let ph = placeholder(dialect, params.len());
             match dialect {
                 FilterDialect::Postgres => Some(format!("CAST({} AS TEXT) ILIKE {}", quoted, ph)),
+                FilterDialect::Sqlite => Some(format!("CAST({} AS TEXT) LIKE {}", quoted, ph)),
                 FilterDialect::Mysql => Some(format!("CAST({} AS CHAR) LIKE {}", quoted, ph)),
+                FilterDialect::Oracle => {
+                    Some(format!("LOWER(TO_CHAR({})) LIKE LOWER({})", quoted, ph))
+                }
             }
         }
         "not_contains" => {
@@ -164,7 +187,13 @@ fn build_single_rule_condition(
                 FilterDialect::Postgres => {
                     Some(format!("CAST({} AS TEXT) NOT ILIKE {}", quoted, ph))
                 }
+                FilterDialect::Sqlite => {
+                    Some(format!("CAST({} AS TEXT) NOT LIKE {}", quoted, ph))
+                }
                 FilterDialect::Mysql => Some(format!("CAST({} AS CHAR) NOT LIKE {}", quoted, ph)),
+                FilterDialect::Oracle => {
+                    Some(format!("LOWER(TO_CHAR({})) NOT LIKE LOWER({})", quoted, ph))
+                }
             }
         }
         "starts_with" => {
@@ -172,7 +201,11 @@ fn build_single_rule_condition(
             let ph = placeholder(dialect, params.len());
             match dialect {
                 FilterDialect::Postgres => Some(format!("CAST({} AS TEXT) ILIKE {}", quoted, ph)),
+                FilterDialect::Sqlite => Some(format!("CAST({} AS TEXT) LIKE {}", quoted, ph)),
                 FilterDialect::Mysql => Some(format!("CAST({} AS CHAR) LIKE {}", quoted, ph)),
+                FilterDialect::Oracle => {
+                    Some(format!("LOWER(TO_CHAR({})) LIKE LOWER({})", quoted, ph))
+                }
             }
         }
         "ends_with" => {
@@ -180,7 +213,11 @@ fn build_single_rule_condition(
             let ph = placeholder(dialect, params.len());
             match dialect {
                 FilterDialect::Postgres => Some(format!("CAST({} AS TEXT) ILIKE {}", quoted, ph)),
+                FilterDialect::Sqlite => Some(format!("CAST({} AS TEXT) LIKE {}", quoted, ph)),
                 FilterDialect::Mysql => Some(format!("CAST({} AS CHAR) LIKE {}", quoted, ph)),
+                FilterDialect::Oracle => {
+                    Some(format!("LOWER(TO_CHAR({})) LIKE LOWER({})", quoted, ph))
+                }
             }
         }
         "greater_than" => {
@@ -210,7 +247,8 @@ fn build_single_rule_condition(
 fn placeholder(dialect: FilterDialect, pos: usize) -> String {
     match dialect {
         FilterDialect::Postgres => format!("${}", pos),
-        FilterDialect::Mysql => "?".to_string(),
+        FilterDialect::Oracle => format!(":{}", pos),
+        FilterDialect::Mysql | FilterDialect::Sqlite => "?".to_string(),
     }
 }
 
@@ -313,5 +351,65 @@ mod tests {
             Some("(CAST(`status` AS CHAR) = ? OR CAST(`role` AS CHAR) = ?)")
         );
         assert_eq!(params.len(), 2);
+    }
+
+    #[test]
+    fn test_sqlite_dialect() {
+        let mut params = Vec::new();
+        let group = TableFilterGroup {
+            conjunction: "AND".to_string(),
+            rules: vec![
+                TableFilterRule {
+                    column: "name".to_string(),
+                    operator: "contains".to_string(),
+                    value: Some("alice".to_string()),
+                },
+                TableFilterRule {
+                    column: "age".to_string(),
+                    operator: "greater_than_or_equal".to_string(),
+                    value: Some("18".to_string()),
+                },
+            ],
+        };
+
+        let where_clause =
+            build_where_clause(FilterDialect::Sqlite, None, None, Some(&group), &mut params);
+        assert_eq!(
+            where_clause.as_deref(),
+            Some("(CAST(\"name\" AS TEXT) LIKE ? AND \"age\" >= ?)")
+        );
+        assert_eq!(params.len(), 2);
+        assert_eq!(params[0], serde_json::Value::String("%alice%".to_string()));
+        assert_eq!(params[1], serde_json::Value::Number(18.into()));
+    }
+
+    #[test]
+    fn test_oracle_dialect() {
+        let mut params = Vec::new();
+        let group = TableFilterGroup {
+            conjunction: "AND".to_string(),
+            rules: vec![
+                TableFilterRule {
+                    column: "name".to_string(),
+                    operator: "contains".to_string(),
+                    value: Some("oracle_user".to_string()),
+                },
+                TableFilterRule {
+                    column: "salary".to_string(),
+                    operator: "greater_than".to_string(),
+                    value: Some("5000".to_string()),
+                },
+            ],
+        };
+
+        let where_clause =
+            build_where_clause(FilterDialect::Oracle, None, None, Some(&group), &mut params);
+        assert_eq!(
+            where_clause.as_deref(),
+            Some("(LOWER(TO_CHAR(\"name\")) LIKE LOWER(:1) AND \"salary\" > :2)")
+        );
+        assert_eq!(params.len(), 2);
+        assert_eq!(params[0], serde_json::Value::String("%oracle_user%".to_string()));
+        assert_eq!(params[1], serde_json::Value::Number(5000.into()));
     }
 }

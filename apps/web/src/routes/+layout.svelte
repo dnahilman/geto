@@ -5,6 +5,7 @@
   import { Toaster } from '$lib/components/ui/sonner'
   import { createQueryClient } from '$lib/api/query-client'
   import { auth } from '$lib/stores/auth.svelte'
+  import { desktopUpdater } from '$lib/stores/desktop-updater.svelte'
   import Titlebar from '$lib/components/desktop/titlebar.svelte'
   import Login from '$lib/components/login.svelte'
 
@@ -14,6 +15,7 @@
 
   onMount(() => {
     void auth.check()
+    void desktopUpdater.checkOnStartup()
   })
 </script>
 

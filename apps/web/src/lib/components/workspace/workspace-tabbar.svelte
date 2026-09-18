@@ -12,6 +12,7 @@
   import * as Tabs from '$lib/components/ui/tabs'
   import * as ContextMenu from '$lib/components/ui/context-menu'
   import * as DropdownMenu from '$lib/components/ui/dropdown-menu'
+  import { ScrollArea } from '$lib/components/ui/scroll-area'
   import type { Workspace, Tab, TableViewMode } from '$lib/stores/workspace.svelte'
   import { Button } from '../ui/button'
 
@@ -36,85 +37,104 @@
     if (kind === 'rkey') return KeyRound
     return SquareTerminal
   }
+
+  let viewportRef = $state<HTMLElement | null>(null)
+
+  function handleWheel(e: WheelEvent) {
+    if (!viewportRef) return
+    if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+      viewportRef.scrollLeft += e.deltaY
+      e.preventDefault()
+    }
+  }
 </script>
 
 {#snippet tabbar()}
-  <!-- Horizontal scrollable tabs using ui/tabs -->
-  <Tabs.Root
-    value={ws.activeId ?? undefined}
-    onValueChange={(val) => {
-      if (val) ws.activeId = val
-    }}
+  <!-- Horizontal scrollable tabs using ScrollArea without visible scrollbar -->
+  <ScrollArea
+    bind:viewportRef
+    onwheel={handleWheel}
+    orientation="horizontal"
     class="min-w-0 flex-1 h-full"
+    scrollbarXClasses="hidden"
   >
-    <Tabs.List
-      variant="line"
-      class="flex h-full items-center justify-start gap-1 overflow-x-auto overflow-y-hidden bg-transparent p-0 px-1 border-0"
+    <Tabs.Root
+      value={ws.activeId ?? undefined}
+      onValueChange={(val) => {
+        if (val) ws.activeId = val
+      }}
+      class="h-full w-fit"
     >
-      {#each ws.tabs as tab (tab.id)}
-        {@const Icon = icon(tab.kind)}
-        <ContextMenu.Root>
-          <ContextMenu.Trigger>
-            {#snippet child({ props })}
-              <Tabs.Trigger
-                {...props}
-                value={tab.id}
-                class="group relative flex h-full items-center gap-1.5 rounded-none border-t-0 border-x-0 border-b-2 border-transparent px-0 py-1 text-xs shrink-0 after:hidden ring-0 outline-none shadow-none focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 focus-visible:border-transparent data-[state=active]:border-b-primary data-[state=active]:border-t-transparent data-[state=active]:border-x-transparent data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none dark:data-active:border-transparent dark:data-active:border-b-primary dark:data-[state=active]:border-transparent dark:data-[state=active]:border-b-primary hover:text-foreground text-muted-foreground transition-colors cursor-pointer"
-                ondblclick={() => ws.togglePin(tab.id)}
-              >
-                <Icon class="size-3.5 shrink-0" />
-                <span class={tab.pinned ? 'italic' : ''}>{tab.title}</span>
-                {#if tab.pinned}
-                  <button
-                    type="button"
-                    class="hover:bg-muted rounded p-0.5"
-                    title="Unpin"
-                    onclick={(e) => {
-                      e.stopPropagation()
-                      ws.togglePin(tab.id)
-                    }}
-                  >
-                    <Pin class="size-3 fill-current" />
-                  </button>
-                {:else}
-                  <button
-                    type="button"
-                    class="hover:bg-muted rounded p-0.5 opacity-50 group-hover:opacity-100"
-                    title="Close"
-                    onpointerdown={(e) => e.stopPropagation()}
-                    onmousedown={(e) => e.stopPropagation()}
-                    onpointerup={(e) => e.stopPropagation()}
-                    onmouseup={(e) => e.stopPropagation()}
-                    onclick={(e) => {
-                      e.stopPropagation()
-                      ws.close(tab.id)
-                    }}
-                  >
-                    <X class="size-3" />
-                  </button>
-                {/if}
-              </Tabs.Trigger>
-            {/snippet}
-          </ContextMenu.Trigger>
-          <ContextMenu.Content class="w-44">
-            <ContextMenu.Item onSelect={() => ws.close(tab.id)}>Close</ContextMenu.Item>
-            <ContextMenu.Item onSelect={() => ws.closeOthers(tab.id)}>Close Others</ContextMenu.Item
-            >
-            <ContextMenu.Item onSelect={() => ws.closeAll()}>Close All</ContextMenu.Item>
-            <ContextMenu.Separator />
-            <ContextMenu.Item onSelect={() => ws.togglePin(tab.id)}>
-              {tab.pinned ? 'Unpin' : 'Pin'}
-            </ContextMenu.Item>
-          </ContextMenu.Content>
-        </ContextMenu.Root>
-      {/each}
-    </Tabs.List>
-  </Tabs.Root>
+      <Tabs.List
+        variant="line"
+        class="flex h-full w-fit items-center justify-start gap-1 bg-transparent p-0 px-1 border-0"
+      >
+        {#each ws.tabs as tab (tab.id)}
+          {@const Icon = icon(tab.kind)}
+          <ContextMenu.Root>
+            <ContextMenu.Trigger>
+              {#snippet child({ props })}
+                <Tabs.Trigger
+                  {...props}
+                  value={tab.id}
+                  class="group relative flex-none w-fit flex h-full items-center gap-1.5 rounded-none border-t-0 border-x-0 border-b-2 border-transparent px-2.5 py-1 text-xs shrink-0 after:hidden ring-0 outline-none shadow-none focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 focus-visible:border-transparent data-[state=active]:border-b-primary data-[state=active]:border-t-transparent data-[state=active]:border-x-transparent data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none dark:data-active:border-transparent dark:data-active:border-b-primary dark:data-[state=active]:border-transparent dark:data-[state=active]:border-b-primary hover:text-foreground text-muted-foreground transition-colors cursor-pointer"
+                  ondblclick={() => ws.togglePin(tab.id)}
+                >
+                  <Icon class="size-3.5 shrink-0" />
+                  <span class={tab.pinned ? 'italic' : ''}>{tab.title}</span>
+                  {#if tab.pinned}
+                    <button
+                      type="button"
+                      class="hover:bg-muted rounded p-0.5"
+                      title="Unpin"
+                      onclick={(e) => {
+                        e.stopPropagation()
+                        ws.togglePin(tab.id)
+                      }}
+                    >
+                      <Pin class="size-3 fill-current" />
+                    </button>
+                  {:else}
+                    <button
+                      type="button"
+                      class="hover:bg-muted rounded p-0.5 opacity-50 group-hover:opacity-100"
+                      title="Close"
+                      onpointerdown={(e) => e.stopPropagation()}
+                      onmousedown={(e) => e.stopPropagation()}
+                      onpointerup={(e) => e.stopPropagation()}
+                      onmouseup={(e) => e.stopPropagation()}
+                      onclick={(e) => {
+                        e.stopPropagation()
+                        ws.close(tab.id)
+                      }}
+                    >
+                      <X class="size-3" />
+                    </button>
+                  {/if}
+                </Tabs.Trigger>
+              {/snippet}
+            </ContextMenu.Trigger>
+            <ContextMenu.Content class="w-44">
+              <ContextMenu.Item onSelect={() => ws.close(tab.id)}>Close</ContextMenu.Item>
+              <ContextMenu.Item onSelect={() => ws.closeOthers(tab.id)}>Close Others</ContextMenu.Item>
+              <ContextMenu.Item onSelect={() => ws.closeAll()}>Close All</ContextMenu.Item>
+              <ContextMenu.Separator />
+              <ContextMenu.Item onSelect={() => ws.togglePin(tab.id)}>
+                {tab.pinned ? 'Unpin' : 'Pin'}
+              </ContextMenu.Item>
+            </ContextMenu.Content>
+          </ContextMenu.Root>
+        {/each}
+      </Tabs.List>
+    </Tabs.Root>
+  </ScrollArea>
 {/snippet}
 
 {#snippet tabbarAction()}
-  <!-- Action Toolbar at the end -->
-  <div class="flex h-full shrink-0 items-center gap-1 border-l bg-background px-2 text-xs">
+  <!-- Action Toolbar at the end: top layer, fully opaque background -->
+  <div
+    class="relative z-20 flex h-full shrink-0 items-center gap-1 border-l bg-background px-2 text-xs shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.15)] dark:shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.3)]"
+  >
     {#if activeTableTab}
       {@const ActiveIcon = currentOption.icon}
       <DropdownMenu.Root>
@@ -165,7 +185,7 @@
   </div>
 {/snippet}
 
-<div class="relative flex h-9 items-center justify-between border-b bg-background">
+<div class="relative flex h-9 w-full items-center justify-between border-b bg-background overflow-hidden">
   {@render tabbar()}
   {@render tabbarAction()}
 </div>

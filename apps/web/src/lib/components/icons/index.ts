@@ -1,2 +1,5 @@
 export { default as PostgresIcon } from './postgres-icon.svelte'
+export { default as MysqlIcon } from './mysql-icon.svelte'
+export { default as SqliteIcon } from './sqlite-icon.svelte'
+export { default as OracleIcon } from './oracle-icon.svelte'
 export { default as ProviderIcon } from './provider-icon.svelte'

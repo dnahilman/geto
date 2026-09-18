@@ -9,6 +9,20 @@ const SSL_MODES: SslMode[] = ['disable', 'allow', 'prefer', 'require', 'verify-c
 export function parseConnectionUrl(raw: string): Partial<ConnectionInput> | null {
   const s = raw.trim()
   if (!s) return null
+
+  if (s.startsWith('sqlite://') || s.startsWith('sqlite3://') || s.startsWith('sqlite:')) {
+    const dbPath = s.replace(/^sqlite3?:(?:\/\/)?/, '')
+    return {
+      provider: 'sqlite',
+      host: '',
+      port: 0,
+      database: dbPath || ':memory:',
+      username: '',
+      password: '',
+      sslMode: 'disable',
+    }
+  }
+
   let u: URL
   try {
     u = new URL(s)
@@ -41,6 +55,19 @@ export function parseConnectionUrl(raw: string): Partial<ConnectionInput> | null
       username: u.username ? decodeURIComponent(u.username) : 'root',
       password,
       sslMode: (sslmode && SSL_MODES.includes(sslmode as SslMode) ? sslmode : 'prefer') as SslMode,
+    }
+  }
+
+  if (scheme === 'oracle' || scheme === 'orcl') {
+    const sslmode = u.searchParams.get('sslmode') || u.searchParams.get('ssl-mode')
+    return {
+      provider: 'oracle',
+      host: host ? decodeURIComponent(host) : 'localhost',
+      port: u.port ? Number(u.port) : 1521,
+      database: decodeURIComponent(u.pathname.replace(/^\//, '')) || 'FREEPDB1',
+      username: u.username ? decodeURIComponent(u.username) : 'system',
+      password,
+      sslMode: (sslmode && SSL_MODES.includes(sslmode as SslMode) ? sslmode : 'disable') as SslMode,
     }
   }
 

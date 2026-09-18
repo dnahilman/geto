@@ -18,6 +18,9 @@
     {
       "identifier": "fs:scope",
       "allow": ["**"]
-    }
+    },
+    "updater:default",
+    "process:default",
+    "process:allow-restart"
   ]
 }

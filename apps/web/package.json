@@ -40,6 +40,8 @@
     "@tauri-apps/api": "^2.0.0",
     "@tauri-apps/plugin-dialog": "^2.0.0",
     "@tauri-apps/plugin-fs": "^2.0.0",
+    "@tauri-apps/plugin-process": "^2.3.1",
+    "@tauri-apps/plugin-updater": "^2.11.0",
     "bits-ui": "^2.18.1",
     "cn": "^0.3.0",
     "lucide-svelte": "^1.0.1",

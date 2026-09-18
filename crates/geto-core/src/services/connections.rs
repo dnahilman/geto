@@ -3,12 +3,13 @@ use std::time::Instant;
 
 use crate::crypto::SecretCipher;
 use crate::db::DriverRegistry;
+use crate::db::ssh::SshTunnel;
 use crate::error::AppError;
 use crate::store::connections::{
     create_connection as store_create, delete_connection as store_delete,
     get_connection as store_get, get_connection_secret, list_connections as store_list,
     set_connection_database as store_set_db, update_connection as store_update, Connection,
-    ConnectionInput, SslMode,
+    ConnectionInput, SshSecret, SslMode,
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
@@ -129,6 +130,73 @@ pub async fn run_ping_test(
             let latency = t0.elapsed().as_millis() as u64;
             Ok((version, latency))
         }
+        "sqlite" | "sqlite3" => {
+            let raw_path = database.trim();
+            let db_path = if raw_path.is_empty() {
+                ":memory:"
+            } else {
+                raw_path.strip_prefix("sqlite://").unwrap_or(raw_path)
+            };
+
+            let opts = if db_path == ":memory:" {
+                sqlx::sqlite::SqliteConnectOptions::new().in_memory(true)
+            } else {
+                sqlx::sqlite::SqliteConnectOptions::new()
+                    .filename(db_path)
+                    .create_if_missing(true)
+            };
+
+            let pool = sqlx::sqlite::SqlitePoolOptions::new()
+                .max_connections(1)
+                .acquire_timeout(std::time::Duration::from_secs(10))
+                .connect_with(opts)
+                .await
+                .map_err(|e| e.to_string())?;
+
+            let row = sqlx::query("SELECT sqlite_version() AS version")
+                .fetch_one(&pool)
+                .await
+                .map_err(|e| e.to_string())?;
+
+            use sqlx::Row;
+            let ver: String = row.try_get("version").unwrap_or_else(|_| "unknown".to_string());
+            let version = format!("SQLite {}", ver);
+            let latency = t0.elapsed().as_millis() as u64;
+            Ok((version, latency))
+        }
+        "oracle" | "orcl" => {
+            let p = if port > 0 { port as u16 } else { 1521 };
+            let db = if database.is_empty() { "FREEPDB1" } else { database };
+            let pwd = password.unwrap_or_default();
+            let mut config = oracle_rs::Config::new(host, p, db, username, pwd);
+            if ssl_mode == SslMode::Require
+                || ssl_mode == SslMode::VerifyCa
+                || ssl_mode == SslMode::VerifyFull
+            {
+                if let Ok(cfg_tls) = config.clone().with_tls() {
+                    config = cfg_tls;
+                }
+            }
+
+            let conn = oracle_rs::Connection::connect_with_config(config)
+                .await
+                .map_err(|e| e.to_string())?;
+
+            let qr = conn
+                .query("SELECT banner FROM v$version WHERE ROWNUM = 1", &[])
+                .await
+                .map_err(|e| e.to_string())?;
+
+            let ver = qr
+                .rows
+                .first()
+                .and_then(|r| r.get(0).and_then(|v| v.as_str()))
+                .unwrap_or("Oracle Database");
+
+            let latency = t0.elapsed().as_millis() as u64;
+            let _ = conn.close().await;
+            Ok((ver.to_string(), latency))
+        }
         other => Err(format!("Unsupported provider: {}", other)),
     }
 }
@@ -143,6 +211,10 @@ pub fn build_connection_string(
     password: Option<&str>,
     ssl_mode: SslMode,
 ) -> String {
+    if provider == "sqlite" || provider == "sqlite3" {
+        return format!("sqlite://{}", database);
+    }
+
     let auth = match password {
         Some(pwd) if !pwd.is_empty() => format!("{}:{}@", username, pwd),
         _ => {
@@ -153,6 +225,10 @@ pub fn build_connection_string(
             }
         }
     };
+
+    if provider == "oracle" || provider == "orcl" {
+        return format!("oracle://{}{}:{}/{}", auth, host, port, database);
+    }
 
     let scheme = if provider == "mysql" { "mysql" } else { "postgresql" };
     let mut url = format!("{}://{}{}:{}/{}", scheme, auth, host, port, database);
@@ -224,10 +300,41 @@ pub async fn set_connection_database(
 
 /// Test connection with unsaved input parameters.
 pub async fn test_unsaved_connection(input: &ConnectionInput) -> TestResult {
+    let (_tunnel, host, port) = if let Some(ssh) = &input.ssh {
+        if ssh.enabled {
+            let ssh_sec = SshSecret {
+                host: ssh.host.clone(),
+                port: ssh.port,
+                username: ssh.username.clone(),
+                auth_method: ssh.auth_method,
+                password: ssh.password.clone(),
+                private_key: ssh.private_key.clone(),
+                passphrase: ssh.passphrase.clone(),
+            };
+            match SshTunnel::start(&ssh_sec, &input.host, input.port as u16).await {
+                Ok(tun) => {
+                    let p = tun.local_port as i32;
+                    (Some(tun), "127.0.0.1".to_string(), p)
+                }
+                Err(err) => {
+                    return TestResult {
+                        version: None,
+                        latency_ms: None,
+                        error: Some(format!("SSH tunnel error: {}", err)),
+                    };
+                }
+            }
+        } else {
+            (None, input.host.clone(), input.port)
+        }
+    } else {
+        (None, input.host.clone(), input.port)
+    };
+
     match run_ping_test(
         &input.provider,
-        &input.host,
-        input.port,
+        &host,
+        port,
         &input.database,
         &input.username,
         input.password.as_deref(),
@@ -259,10 +366,32 @@ pub async fn test_saved_connection(
         .ok_or_else(|| AppError::NotFound("Connection not found".to_string()))?;
 
     let conn = secret.connection;
+    let (_tunnel, host, port) = if let (Some(ssh_conf), Some(ssh_sec)) = (&conn.ssh, &secret.ssh_secret) {
+        if ssh_conf.enabled {
+            match SshTunnel::start(ssh_sec, &conn.host, conn.port as u16).await {
+                Ok(tun) => {
+                    let p = tun.local_port as i32;
+                    (Some(tun), "127.0.0.1".to_string(), p)
+                }
+                Err(err) => {
+                    return Ok(TestResult {
+                        version: None,
+                        latency_ms: None,
+                        error: Some(format!("SSH tunnel error: {}", err)),
+                    });
+                }
+            }
+        } else {
+            (None, conn.host.clone(), conn.port)
+        }
+    } else {
+        (None, conn.host.clone(), conn.port)
+    };
+
     let res = match run_ping_test(
         &conn.provider,
-        &conn.host,
-        conn.port,
+        &host,
+        port,
         &conn.database,
         &conn.username,
         secret.password.as_deref(),

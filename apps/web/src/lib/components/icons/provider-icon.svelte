@@ -2,6 +2,8 @@
   import { Database } from 'lucide-svelte'
   import PostgresIcon from './postgres-icon.svelte'
   import MysqlIcon from './mysql-icon.svelte'
+  import SqliteIcon from './sqlite-icon.svelte'
+  import OracleIcon from './oracle-icon.svelte'
 
   interface Props {
     provider?: string
@@ -17,20 +19,10 @@
   <PostgresIcon class={className} />
 {:else if normalized === 'mysql' || normalized === 'mysql2'}
   <MysqlIcon class={className} />
-{:else if normalized === 'sqlite'}
-  <svg
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    stroke-width="1.5"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-    class={className}
-  >
-    <path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L3 12.5V21h8.5z" />
-    <path d="M16 8L2 22" />
-    <path d="M17.5 15H9" />
-  </svg>
+{:else if normalized === 'sqlite' || normalized === 'sqlite3'}
+  <SqliteIcon class={className} />
+{:else if normalized === 'oracle' || normalized === 'plsql'}
+  <OracleIcon class={className} />
 {:else if normalized === 'duckdb'}
   <svg
     viewBox="0 0 24 24"

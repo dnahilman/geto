@@ -27,5 +27,19 @@ pub fn providers_list() -> Vec<ProviderMeta> {
             default_port: 3306,
             url_schemes: vec!["mysql".to_string(), "mysql2".to_string()],
         },
+        ProviderMeta {
+            id: "sqlite".to_string(),
+            label: "SQLite".to_string(),
+            kind: "file".to_string(),
+            default_port: 0,
+            url_schemes: vec!["sqlite".to_string(), "sqlite3".to_string()],
+        },
+        ProviderMeta {
+            id: "oracle".to_string(),
+            label: "Oracle".to_string(),
+            kind: "relational".to_string(),
+            default_port: 1521,
+            url_schemes: vec!["oracle".to_string(), "orcl".to_string()],
+        },
     ]
 }

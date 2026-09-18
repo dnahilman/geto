@@ -7,6 +7,7 @@ import {
   PostgreSQL,
   MySQL,
   SQLite,
+  PLSQL,
   formatSql,
   checkSqlSyntax,
   runClientSideSqlLint,
@@ -111,12 +112,25 @@ describe('@geto/editor Test Suite', () => {
       expect(resolveDialect('sqlite')).toBe(SQLite)
       expect(resolveDialect('sqlite3')).toBe(SQLite)
     })
+
+    it('should resolve Oracle correctly', () => {
+      expect(resolveDialect('oracle')).toBe(PLSQL)
+      expect(resolveDialect('plsql')).toBe(PLSQL)
+    })
   })
 
   describe('SQL Formatter', () => {
     it('should format queries and uppercase keywords', () => {
       const input = 'select id, email from users where active = 1'
       const formatted = formatSql(input, 'postgresql')
+      expect(formatted).toContain('SELECT')
+      expect(formatted).toContain('FROM')
+      expect(formatted).toContain('WHERE')
+    })
+
+    it('should format Oracle PLSQL queries properly', () => {
+      const input = 'select employee_id, salary from employees where department_id = 10'
+      const formatted = formatSql(input, 'oracle')
       expect(formatted).toContain('SELECT')
       expect(formatted).toContain('FROM')
       expect(formatted).toContain('WHERE')

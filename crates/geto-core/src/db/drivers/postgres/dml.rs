@@ -152,7 +152,7 @@ pub fn build_create_table(
             "A table needs at least one column".to_string(),
         ));
     }
-    let type_re = regex::Regex::new(r"^[A-Za-z][A-Za-z0-9 _().,[\]]*$")
+    let type_re = regex::Regex::new(r"^[A-Za-z][A-Za-z0-9 _().,\[\]]*$")
         .map_err(|e| AppError::Internal(e.to_string()))?;
 
     let mut defs = Vec::new();

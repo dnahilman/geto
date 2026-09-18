@@ -1,7 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Geto",
-  "version": "0.5.0",
   "identifier": "com.geto.app",
   "build": {
     "beforeDevCommand": "bun run --filter @geto/web dev",
@@ -30,12 +29,22 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "createUpdaterArtifacts": true,
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
       "icons/128x128@2x.png",
       "icons/icon.png",
-      "icons/icon.ico"
+      "icons/icon.ico",
+      "icons/icon.icns"
     ]
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDZDRjU1RkY3RUVFODVFMUEKUldRYVh1anU5MS8xYkFNNmMreW5XNDJ2ZU5Ka25ISkhNMWd4Z0d5ZlBTaVhsV2NGREZRYnpmWUMK",
+      "endpoints": [
+        "https://github.com/dnahilman/geto/releases/latest/download/latest.json"
+      ]
+    }
   }
 }

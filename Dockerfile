@@ -1,7 +1,7 @@
 # ---- stage 1: build the SvelteKit SPA ----
 FROM oven/bun:alpine AS web-build
 WORKDIR /app
-COPY package.json bunfig.toml bun.lock* ./
+COPY package.json bunfig.toml bun.lock* tsconfig*.json ./
 COPY packages ./packages
 COPY apps/web/package.json apps/web/
 COPY apps/desktop/package.json apps/desktop/
@@ -12,7 +12,7 @@ RUN bun run --filter @geto/web build
 # ---- stage 2: build the Rust server binary ----
 FROM rust:slim-bookworm AS server-build
 WORKDIR /app
-RUN apt-get update && apt-get install -y --no-install-recommends pkg-config && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends build-essential cmake pkg-config ca-certificates && rm -rf /var/lib/apt/lists/*
 COPY Cargo.toml Cargo.lock* ./
 COPY .cargo ./.cargo
 COPY crates/geto-core ./crates/geto-core

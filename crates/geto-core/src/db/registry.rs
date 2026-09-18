@@ -6,7 +6,10 @@ use tokio::sync::RwLock;
 use crate::crypto::SecretCipher;
 use crate::db::driver::DbDriver;
 use crate::db::drivers::mysql::MySqlDriver;
+use crate::db::drivers::oracle::OracleDriver;
 use crate::db::drivers::postgres::PostgresDriver;
+use crate::db::drivers::sqlite::SqliteDriver;
+use crate::db::ssh::SshTunnel;
 use crate::error::AppError;
 use crate::state::CoreState;
 use crate::store::connections::get_connection_secret;
@@ -54,6 +57,7 @@ impl ConnectionSecretsProvider for (&sqlx::SqlitePool, &SecretCipher) {
 
 struct CachedDriver {
     driver: Arc<dyn DbDriver>,
+    tunnel: Option<SshTunnel>,
     last_used: Instant,
 }
 
@@ -98,14 +102,45 @@ impl DriverRegistry {
             .await?
             .ok_or_else(|| AppError::NotFound("Connection not found".to_string()))?;
 
-        // 3. Instantiate driver based on provider
-        let driver: Arc<dyn DbDriver> = match secret.connection.provider.as_str() {
+        // 3. Establish SSH tunnel if configured and enabled
+        let (tunnel, effective_secret) = if let (Some(ssh_conf), Some(ssh_sec)) =
+            (&secret.connection.ssh, &secret.ssh_secret)
+        {
+            if ssh_conf.enabled {
+                let tun = SshTunnel::start(
+                    ssh_sec,
+                    &secret.connection.host,
+                    secret.connection.port as u16,
+                )
+                .await?;
+
+                let mut sec_clone = secret.clone();
+                sec_clone.connection.host = "127.0.0.1".to_string();
+                sec_clone.connection.port = tun.local_port as i32;
+                (Some(tun), sec_clone)
+            } else {
+                (None, secret)
+            }
+        } else {
+            (None, secret)
+        };
+
+        // 4. Instantiate driver based on provider
+        let driver: Arc<dyn DbDriver> = match effective_secret.connection.provider.as_str() {
             "mysql" => {
-                let d = MySqlDriver::connect(&secret).await?;
+                let d = MySqlDriver::connect(&effective_secret).await?;
                 Arc::new(d)
             }
             "postgresql" | "postgres" => {
-                let d = PostgresDriver::connect(&secret).await?;
+                let d = PostgresDriver::connect(&effective_secret).await?;
+                Arc::new(d)
+            }
+            "sqlite" | "sqlite3" => {
+                let d = SqliteDriver::connect(&effective_secret).await?;
+                Arc::new(d)
+            }
+            "oracle" | "orcl" => {
+                let d = OracleDriver::connect(&effective_secret).await?;
                 Arc::new(d)
             }
             other => {
@@ -113,12 +148,13 @@ impl DriverRegistry {
             }
         };
 
-        // 4. Cache and return
+        // 5. Cache and return
         let mut guard = self.drivers.write().await;
         guard.insert(
             connection_id.to_string(),
             CachedDriver {
                 driver: driver.clone(),
+                tunnel,
                 last_used: Instant::now(),
             },
         );
@@ -140,8 +176,11 @@ impl DriverRegistry {
             guard.remove(connection_id)
         };
 
-        if let Some(cached) = removed {
+        if let Some(mut cached) = removed {
             cached.driver.close().await;
+            if let Some(ref mut tun) = cached.tunnel {
+                tun.close();
+            }
         }
     }
 
@@ -152,7 +191,7 @@ impl DriverRegistry {
             let now = Instant::now();
             guard.retain(|_id, cached| {
                 if now.duration_since(cached.last_used) > max_idle {
-                    to_close.push(cached.driver.clone());
+                    to_close.push((cached.driver.clone(), cached.tunnel.take()));
                     false
                 } else {
                     true
@@ -160,8 +199,11 @@ impl DriverRegistry {
             });
         }
 
-        for driver in to_close {
+        for (driver, mut tunnel) in to_close {
             driver.close().await;
+            if let Some(ref mut tun) = tunnel {
+                tun.close();
+            }
         }
     }
 }

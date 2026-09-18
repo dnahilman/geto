@@ -18,10 +18,18 @@
     "docker:build": "podman build -t geto:latest .",
     "codegen": "cargo run -p geto-server -- export-openapi > openapi.json && bunx openapi-typescript openapi.json -o apps/web/src/lib/types/api.d.ts",
     "format": "prettier --write \"{apps,packages}/**/*.{ts,svelte,js,json,css}\"",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "bump": "bumpp",
+    "bump:patch": "bumpp patch",
+    "bump:minor": "bumpp minor",
+    "bump:major": "bumpp major",
+    "copy:key": "clip.exe < ~/.tauri/geto.key && echo 'Private key copied to clipboard!'",
+    "generate:icons": "bun .temp/generate-icons.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@types/node": "^26.6.1",
+    "bumpp": "^12.3.0",
     "eslint": "^10.9.1",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-svelte": "^3.23.0",

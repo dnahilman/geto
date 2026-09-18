@@ -185,6 +185,7 @@
 
 ::-webkit-scrollbar {
   width: 5px;
+  height: 4px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
@@ -192,6 +193,9 @@
 ::-webkit-scrollbar-thumb {
   background: var(--border);
   border-radius: 5px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-foreground);
 }
 * {
   scrollbar-width: thin;

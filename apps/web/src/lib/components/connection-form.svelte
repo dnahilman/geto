@@ -22,6 +22,9 @@
     type SslMode,
   } from '$lib/api/connections'
   import { parseConnectionUrl } from '$lib/api/connection-url'
+  import { isTauri } from '$lib/api/transport'
+  import { open as openDialog } from '@tauri-apps/plugin-dialog'
+  import { ProviderIcon } from '$lib/components/icons'
 
   interface Props {
     open?: boolean
@@ -64,13 +67,19 @@
     if (provider === 'mysql') {
       return { database: '', username: 'root', sslMode: 'prefer' as SslMode }
     }
+    if (provider === 'sqlite') {
+      return { database: '', username: '', sslMode: 'disable' as SslMode }
+    }
+    if (provider === 'oracle') {
+      return { database: 'FREEPDB1', username: 'system', sslMode: 'disable' as SslMode }
+    }
     return { database: 'postgres', username: 'postgres', sslMode: 'prefer' as SslMode }
   }
   function blankFor(provider: ConnectionInput['provider'], port: number): ConnectionInput {
     return {
       name: '',
       provider,
-      host: 'localhost',
+      host: provider === 'sqlite' ? '' : 'localhost',
       port,
       password: '',
       readonly: false,
@@ -89,9 +98,41 @@
   let urlError = $state(false)
 
   const isRedis = $derived(form.provider === 'redis')
+  const isSqlite = $derived(form.provider === 'sqlite')
+  const isOracle = $derived(form.provider === 'oracle')
   const providerLabel = $derived(
     providers.data?.find((p) => p.id === form.provider)?.label ?? form.provider,
   )
+
+  async function browseSqliteFile() {
+    if (isTauri()) {
+      try {
+        const selected = await openDialog({
+          multiple: false,
+          directory: false,
+          filters: [
+            {
+              name: 'SQLite Database',
+              extensions: ['db', 'sqlite', 'sqlite3', 'db3', 's3db'],
+            },
+            {
+              name: 'All Files',
+              extensions: ['*'],
+            },
+          ],
+        })
+        if (selected && typeof selected === 'string') {
+          form.database = selected
+          if (!form.name) {
+            const base = selected.split(/[\/\\]/).pop() || ''
+            form.name = base.replace(/\.[^.]+$/, '')
+          }
+        }
+      } catch (err) {
+        console.error('Failed to open file dialog:', err)
+      }
+    }
+  }
 
   function chooseProvider(p: ProviderMeta) {
     form = blankFor(p.id, p.defaultPort)
@@ -219,14 +260,10 @@
             class="hover:border-primary hover:bg-accent/40 flex flex-col items-center gap-2 rounded-lg border p-4 transition-colors"
             onclick={() => chooseProvider(p)}
           >
-            {#if p.kind === 'keyvalue'}
-              <KeyRound class="size-7" />
-            {:else}
-              <Database class="size-7" />
-            {/if}
+            <ProviderIcon provider={p.id} class="size-7" />
             <span class="text-sm font-medium">{p.label}</span>
             <span class="text-muted-foreground text-xs">
-              {p.kind === 'keyvalue' ? 'Key-value' : 'Relational'}
+              {p.kind === 'keyvalue' ? 'Key-value' : p.kind === 'file' ? 'File database' : 'Relational'}
             </span>
           </button>
         {/each}
@@ -240,10 +277,12 @@
         </div>
 
         <Tabs.Root bind:value={tab}>
-          <Tabs.List class="grid w-full grid-cols-3">
+          <Tabs.List class="grid w-full {isSqlite ? 'grid-cols-2' : 'grid-cols-3'}">
             <Tabs.Trigger value="connection">Connection</Tabs.Trigger>
             <Tabs.Trigger value="options">Options</Tabs.Trigger>
-            <Tabs.Trigger value="ssh">SSH</Tabs.Trigger>
+            {#if !isSqlite}
+              <Tabs.Trigger value="ssh">SSH</Tabs.Trigger>
+            {/if}
           </Tabs.List>
 
           <!-- Tab 1: Connection (fields ⇄ URL) -->
@@ -267,7 +306,27 @@
               </button>
             </div>
 
-            {#if mode === 'fields'}
+            {#if isSqlite && mode === 'fields'}
+              <div class="grid gap-1.5">
+                <Label for="cn-sqlite-path">Database file path</Label>
+                <div class="flex gap-2">
+                  <Input
+                    id="cn-sqlite-path"
+                    bind:value={form.database}
+                    placeholder={isTauri() ? '/path/to/database.db or click browse' : '/path/to/database.db or :memory:'}
+                    class="font-mono text-xs"
+                  />
+                  {#if isTauri()}
+                    <Button variant="outline" type="button" onclick={browseSqliteFile}>
+                      Browse...
+                    </Button>
+                  {/if}
+                </div>
+                <p class="text-muted-foreground text-xs">
+                  Enter an absolute file path, relative path, or <code>:memory:</code>.
+                </p>
+              </div>
+            {:else if mode === 'fields'}
               <div class="grid grid-cols-3 gap-2">
                 <div class="col-span-2 grid gap-1.5">
                   <Label for="cn-host">Host</Label>
@@ -279,8 +338,12 @@
                 </div>
               </div>
               <div class="grid gap-1.5">
-                <Label for="cn-db">{isRedis ? 'DB index' : 'Database'}</Label>
-                <Input id="cn-db" bind:value={form.database} placeholder={isRedis ? '0' : ''} />
+                <Label for="cn-db">{isRedis ? 'DB index' : isOracle ? 'Service Name / SID' : 'Database'}</Label>
+                <Input
+                  id="cn-db"
+                  bind:value={form.database}
+                  placeholder={isRedis ? '0' : isOracle ? 'FREEPDB1 or XE' : ''}
+                />
               </div>
               <div class="grid grid-cols-2 gap-2">
                 <div class="grid gap-1.5">
@@ -333,13 +396,19 @@
                 class="font-mono text-xs"
                 placeholder={isRedis
                   ? 'redis://:password@host:6379/0'
-                  : 'postgres://user:password@host:5432/database?sslmode=disable'}
+                  : isSqlite
+                    ? 'sqlite:///path/to/database.db'
+                    : 'postgres://user:password@host:5432/database?sslmode=disable'}
               />
               {#if urlError}
                 <p class="text-destructive text-xs">Not a valid connection URL.</p>
               {:else if url.trim()}
                 <p class="text-muted-foreground text-xs">
-                  Parsed → {form.username}@{form.host}:{form.port}/{form.database}
+                  {#if isSqlite}
+                    Parsed → sqlite://{form.database}
+                  {:else}
+                    Parsed → {form.username}@{form.host}:{form.port}/{form.database}
+                  {/if}
                 </p>
               {/if}
             {/if}
@@ -361,22 +430,24 @@
                 >
               </span>
             </label>
-            <label class="flex cursor-pointer items-start gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={useHostGateway}
-                onchange={(e) => setHostGateway((e.target as HTMLInputElement).checked)}
-                class="mt-0.5 h-4 w-4 cursor-pointer"
-              />
-              <span>
-                Use Docker network
-                <span class="text-muted-foreground block text-xs">
-                  Reach a host DB from the geto container via <code class="font-mono"
-                    >host.docker.internal</code
-                  >.
+            {#if !isSqlite}
+              <label class="flex cursor-pointer items-start gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={useHostGateway}
+                  onchange={(e) => setHostGateway((e.target as HTMLInputElement).checked)}
+                  class="mt-0.5 h-4 w-4 cursor-pointer"
+                />
+                <span>
+                  Use Docker network
+                  <span class="text-muted-foreground block text-xs">
+                    Reach a host DB from the geto container via <code class="font-mono"
+                      >host.docker.internal</code
+                    >.
+                  </span>
                 </span>
-              </span>
-            </label>
+              </label>
+            {/if}
           </Tabs.Content>
 
           <!-- Tab 3: SSH -->
